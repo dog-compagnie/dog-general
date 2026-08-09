@@ -12,6 +12,7 @@
 :root{
   --bg:#0A0E14;--bg2:#141B26;--bg3:#1C2635;
   --border:rgba(93,173,226,0.14);
+  --accent:#2980B9;--accent-light:#5DADE2;
   --blue:#2980B9;--blue-light:#5DADE2;
   --green:#1E8449;--green-light:#52D98B;
   --red:#C0392B;--red-light:#F08080;
@@ -31,10 +32,20 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* BG */
 .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 70% 55% at 8% 5%, rgba(41,128,185,0.13) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 45% at 95% 15%, rgba(211,84,0,0.09) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 85% 95%, rgba(192,57,43,0.08) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(30,132,73,0.06) 0%, transparent 55%);
+    radial-gradient(ellipse 65% 55% at 12% 8%, color-mix(in srgb,var(--accent) 26%,transparent) 0%, transparent 58%),
+    radial-gradient(ellipse 50% 45% at 92% 12%, rgba(211,84,0,0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 48% at 88% 92%, rgba(192,57,43,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 40% at 8% 90%, rgba(30,132,73,0.1) 0%, transparent 55%),
+    linear-gradient(180deg, #0A0E14 0%, #090C11 100%);
+  background-size:200% 200%,200% 200%,200% 200%,200% 200%,100% 100%;
+  animation:bgDrift 34s ease-in-out infinite alternate;
+}
+.bg::after{content:"";position:absolute;inset:0;opacity:0.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes bgDrift{
+  0%{background-position:0% 0%,100% 0%,100% 100%,0% 100%,0 0;}
+  100%{background-position:8% 6%,92% 10%,94% 92%,4% 96%,0 0;}
 }
 
 /* ═══ LOGIN SCREEN ═══ */
@@ -71,8 +82,15 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* ═══ TOPBAR ═══ */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;background:rgba(8,11,17,0.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;box-shadow:0 1px 0 rgba(41,128,185,0.06);}
 .topbar-logo{font-size:14px;font-weight:700;color:#fff;letter-spacing:-0.01em;}
-.topbar-logo span{background:linear-gradient(120deg,var(--blue-light),var(--orange-light));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.topbar-logo span{background:linear-gradient(120deg,var(--accent-light),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .topbar-role{font-size:11px;padding:4px 10px;border-radius:12px;font-weight:700;}
+.svc-switch{display:flex;gap:3px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:11px;padding:3px;}
+.svc-switch-btn{width:30px;height:26px;border-radius:8px;background:transparent;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0.5;transition:all 0.18s;}
+.svc-switch-btn:hover{opacity:0.85;background:rgba(255,255,255,0.06);}
+.svc-switch-btn.active{opacity:1;background:rgba(93,173,226,0.18);box-shadow:0 0 0 1px rgba(93,173,226,0.35) inset;}
+.svc-switch-btn.active[data-svc="securite"]{background:rgba(41,128,185,0.22);box-shadow:0 0 0 1px rgba(41,128,185,0.4) inset;}
+.svc-switch-btn.active[data-svc="depannage"]{background:rgba(211,84,0,0.22);box-shadow:0 0 0 1px rgba(211,84,0,0.4) inset;}
+.svc-switch-btn.active[data-svc="rescue"]{background:rgba(192,57,43,0.22);box-shadow:0 0 0 1px rgba(192,57,43,0.4) inset;}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
 .sync-badge{font-size:11px;padding:3px 9px;border-radius:12px;background:rgba(30,132,73,0.1);border:1px solid rgba(30,132,73,0.2);color:#4A7F5E;}
 .logout-btn{background:rgba(255,255,255,0.06);color:var(--text2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;}
@@ -98,9 +116,13 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* ═══ SIDENAV ═══ */
 .sidenav{position:fixed;top:58px;left:0;bottom:0;width:212px;background:rgba(8,11,17,0.92);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:90;overflow-y:auto;}
 .sidenav-section{font-family:var(--font-display);font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;padding:16px 14px 6px;}
+.sidenav-profile{display:flex;align-items:center;gap:11px;padding:18px 14px 16px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.sidenav-avatar{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.35);}
+.sidenav-name{font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
+.sidenav-svc-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);margin-top:2px;font-weight:600;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;transition:all 0.18s;border-left:3px solid transparent;}
 .nav-item:hover{background:rgba(93,173,226,0.07);}
-.nav-item.active{background:linear-gradient(90deg,rgba(41,128,185,0.16),rgba(41,128,185,0.02));border-left-color:var(--blue-light);}
+.nav-item.active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 18%,transparent),transparent);border-left-color:var(--accent-light);}
 .nav-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .nav-label{font-size:12px;font-weight:600;color:var(--text2);}
 .nav-item.active .nav-label{color:#fff;}
@@ -123,7 +145,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .page-maint-msg{font-size:13px;color:var(--text2);line-height:1.6;padding:0 28px;}
 .page.active{display:block;}
 .page-title{font-family:var(--font-display);font-size:23px;font-weight:700;letter-spacing:-0.01em;color:#fff;margin-bottom:4px;}
-.page-title span{color:var(--blue-light);}
+.page-title span{color:var(--accent-light);}
 .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
 
 /* ═══ CARDS ═══ */
@@ -495,11 +517,11 @@ tbody tr:hover{background:rgba(41,128,185,0.03);}
 <div class="topbar">
   <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidenav()" aria-label="Menu">☰</button>
   <div class="topbar-logo" id="topbar-logo">Dog <span>Compagnie</span></div>
-  <select id="admin-service-switch" onchange="setAdminService(this.value)" style="display:none;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.3);border-radius:7px;color:#fff;font-size:11px;padding:4px 8px;margin-left:8px;">
-    <option value="securite">🛡 Dog Sécurité</option>
-    <option value="depannage">🔧 Dog Dépannage</option>
-    <option value="rescue">🚑 Dog Rescue</option>
-  </select>
+  <div class="svc-switch" id="admin-service-switch" style="display:none;">
+    <button class="svc-switch-btn" data-svc="securite" onclick="setAdminService('securite')" title="Dog Sécurité">🛡️</button>
+    <button class="svc-switch-btn" data-svc="depannage" onclick="setAdminService('depannage')" title="Dog Dépannage">🔧</button>
+    <button class="svc-switch-btn" data-svc="rescue" onclick="setAdminService('rescue')" title="Dog Rescue">🚑</button>
+  </div>
   <div class="topbar-role" id="topbar-role"></div>
   <div class="topbar-right">
     <div class="sync-badge" id="sync-badge">✓ Connecté</div>
@@ -4182,8 +4204,18 @@ function getNavConfig() {
 function renderSidenav() {
   const nav = document.getElementById("sidenav");
   if(!nav) return;
+  const svc = myService();
+  const initials = currentCompte && currentCompte.prenom ? `${(currentCompte.prenom[0]||"")}${(currentCompte.nom||"?")[0]||""}`.toUpperCase() : (role==="admin"?"AD":"??");
+  const who = currentCompte && currentCompte.prenom ? `${currentCompte.prenom} ${currentCompte.nom}` : specialRoleLabel();
+  let html = `<div class="sidenav-profile">
+    <div class="sidenav-avatar" style="background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 40%,black));">${initials}</div>
+    <div style="min-width:0;">
+      <div class="sidenav-name">${who}</div>
+      <div class="sidenav-svc-badge"><span>${SERVICE_ICONS[svc]}</span>${svcLabel(svc)}</div>
+    </div>
+  </div>`;
   const items = getNavConfig().filter(it=>it.roles.includes(role));
-  let html = "", lastSection = null;
+  let lastSection = null;
   items.forEach(it=>{
     if(it.section && it.section!==lastSection) {
       html += `<div class="sidenav-section">${it.section}</div>`;
@@ -4624,8 +4656,7 @@ async function launchApp() {
 
   const switcher = document.getElementById("admin-service-switch");
   if(switcher) {
-    switcher.style.display = (role==="admin") ? "inline-block" : "none";
-    if(role==="admin") switcher.value = window._adminViewService || "securite";
+    switcher.style.display = (role==="admin") ? "flex" : "none";
   }
   updateTopbarBranding();
 
@@ -4656,6 +4687,11 @@ function setAdminService(svc) {
   loadAll();
   toast("✓ Vue basculée sur "+svcLabel(svc));
 }
+const ACCENT_BY_SERVICE = {
+  securite:  {main:"#2980B9", light:"#5DADE2"},
+  depannage: {main:"#D35400", light:"#F0A840"},
+  rescue:    {main:"#C0392B", light:"#F08080"},
+};
 function updateTopbarBranding() {
   const el = document.getElementById("topbar-logo");
   const svc = myService();
@@ -4663,6 +4699,10 @@ function updateTopbarBranding() {
     const parts = svcLabel(svc).split(" ");
     el.innerHTML = `${parts[0]} <span>${parts.slice(1).join(" ")}</span>`;
   }
+  const accent = ACCENT_BY_SERVICE[svc]||ACCENT_BY_SERVICE.securite;
+  document.documentElement.style.setProperty("--accent", accent.main);
+  document.documentElement.style.setProperty("--accent-light", accent.light);
+  document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
   DOC_LABEL.courrier = COURRIER_LABEL_BY_SERVICE[svc];
   const tabBtn = document.getElementById("doc-tab-courrier");
   if(tabBtn) tabBtn.textContent = "✉️ "+COURRIER_LABEL_BY_SERVICE[svc];
