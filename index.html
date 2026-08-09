@@ -146,16 +146,31 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .page{display:none;padding:28px;position:relative;}
 .page-maint-overlay{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:radial-gradient(ellipse at top, rgba(20,26,36,0.98) 0%, rgba(8,11,16,0.99) 100%);z-index:50;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:min(9vh,70px);text-align:center;padding-left:30px;padding-right:30px;padding-bottom:30px;backdrop-filter:blur(6px);overflow-y:auto;}
 .page-maint-overlay.show{display:flex;}
-.page-maint-card{background:linear-gradient(165deg,rgba(30,40,55,0.92),rgba(16,22,32,0.96));border:1px solid rgba(240,168,64,0.3);border-radius:20px;padding:0 0 32px;max-width:400px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 60px -20px rgba(240,168,64,0.25);overflow:hidden;backdrop-filter:blur(6px);}
-.page-maint-icon-wrap{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(240,168,64,0.2),rgba(240,168,64,0.04));border:2px solid rgba(240,168,64,0.4);display:flex;align-items:center;justify-content:center;margin:28px auto 18px;animation:maint-pulse 2.4s ease-in-out infinite;font-size:30px;}
-.maint-stripe{height:9px;background:repeating-linear-gradient(45deg,#F0A840 0 12px,#161d27 12px 24px);}
-.page-maint-icon-wrap .icon{font-size:32px;}
-@keyframes maint-pulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(240,168,64,0.32);}
-  50%{box-shadow:0 0 0 14px rgba(240,168,64,0);}
+.page-maint-card{position:relative;background:linear-gradient(165deg,rgba(30,40,55,0.92),rgba(16,22,32,0.97));border:1px solid rgba(93,173,226,0.18);border-radius:22px;padding:36px 0 34px;max-width:400px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55);overflow:hidden;backdrop-filter:blur(6px);}
+.page-maint-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#2980B9,#D35400,#C0392B,transparent);background-size:200% 100%;animation:maint-scan 3s linear infinite;}
+@keyframes maint-scan{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+.maint-radar{position:relative;width:96px;height:96px;margin:6px auto 22px;display:flex;align-items:center;justify-content:center;}
+.maint-radar-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid transparent;animation:maint-ping 2.7s cubic-bezier(.2,.7,.3,1) infinite;}
+.maint-radar-ring.r1{border-color:#5DADE2;animation-delay:0s;}
+.maint-radar-ring.r2{border-color:#F0A840;animation-delay:0.6s;}
+.maint-radar-ring.r3{border-color:#F08080;animation-delay:1.2s;}
+@keyframes maint-ping{
+  0%{transform:scale(0.55);opacity:0;}
+  15%{opacity:0.9;}
+  100%{transform:scale(1.5);opacity:0;}
 }
-.page-maint-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:8px;padding:0 24px;}
-.page-maint-msg{font-size:13px;color:var(--text2);line-height:1.6;padding:0 28px;}
+.maint-radar-core{position:relative;width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,#1C2635,#0A0E14);border:1.5px solid rgba(93,173,226,0.35);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 24px -4px rgba(93,173,226,0.4),0 4px 14px rgba(0,0,0,0.4);z-index:2;}
+
+.page-maint-title{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.01em;color:#fff;margin-bottom:9px;padding:0 24px;}
+.page-maint-msg{font-size:13px;color:var(--text2);line-height:1.65;padding:0 28px;}
+.maint-services-row{display:flex;justify-content:center;gap:10px;margin-top:20px;padding:0 24px;}
+.maint-svc-pill{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--text2);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:5px 11px;}
+.maint-svc-pill .dot{width:6px;height:6px;border-radius:50%;animation:maint-dot 1.8s ease-in-out infinite;}
+.maint-svc-pill.s1 .dot{background:#5DADE2;animation-delay:0s;}
+.maint-svc-pill.s2 .dot{background:#F0A840;animation-delay:0.3s;}
+.maint-svc-pill.s3 .dot{background:#F08080;animation-delay:0.6s;}
+@keyframes maint-dot{0%,100%{opacity:0.3;}50%{opacity:1;}}
 .page.active{display:block;}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#fff;margin-bottom:5px;display:flex;align-items:center;gap:12px;}
 .page-title::before{content:"";width:5px;height:26px;border-radius:4px;background:linear-gradient(180deg,var(--accent-light),var(--accent));box-shadow:0 0 12px color-mix(in srgb,var(--accent) 55%,transparent);flex-shrink:0;}
@@ -456,10 +471,19 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 <!-- ═══ ÉCRAN DE MAINTENANCE (non fermable, tout le monde sauf Admin) ═══ -->
 <div id="maintenance-screen" class="alert-popup" style="z-index:900;align-items:flex-start;padding-top:min(9vh,70px);overflow-y:auto;">
   <div class="page-maint-card" style="max-width:400px;">
-    <div class="maint-stripe"></div>
-    <div class="page-maint-icon-wrap"><span class="icon">🚧</span></div>
-    <div class="page-maint-title" style="font-size:19px;">Maintenance en cours</div>
+    <div class="maint-radar">
+      <div class="maint-radar-ring r1"></div>
+      <div class="maint-radar-ring r2"></div>
+      <div class="maint-radar-ring r3"></div>
+      <div class="maint-radar-core">📡</div>
+    </div>
+    <div class="page-maint-title" style="font-size:19px;">Synchronisation en cours</div>
     <div class="page-maint-msg" id="maintenance-message">Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.</div>
+    <div class="maint-services-row">
+      <div class="maint-svc-pill s1"><span class="dot"></span>Sécurité</div>
+      <div class="maint-svc-pill s2"><span class="dot"></span>Dépannage</div>
+      <div class="maint-svc-pill s3"><span class="dot"></span>Rescue</div>
+    </div>
     <div style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Cette page se réactivera automatiquement dès la fin de la maintenance.</div>
   </div>
 </div>
@@ -4607,8 +4631,12 @@ function setupPageMaintOverlays() {
     ov.className = "page-maint-overlay";
     ov.innerHTML = `
       <div class="page-maint-card">
-        <div class="maint-stripe"></div>
-        <div class="page-maint-icon-wrap"><span class="icon">🚧</span></div>
+        <div class="maint-radar">
+          <div class="maint-radar-ring r1"></div>
+          <div class="maint-radar-ring r2"></div>
+          <div class="maint-radar-ring r3"></div>
+          <div class="maint-radar-core">📡</div>
+        </div>
         <div class="page-maint-title">Page en maintenance</div>
         <div class="page-maint-msg"></div>
       </div>`;
