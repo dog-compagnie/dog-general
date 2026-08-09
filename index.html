@@ -657,7 +657,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
   <!-- PAGE CANDIDATURES (formulaire) -->
   <div class="page" id="page-candidature-form">
     <div class="page-title">Candidater au <span>service</span></div>
-    <div class="page-sub" id="cand-space-sub">Remplissez ce formulaire pour soumettre votre candidature au Service Dépannage de la Dog Compagnie.</div>
+    <div class="page-sub" id="cand-space-sub">Remplissez ce formulaire pour soumettre votre candidature à l'un des services de la Dog Compagnie.</div>
     <div class="card candidature-form" id="cand-space-form">
       <div class="card-hdr"><div class="card-hdr-title">📝 Formulaire de candidature</div></div>
       <div class="card-body">
@@ -694,7 +694,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
         </div>
 
         <div class="field"><label>Disponibilités</label><input id="cand-dispo" placeholder="Ex : soirs et week-ends, immédiatement…"></div>
-        <div class="field"><label>Motivation *</label><textarea id="cand-motiv" placeholder="Expliquez pourquoi vous souhaitez rejoindre le Service Dépannage de la Dog Compagnie…" rows="5"></textarea></div>
+        <div class="field"><label>Motivation *</label><textarea id="cand-motiv" placeholder="Expliquez pourquoi vous souhaitez rejoindre ce service de la Dog Compagnie…" rows="5"></textarea></div>
         <button class="btn btn-primary btn-full" onclick="soumettreCandidat()" style="margin-top:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Envoyer ma candidature
@@ -2424,10 +2424,12 @@ function buildDocInner(data, ref, overrideAuteur, overrideRole) {
   const infoHTML = infoRows.map(r=>`<div><div class="lbl">${escHtml(r.l)}</div><div class="val">${escHtml(r.v)}</div></div>`).join("");
 
   const isDG = type==="courrier_dg";
-  const brandSubtitle = isDG ? "DIRECTION GÉNÉRALE" : "SERVICE DÉPANNAGE";
-  const brandColor = isDG ? "#7D3C98" : "#2980B9";
-  const orgLine = isDG ? "Dog Compagnie" : "Dépannage";
-  const stampOrgLine = isDG ? "Direction Générale" : "Service Dépannage";
+  const svc = myService();
+  const titleCase = s => s.split(" ").map(w=>w.charAt(0)+w.slice(1).toLowerCase()).join(" ");
+  const brandSubtitle = isDG ? "DIRECTION GÉNÉRALE" : SERVICE_BRAND_BY_SERVICE[svc];
+  const brandColor = isDG ? "#7D3C98" : (ACCENT_BY_SERVICE[svc]?.main || "#2980B9");
+  const orgLine = isDG ? "Dog Compagnie" : svcLabel(svc).replace(/^Dog\s+/,"");
+  const stampOrgLine = isDG ? "Direction Générale" : titleCase(SERVICE_BRAND_BY_SERVICE[svc]);
   const headerHTML = isDG
     ? `<div class="doc-hdr" style="justify-content:flex-start;gap:16px;">
         <img class="doc-logo-img" src="data:image/jpeg;base64,${LOGO_COMPAGNIE_B64}">
@@ -2482,7 +2484,7 @@ function buildDocInner(data, ref, overrideAuteur, overrideRole) {
       <div class="company">DOG<br>COMPAGNIE</div>
       <div style="font-size:8px;margin:2px 0;">${stampOrgLine}</div>
       <div class="initials">${escHtml(initials)}</div>
-      <div style="font-size:8px;">${isDG ? escHtml(auteurRole.toUpperCase()) : escHtml(auteurRole.toUpperCase())+"<br>DÉPANNAGE"}</div>
+      <div style="font-size:8px;">${isDG ? escHtml(auteurRole.toUpperCase()) : escHtml(auteurRole.toUpperCase())+"<br>"+SERVICE_BRAND_BY_SERVICE[svc].split(" ")[1]}</div>
     </div>
   </div>
   <div class="doc-refline">${escHtml(ref)}<br>Dog Compagnie — Document officiel</div>
@@ -3311,6 +3313,7 @@ function buildFactureInner(d) {
   const escHtml = s => (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const auteur = identityLabel();
   const auteurRole = specialRoleLabel();
+  const svc = d.service || myService();
   const initials = auteur.split(" ").filter(Boolean).map(w=>w[0]).join("").toUpperCase().slice(0,3);
   const dateFactureFr = d.date_facture ? new Date(d.date_facture+"T12:00:00").toLocaleDateString("fr-FR") : "—";
   const datePrestationFr = d.date_prestation ? new Date(d.date_prestation+"T12:00:00").toLocaleDateString("fr-FR") : "—";
@@ -3408,14 +3411,14 @@ function buildFactureInner(d) {
         <div class="fact-signature2">
           <div style="border-top:1px solid #999;width:160px;margin-top:24px;"></div>
           <div class="name">${escHtml(auteur)}</div>
-          <div class="role">${escHtml(auteurRole)}<br>Dépannage</div>
+          <div class="role">${escHtml(auteurRole)}<br>${svcLabel(svc).replace(/^Dog\s+/,"")}</div>
         </div>
       </div>
       <div class="fact-stamp">
         <div class="company">DOG<br>COMPAGNIE</div>
-        <div style="font-size:8px;margin:2px 0;">Service Dépannage</div>
+        <div style="font-size:8px;margin:2px 0;">${SERVICE_BRAND_BY_SERVICE[svc].split(" ").map(w=>w.charAt(0)+w.slice(1).toLowerCase()).join(" ")}</div>
         <div class="initials">${escHtml(initials)}</div>
-        <div style="font-size:8px;">${escHtml(auteurRole.toUpperCase())}<br>DÉPANNAGE</div>
+        <div style="font-size:8px;">${escHtml(auteurRole.toUpperCase())}<br>${SERVICE_BRAND_BY_SERVICE[svc].split(" ")[1]}</div>
       </div>
     </div>
     <div class="fact-footer">${escHtml(d.numero)} — Dog Compagnie — Facture générée le ${new Date().toLocaleDateString("fr-FR")}</div>
@@ -6762,7 +6765,7 @@ function buildPaieInner(d) {
 .paie-footer{margin-top:30px;font-size:9px;color:#999;text-align:center;}
 `;
   const html = `<div class="paie-page">
-    <div class="paie-titlebar">FICHE DE PAIE — DOG DÉPANNAGE</div>
+    <div class="paie-titlebar">FICHE DE PAIE — ${(SERVICE_LABELS[d.service]||"DOG COMPAGNIE").toUpperCase()}</div>
     <div class="paie-grid">
       <div><div class="lbl">Agent</div><div class="val">${escHtml(d.agent_nom)}</div></div>
       <div><div class="lbl">Période</div><div class="val">${escHtml(d.periode_label)}</div></div>
@@ -6772,7 +6775,7 @@ function buildPaieInner(d) {
     ${(d.primes||[]).length ? `<div class="paie-section-title">Primes</div><div class="paie-totaux">${primesHTML}</div>` : ""}
     <div class="paie-total-final"><span>TOTAL NET</span><span>${fmtEuro(d.total)}</span></div>
     <div style="margin-top:14px;font-size:11px;color:#555;text-align:center;font-style:italic;">Vous disposez de 2 semaines à compter de la réception de cette fiche de paie pour récupérer votre paie auprès d'un PDG.</div>
-    <div class="paie-footer">Dog Dépannage — Fiche de paie générée le ${new Date().toLocaleDateString("fr-FR")}</div>
+    <div class="paie-footer">${SERVICE_LABELS[d.service]||"Dog Compagnie"} — Fiche de paie générée le ${new Date().toLocaleDateString("fr-FR")}</div>
   </div>`;
   return {css, html};
 }
