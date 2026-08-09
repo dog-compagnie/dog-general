@@ -23,7 +23,8 @@
   --font-display:'Space Grotesk',-apple-system,sans-serif;
   --font-body:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
-body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-user-select:none;user-select:none;}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;transition:all 0.15s;}
 button:active{transform:scale(0.97);}
 input,select,textarea{font-family:inherit;}
@@ -109,11 +110,14 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .notif-panel{position:absolute;top:46px;right:0;width:346px;max-height:440px;overflow-y:auto;background:rgba(20,27,38,0.97);backdrop-filter:blur(14px);border:1px solid rgba(93,173,226,0.22);border-radius:15px;box-shadow:0 16px 48px rgba(0,0,0,0.55);z-index:200;display:none;}
 .notif-panel.show{display:block;}
 .notif-panel-hdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display);font-size:12.5px;font-weight:600;color:#A8CFEA;position:sticky;top:0;background:rgba(20,27,38,0.97);}
-.notif-item{padding:12px 16px;border-bottom:1px solid rgba(93,173,226,0.07);cursor:pointer;transition:background 0.15s;}
-.notif-item:hover{background:rgba(93,173,226,0.08);}
+.notif-item{border-bottom:1px solid rgba(93,173,226,0.07);}
 .notif-item:last-child{border-bottom:none;}
-.notif-item-text{font-size:12px;color:var(--text);line-height:1.55;}
-.notif-item-time{font-size:10px;color:var(--text3);margin-top:4px;}
+.notif-item-btn{display:flex;align-items:flex-start;gap:11px;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;transition:background 0.15s;}
+.notif-item-btn:hover{background:rgba(93,173,226,0.08);}
+.notif-item-icon{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent) 18%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.notif-item-body{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.notif-item-text{font-size:12px;color:var(--text);line-height:1.5;}
+.notif-item-time{font-size:10px;color:var(--text3);}
 .notif-empty{padding:30px 16px;text-align:center;font-size:12px;color:var(--text3);}
 .notif-mark-all{padding:11px 14px;text-align:center;font-size:11px;color:var(--accent-light);cursor:pointer;border-top:1px solid var(--border);font-weight:700;position:sticky;bottom:0;background:rgba(20,27,38,0.97);transition:background 0.15s;}
 .notif-mark-all:hover{background:rgba(93,173,226,0.08);}
@@ -142,9 +146,9 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .page{display:none;padding:28px;position:relative;}
 .page-maint-overlay{display:none;position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(20,26,36,0.98) 0%, rgba(8,11,16,0.99) 100%);z-index:50;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;backdrop-filter:blur(3px);}
 .page-maint-overlay.show{display:flex;}
-.page-maint-card{background:var(--bg2);border:1px solid rgba(240,168,64,0.28);border-radius:18px;padding:0 0 30px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;}
+.page-maint-card{background:linear-gradient(165deg,rgba(30,40,55,0.92),rgba(16,22,32,0.96));border:1px solid rgba(240,168,64,0.3);border-radius:20px;padding:0 0 32px;max-width:400px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 60px -20px rgba(240,168,64,0.25);overflow:hidden;backdrop-filter:blur(6px);}
+.page-maint-icon-wrap{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(240,168,64,0.2),rgba(240,168,64,0.04));border:2px solid rgba(240,168,64,0.4);display:flex;align-items:center;justify-content:center;margin:28px auto 18px;animation:maint-pulse 2.4s ease-in-out infinite;font-size:30px;}
 .maint-stripe{height:9px;background:repeating-linear-gradient(45deg,#F0A840 0 12px,#161d27 12px 24px);}
-.page-maint-icon-wrap{width:72px;height:72px;border-radius:50%;background:rgba(240,168,64,0.12);border:2px solid rgba(240,168,64,0.35);display:flex;align-items:center;justify-content:center;margin:26px auto 16px;animation:maint-pulse 2.4s ease-in-out infinite;}
 .page-maint-icon-wrap .icon{font-size:32px;}
 @keyframes maint-pulse{
   0%,100%{box-shadow:0 0 0 0 rgba(240,168,64,0.32);}
@@ -166,11 +170,12 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .card-body{padding:18px;}
 
 /* FIELDS */
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:15px;}
 .field:last-child{margin-bottom:0;}
-.field label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;}
-.field input,.field select,.field textarea{background:rgba(9,13,20,0.65);border:1px solid rgba(93,173,226,0.13);border-radius:9px;color:var(--text);font-size:13px;padding:9px 12px;outline:none;width:100%;transition:border-color 0.15s;-webkit-appearance:none;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(93,173,226,0.5);color:#fff;}
+.field label{font-family:var(--font-display);font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;}
+.field input,.field select,.field textarea{background:rgba(6,9,14,0.6);border:1.5px solid rgba(93,173,226,0.12);border-radius:10px;color:var(--text);font-size:13px;padding:10px 13px;outline:none;width:100%;transition:all 0.2s cubic-bezier(.2,.8,.3,1);-webkit-appearance:none;box-shadow:0 1px 2px rgba(0,0,0,0.2) inset;}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:rgba(93,173,226,0.24);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent-light);color:#fff;background:rgba(6,9,14,0.85);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent),0 1px 2px rgba(0,0,0,0.2) inset;}
 .field input::placeholder,.field textarea::placeholder{color:var(--text3);}
 .field select option{background:#161E2A;}
 .field textarea{resize:vertical;min-height:80px;line-height:1.6;}
@@ -449,8 +454,8 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 <div class="bg"></div>
 
 <!-- ═══ ÉCRAN DE MAINTENANCE (non fermable, tout le monde sauf Admin) ═══ -->
-<div id="maintenance-screen" class="alert-popup" style="z-index:900;">
-  <div class="page-maint-card" style="max-width:420px;">
+<div id="maintenance-screen" class="alert-popup" style="z-index:900;align-items:flex-start;padding-top:min(9vh,70px);overflow-y:auto;">
+  <div class="page-maint-card" style="max-width:400px;">
     <div class="maint-stripe"></div>
     <div class="page-maint-icon-wrap"><span class="icon">🚧</span></div>
     <div class="page-maint-title" style="font-size:19px;">Maintenance en cours</div>
@@ -530,11 +535,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 <div class="topbar">
   <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidenav()" aria-label="Menu">☰</button>
   <div class="topbar-logo" id="topbar-logo">Dog <span>Compagnie</span></div>
-  <div class="svc-switch" id="admin-service-switch" style="display:none;">
-    <button class="svc-switch-btn" data-svc="securite" onclick="setAdminService('securite')" title="Dog Sécurité">🛡️</button>
-    <button class="svc-switch-btn" data-svc="depannage" onclick="setAdminService('depannage')" title="Dog Dépannage">🔧</button>
-    <button class="svc-switch-btn" data-svc="rescue" onclick="setAdminService('rescue')" title="Dog Rescue">🚑</button>
-  </div>
+  <div class="svc-switch" id="service-switch" style="display:none;"></div>
   <div class="topbar-role" id="topbar-role"></div>
   <div class="topbar-right">
     <div class="sync-badge" id="sync-badge">✓ Connecté</div>
@@ -1656,6 +1657,30 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// PROTECTION ANTI-COPIE (dissuasive, pas une sécurité absolue — voir
+// note fournie séparément : aucun site 100% client-side ne peut être
+// rendu totalement impossible à copier)
+// ═══════════════════════════════════════════════════════════════════
+const ALLOWED_HOSTNAMES = [
+  "dog-compagnie.github.io",
+  "localhost", "127.0.0.1" // laissés pour vos propres tests locaux
+];
+if(!ALLOWED_HOSTNAMES.includes(window.location.hostname)) {
+  document.documentElement.innerHTML = "";
+  document.write("<body style='background:#0A0E14;color:#F08080;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;'><div>⚠️ Ce site n'est pas autorisé à s'exécuter sur ce domaine.</div></body>");
+  throw new Error("Domaine non autorisé");
+}
+document.addEventListener("contextmenu", e=>e.preventDefault());
+document.addEventListener("keydown", e=>{
+  const k = e.key.toLowerCase();
+  if(e.key==="F12") e.preventDefault();
+  if((e.ctrlKey||e.metaKey) && e.shiftKey && (k==="i"||k==="j"||k==="c")) e.preventDefault();
+  if((e.ctrlKey||e.metaKey) && (k==="u"||k==="s")) e.preventDefault();
+});
+console.log("%c⛔ Arrêt", "color:#F08080;font-size:32px;font-weight:800;");
+console.log("%cCe site et son code sont la propriété de Dog Compagnie. Toute copie, extraction ou réutilisation du contenu ou du code est interdite.", "color:#84A0BC;font-size:13px;");
+
 const SB_URL = "https://pyskpavynkjjfmktkrhh.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5c2twYXZ5bmtqamZta3RrcmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyODM2OTgsImV4cCI6MjEwMTg1OTY5OH0.lIhD0HGmuIBufiSrUh1VRfc5LtmE3zAIEwLKA2j8NT8";
 const H = {"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Prefer":"return=representation"};
@@ -4201,14 +4226,26 @@ function hideProfilePicker() {
 function selectProfile(i) {
   const g = window._pendingGrades && window._pendingGrades[i];
   if(!g || !window._pendingCompte) return;
-  finalizeLogin(window._pendingCompte, g);
+  finalizeLogin(window._pendingCompte, g, window._pendingGrades);
 }
-function finalizeLogin(compte, grade) {
+function finalizeLogin(compte, grade, sameRoleGrades) {
   // Fusionne l'identité (prénom/nom/pin) et le grade choisi (service/rôle/statut…) en un seul objet,
   // exactement comme le reste de l'app s'y attend.
   currentCompte = {...compte, ...grade, compte_id: compte.id};
   currentAgent = currentCompte;
+  window._myServiceGrades = sameRoleGrades || [grade];
   launchApp();
+}
+function setMyServiceGrade(svc) {
+  const g = (window._myServiceGrades||[]).find(x=>x.service===svc);
+  if(!g || !currentCompte) return;
+  currentCompte = {...currentCompte, ...g};
+  currentAgent = currentCompte;
+  updateTopbarBranding();
+  document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
+  renderSidenav();
+  loadAll();
+  toast("✓ Vue basculée sur "+svcLabel(svc));
 }
 
 // ─── NAVIGATION (menu latéral + pages) ──────────────────────────────
@@ -4432,9 +4469,14 @@ function renderNotifPanel() {
     return;
   }
   listEl.innerHTML = notifs.map(n=>`
-    <div class="notif-item" onclick="handleNotifClick('${n.type}','${n.id}')">
-      <div class="notif-item-text">${n.icon} ${esc(n.text)}</div>
-      <div class="notif-item-time">${fmtNotifTime(n.time)}</div>
+    <div class="notif-item">
+      <button class="notif-item-btn" onclick="handleNotifClick('${n.type}','${n.id}')">
+        <span class="notif-item-icon">${n.icon}</span>
+        <span class="notif-item-body">
+          <span class="notif-item-text">${esc(n.text)}</span>
+          <span class="notif-item-time">${fmtNotifTime(n.time)}</span>
+        </span>
+      </button>
     </div>`).join("")
     + `<div class="notif-mark-all" onclick="markAllNotifsSeen()">✓ Tout marquer comme lu</div>`;
 }
@@ -4704,10 +4746,7 @@ async function launchApp() {
   document.getElementById("screen-login").style.display="none";
   document.getElementById("app").style.display="block";
 
-  const switcher = document.getElementById("admin-service-switch");
-  if(switcher) {
-    switcher.style.display = (role==="admin") ? "flex" : "none";
-  }
+  renderServiceSwitch();
   updateTopbarBranding();
 
   const topbarRole = document.getElementById("topbar-role");
@@ -4729,6 +4768,20 @@ async function launchApp() {
   }
 
   finishLaunch();
+}
+function renderServiceSwitch() {
+  const switcher = document.getElementById("service-switch");
+  if(!switcher) return;
+  if(role==="admin") {
+    switcher.style.display = "flex";
+    switcher.innerHTML = SERVICES.map(s=>`<button class="svc-switch-btn" data-svc="${s}" onclick="setAdminService('${s}')" title="${svcLabel(s)}">${SERVICE_ICONS[s]}</button>`).join("");
+  } else if(window._myServiceGrades && window._myServiceGrades.length>1) {
+    switcher.style.display = "flex";
+    switcher.innerHTML = window._myServiceGrades.map(g=>`<button class="svc-switch-btn" data-svc="${g.service}" onclick="setMyServiceGrade('${g.service}')" title="${svcLabel(g.service)}">${SERVICE_ICONS[g.service]}</button>`).join("");
+  } else {
+    switcher.style.display = "none";
+    switcher.innerHTML = "";
+  }
 }
 function setAdminService(svc) {
   window._adminViewService = svc;
@@ -4825,7 +4878,7 @@ async function confirmLogin() {
         return;
       }
       if(grades.length>1) { showProfilePicker(compte, grades); return; }
-      finalizeLogin(compte, grades[0]);
+      finalizeLogin(compte, grades[0], grades);
     } catch(e) {
       err.textContent="Erreur de connexion : "+e.message;
       err.style.display="block";
