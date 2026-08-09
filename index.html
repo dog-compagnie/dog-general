@@ -418,20 +418,22 @@ tbody tr:hover{background:rgba(41,128,185,0.03);}
 <!-- ═══ LOGIN ═══ -->
 <div id="screen-login">
   <div class="login-box">
-    <div class="login-logo">🔧</div>
-    <div class="login-title">Dog Dépannage</div>
-    <div class="login-sub">Choisissez votre espace puis entrez votre code PIN</div>
+    <div class="login-logo" style="font-size:34px;letter-spacing:10px;display:flex;justify-content:center;gap:4px;">
+      <span title="Dog Sécurité">🛡️</span><span title="Dog Dépannage">🔧</span><span title="Dog Rescue">🚑</span>
+    </div>
+    <div class="login-title">Dog Compagnie</div>
+    <div class="login-sub">Sécurité · Dépannage · Secours — Choisissez votre espace puis entrez votre code PIN</div>
 
     <!-- ÉTAPE 1 : choix du rôle -->
     <div id="login-step1">
       <div class="role-grid">
         <button class="role-btn" onclick="selectRole('agent')" id="role-agent">
-          <span class="role-icon">🔧</span>
-          <span class="role-name">Dépanneur</span>
+          <span class="role-icon">🪪</span>
+          <span class="role-name">Agent</span>
         </button>
         <button class="role-btn" onclick="selectRole('candidat')" id="role-candidat">
           <span class="role-icon">📝</span>
-          <span class="role-name">Candidater au service</span>
+          <span class="role-name">Candidater</span>
         </button>
         <button class="role-btn" onclick="selectRole('responsable')" id="role-responsable">
           <span class="role-icon">🎖</span>
@@ -442,11 +444,11 @@ tbody tr:hover{background:rgba(41,128,185,0.03);}
           <span class="role-name">PDG</span>
         </button>
         <button class="role-btn" onclick="selectRole('admin')" id="role-admin" style="grid-column:1 / -1;flex-direction:row;justify-content:center;gap:10px;padding:12px;border-style:dashed;opacity:0.85;">
-          <span class="role-icon" style="font-size:18px;">🔧</span>
+          <span class="role-icon" style="font-size:18px;">⚙️</span>
           <span class="role-name">Admin</span>
         </button>
       </div>
-
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;">Votre service (Sécurité / Dépannage / Rescue) est reconnu automatiquement d'après votre compte.</div>
     </div>
 
     <!-- ÉTAPE 2 : saisie PIN -->
