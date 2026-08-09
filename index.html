@@ -6051,7 +6051,7 @@ async function toggleService() {
     try {
       const r = await fetch(SB_URL+"/rest/v1/services_logs", {
         method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-        body:JSON.stringify({ agent_id:currentAgent.compte_id||currentAgent.id, agent_nom:currentAgent.prenom+" "+currentAgent.nom, debut:debut.toISOString() })
+        body:JSON.stringify({ agent_id:currentAgent.compte_id||currentAgent.id, agent_nom:currentAgent.prenom+" "+currentAgent.nom, debut:debut.toISOString(), service:myService() })
       });
       if(!r.ok) throw new Error(await r.text());
       const rows = await r.json();
@@ -6283,7 +6283,7 @@ async function loadEffectifsList() {
     const [personnes, grades, logs, ajustements] = await Promise.all([
       sb("agents_comptes?select=*&order=nom"),
       sb("agents_grades?select=*"),
-      sb("services_logs?select=agent_nom,debut,duree_minutes&order=debut.desc&limit=5000"),
+      sb("services_logs?select=agent_nom,debut,duree_minutes,service&order=debut.desc&limit=5000"),
       sb("ajustements_heures?select=*&limit=2000"),
     ]);
     allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
@@ -6303,9 +6303,9 @@ function fmtHeuresMin(totalMinutes) {
   const m = abs%60;
   return `${sign}${h}h${m>0?String(m).padStart(2,"0"):""}`;
 }
-function heuresPourAgent(nomComplet, filterMonth, filterYear) {
+function heuresPourAgent(nomComplet, filterMonth, filterYear, svc) {
   const minsLogs = effectifsLogsCache
-    .filter(l=>l.agent_nom===nomComplet && l.duree_minutes)
+    .filter(l=>l.agent_nom===nomComplet && l.duree_minutes && (!svc || l.service===svc))
     .filter(l=>{
       if(filterMonth===undefined) return true;
       const d = new Date(l.debut);
@@ -6313,7 +6313,7 @@ function heuresPourAgent(nomComplet, filterMonth, filterYear) {
     })
     .reduce((s,l)=>s+(l.duree_minutes||0),0);
   const minsAdj = effectifsAjustementsCache
-    .filter(a=>a.agent_nom===nomComplet)
+    .filter(a=>a.agent_nom===nomComplet && (!svc || a.service===svc))
     .filter(a=>{
       if(filterMonth===undefined) return true;
       return a.mois===filterMonth+1 && a.annee===filterYear;
@@ -6336,8 +6336,8 @@ function renderEffectifsList(comptesAll) {
     const statut = c.statut_effectif || "En service";
     const isDeparted = statut==="Démission" || statut==="Licencié";
     const statutColor = STATUT_EFFECTIF_COLORS[statut]||"#7F9AB0";
-    const heuresTotal = fmtHeuresMin(heuresPourAgent(nomComplet));
-    const heuresMois = fmtHeuresMin(heuresPourAgent(nomComplet, now.getMonth(), now.getFullYear()));
+    const heuresTotal = fmtHeuresMin(heuresPourAgent(nomComplet, undefined, undefined, c.service));
+    const heuresMois = fmtHeuresMin(heuresPourAgent(nomComplet, now.getMonth(), now.getFullYear(), c.service));
     return `<div class="eff-card">
       <div class="eff-card-top">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -6347,7 +6347,7 @@ function renderEffectifsList(comptesAll) {
             <div class="eff-role">${accountRoleLabel(c)} · ${SERVICE_LABELS[c.service]||"—"}</div>
           </div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="ouvrirFichePaie('${esc(nomComplet)}')">📄 Fiche de paie</button>
+        <button class="btn btn-primary btn-sm" onclick="ouvrirFichePaie('${esc(nomComplet)}','${c.service}')">📄 Fiche de paie</button>
       </div>
       <div class="eff-card-body">
         <div class="eff-field-row">
@@ -6363,7 +6363,7 @@ function renderEffectifsList(comptesAll) {
         <div class="eff-heures">
           <div class="eff-heures-item"><span class="eff-heures-lbl">Heures totales</span><span class="eff-heures-val">${heuresTotal}</span></div>
           <div class="eff-heures-item"><span class="eff-heures-lbl">Heures ce mois-ci</span><span class="eff-heures-val">${heuresMois}</span></div>
-          ${role==="admin" ? `<button class="btn btn-ghost btn-sm" onclick="ajusterHeures('${esc(nomComplet)}')" title="Ajouter ou retirer des heures pour le mois en cours (ex : reprise de l'ancien site)">⚙️ Ajuster (mois en cours)</button>` : ""}
+          ${role==="admin" ? `<button class="btn btn-ghost btn-sm" onclick="ajusterHeures('${esc(nomComplet)}','${c.service}')" title="Ajouter ou retirer des heures pour le mois en cours (ex : reprise de l'ancien site)">⚙️ Ajuster (mois en cours)</button>` : ""}
         </div>
       </div>
     </div>`;
@@ -6440,7 +6440,7 @@ async function reactiverAncienAgent(compteId, statut) {
   await updateStatutEffectif(compteId, statut);
 }
 
-async function ajusterHeures(nomComplet) {
+async function ajusterHeures(nomComplet, svc) {
   if(role!=="admin") { toast("Réservé à l'Admin.","#E74C3C"); return; }
   const input = prompt(`Ajuster les heures de ${nomComplet} pour le mois en cours.\nEntrez un nombre d'heures au format décimal, positif pour ajouter, négatif pour retirer (ex : 2.5 pour 2h30, -1 pour retirer 1h) :`);
   if(input===null) return;
@@ -6451,7 +6451,7 @@ async function ajusterHeures(nomComplet) {
   try {
     const r = await fetch(SB_URL+"/rest/v1/ajustements_heures", {
       method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
-      body: JSON.stringify({agent_nom:nomComplet, mois:now.getMonth()+1, annee:now.getFullYear(), minutes:Math.round(heures*60), raison, created_by:identityLabel()})
+      body: JSON.stringify({agent_nom:nomComplet, mois:now.getMonth()+1, annee:now.getFullYear(), minutes:Math.round(heures*60), raison, created_by:identityLabel(), service:svc||myService()})
     });
     if(!r.ok) throw new Error(await r.text());
     logActivity("heures_ajustees", `Ajustement de ${heures>0?"+":""}${fmtHeuresMin(heures*60)} pour ${nomComplet}${raison?" ("+raison+")":""}`);
@@ -6511,15 +6511,21 @@ async function creerEvenement() {
   const heuresDefaut = parseFloat(document.getElementById("evt-heures").value)||null;
   if(!nom || !date) { toast("Merci d'indiquer le nom et la date de l'événement.","#E74C3C"); return; }
   try {
+    const svc = myService();
     const r = await fetch(SB_URL+"/rest/v1/evenements", {
       method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-      body: JSON.stringify({nom, date_evenement:date, heures_defaut:heuresDefaut, created_by:identityLabel()})
+      body: JSON.stringify({nom, date_evenement:date, heures_defaut:heuresDefaut, created_by:identityLabel(), service:svc})
     });
     if(!r.ok) throw new Error(await r.text());
     const created = await r.json();
     const evtId = created && created[0] && created[0].id;
-    const comptes = await sb("agents_comptes?select=prenom,nom");
+    const [comptes, grades] = await Promise.all([
+      sb("agents_comptes?select=id,prenom,nom"),
+      sb(`agents_grades?select=compte_id&service=eq.${svc}`),
+    ]);
+    const idsDuService = new Set((grades||[]).map(g=>String(g.compte_id)));
     const presencesPayload = (comptes||[])
+      .filter(c=>idsDuService.has(String(c.id)))
       .filter(c=>!TEST_ACCOUNT_NAMES.includes(`${c.prenom||""} ${c.nom||""}`.trim()))
       .map(c=>({
         evenement_id: evtId, agent_nom: `${c.prenom||""} ${c.nom||""}`.trim(), statut:"Non répondu"
@@ -6539,7 +6545,7 @@ async function creerEvenement() {
 async function loadEvenementsList() {
   const el = document.getElementById("evenements-list");
   try {
-    const rows = await sb("evenements?select=*&order=date_evenement.desc&limit=100");
+    const rows = (await sb("evenements?select=*&order=date_evenement.desc&limit=100")).filter(e=>!e.service || e.service===myService());
     if(!el) return;
     if(!rows.length) { el.innerHTML = '<div class="empty"><p>Aucun événement créé.</p></div>'; return; }
     el.innerHTML = rows.map(e=>`
@@ -6629,12 +6635,15 @@ async function setPresenceStatut(presenceId, statut, evtId) {
 
 // ─── FICHES DE PAIE ───────────────────────────────────────────────
 let currentPaieAgent = null;
+let currentPaieService = null;
 let currentPaieMois = null;
 let currentPaieAnnee = null;
 let paiePrimes = [];
 
-async function ouvrirFichePaie(agentNom) {
+async function ouvrirFichePaie(agentNom, svc) {
+  svc = svc || myService();
   currentPaieAgent = agentNom;
+  currentPaieService = svc;
   const now = new Date();
   let mois = now.getMonth() - 1; // mois précédent (0-indexé)
   let annee = now.getFullYear();
@@ -6644,15 +6653,15 @@ async function ouvrirFichePaie(agentNom) {
   const moisNoms = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
   document.getElementById("paie-agent").value = agentNom;
-  document.getElementById("paie-periode").value = `${moisNoms[mois]} ${annee}`;
-  const heuresCalc = Math.round(heuresPourAgent(agentNom, mois, annee)/60);
+  document.getElementById("paie-periode").value = `${moisNoms[mois]} ${annee} — ${svcLabel(svc)}`;
+  const heuresCalc = Math.round(heuresPourAgent(agentNom, mois, annee, svc)/60);
   document.getElementById("paie-heures").value = heuresCalc;
 
   paiePrimes = [];
   try {
     const [presences, evenements] = await Promise.all([
       sb(`evenement_presences?agent_nom=eq.${encodeURIComponent(agentNom)}&statut=eq.Présent&select=*`),
-      sb(`evenements?select=id,nom,date_evenement`),
+      sb(`evenements?select=id,nom,date_evenement,service&service=eq.${svc}`),
     ]);
     const evtById = {};
     (evenements||[]).forEach(e=>{ evtById[e.id] = e; });
@@ -6711,6 +6720,7 @@ function collectPaieData() {
   const moisNoms = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
   return {
     agent_nom: currentPaieAgent,
+    service: currentPaieService||myService(),
     mois: currentPaieMois+1,
     annee: currentPaieAnnee,
     periode_label: `${moisNoms[currentPaieMois]} ${currentPaieAnnee}`,
@@ -6789,7 +6799,7 @@ async function apercuFichePaie() {
 async function loadPaieHistory() {
   const el = document.getElementById("paie-history");
   try {
-    const rows = await sb("fiches_paie?select=*&order=created_at.desc&limit=100");
+    const rows = (await sb("fiches_paie?select=*&order=created_at.desc&limit=200")).filter(r=>!r.service || r.service===myService());
     if(!el) return;
     if(!rows.length) { el.innerHTML = '<div class="empty"><p>Aucune fiche de paie créée.</p></div>'; return; }
     el.innerHTML = rows.map(r=>`
