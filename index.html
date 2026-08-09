@@ -6769,7 +6769,7 @@ async function supprimerPaie(id) {
 async function loadLogs() {
   try {
     const logs = await sb("services_logs?select=*&order=debut.desc&limit=100");
-    allLogs = logs||[];
+    allLogs = (logs||[]).filter(l=>!TEST_ACCOUNT_NAMES.includes((l.agent_nom||"").trim()));
     renderLogs();
   } catch(e) { toast("Erreur chargement logs","#E74C3C"); }
 }
@@ -6804,7 +6804,7 @@ function renderLogs() {
     sortEl.innerHTML = `
       <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;align-self:center;">Trier :</span>
       <button class="btn btn-sm ${window._logsSort==="date"?"btn-primary":"btn-ghost"}" onclick="setLogsSort('date')">📅 Par date</button>
-      <button class="btn btn-sm ${window._logsSort==="nom"?"btn-primary":"btn-ghost"}" onclick="setLogsSort('nom')">🔤 Par nom de dépanneur</button>`;
+      <button class="btn btn-sm ${window._logsSort==="nom"?"btn-primary":"btn-ghost"}" onclick="setLogsSort('nom')">🔤 Par nom de ${agentLabel().toLowerCase()}</button>`;
   }
 
   const canManage = (role==="responsable"||role==="pdg"||role==="admin");
