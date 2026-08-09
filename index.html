@@ -4247,29 +4247,50 @@ function hideProfilePicker() {
   window._pendingCompte = null;
   window._pendingGrades = null;
 }
-function selectProfile(i) {
+async function selectProfile(i) {
   const g = window._pendingGrades && window._pendingGrades[i];
   if(!g || !window._pendingCompte) return;
-  finalizeLogin(window._pendingCompte, g, window._pendingGrades);
+  try {
+    const allGr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+window._pendingCompte.id+"&select=*", { headers:H, mode:"cors" });
+    const allGrades = await allGr.json();
+    finalizeLogin(window._pendingCompte, g, allGrades);
+  } catch(e) { finalizeLogin(window._pendingCompte, g, window._pendingGrades); }
 }
-function finalizeLogin(compte, grade, sameRoleGrades) {
+function finalizeLogin(compte, grade, allGrades) {
   // Fusionne l'identité (prénom/nom/pin) et le grade choisi (service/rôle/statut…) en un seul objet,
   // exactement comme le reste de l'app s'y attend.
   currentCompte = {...compte, ...grade, compte_id: compte.id};
   currentAgent = currentCompte;
-  window._myServiceGrades = sameRoleGrades || [grade];
+  window._myGrades = allGrades || [grade];
   launchApp();
 }
+function updateTopbarRoleDisplay() {
+  const topbarRole = document.getElementById("topbar-role");
+  if(!topbarRole) return;
+  const who = (currentCompte && currentCompte.prenom) ? " — "+currentCompte.prenom+" "+currentCompte.nom : "";
+  topbarRole.textContent = specialRoleLabel() + who;
+  topbarRole.style.background = ROLE_COLORS[role]||"rgba(255,255,255,0.08)";
+  topbarRole.style.color = ROLE_TEXT[role]||"#fff";
+}
 function setMyServiceGrade(svc) {
-  const g = (window._myServiceGrades||[]).find(x=>x.service===svc);
+  const g = (window._myGrades||[]).find(x=>x.service===svc);
   if(!g || !currentCompte) return;
   currentCompte = {...currentCompte, ...g};
   currentAgent = currentCompte;
+  role = g.role; // le rôle peut différer d'un service à l'autre (ex : Responsable en Sécurité, Ambulancier en Rescue)
   updateTopbarBranding();
+  updateTopbarRoleDisplay();
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
+  const bell = document.getElementById("notif-bell");
+  if(bell) bell.style.display = (role==="responsable"||role==="pdg"||role==="admin") ? "flex" : "none";
   renderSidenav();
-  loadAll();
-  toast("✓ Vue basculée sur "+svcLabel(svc));
+  const stillAllowed = getNavConfig().some(it=>it.roles.includes(role) && document.getElementById("page-"+it.page)?.classList.contains("active"));
+  if(!stillAllowed) {
+    goPage("patrouilles");
+  } else {
+    loadAll();
+  }
+  toast("✓ Passage sur "+svcLabel(svc)+" — "+accountRoleLabel(g));
 }
 
 // ─── NAVIGATION (menu latéral + pages) ──────────────────────────────
@@ -4776,14 +4797,7 @@ async function launchApp() {
 
   renderServiceSwitch();
   updateTopbarBranding();
-
-  const topbarRole = document.getElementById("topbar-role");
-  if(topbarRole) {
-    const who = (currentCompte && currentCompte.prenom) ? " — "+currentCompte.prenom+" "+currentCompte.nom : "";
-    topbarRole.textContent = specialRoleLabel() + who;
-    topbarRole.style.background = ROLE_COLORS[role]||"rgba(255,255,255,0.08)";
-    topbarRole.style.color = ROLE_TEXT[role]||"#fff";
-  }
+  updateTopbarRoleDisplay();
 
   const bell = document.getElementById("notif-bell");
   if(bell) bell.style.display = (role==="responsable"||role==="pdg"||role==="admin") ? "flex" : "none";
@@ -4803,9 +4817,9 @@ function renderServiceSwitch() {
   if(role==="admin") {
     switcher.style.display = "flex";
     switcher.innerHTML = SERVICES.map(s=>`<button class="svc-switch-btn" data-svc="${s}" onclick="setAdminService('${s}')" title="${svcLabel(s)}">${SERVICE_ICONS[s]}</button>`).join("");
-  } else if(window._myServiceGrades && window._myServiceGrades.length>1) {
+  } else if(window._myGrades && window._myGrades.length>1) {
     switcher.style.display = "flex";
-    switcher.innerHTML = window._myServiceGrades.map(g=>`<button class="svc-switch-btn" data-svc="${g.service}" onclick="setMyServiceGrade('${g.service}')" title="${svcLabel(g.service)}">${SERVICE_ICONS[g.service]}</button>`).join("");
+    switcher.innerHTML = window._myGrades.map(g=>`<button class="svc-switch-btn ${g.service===myService()?"active":""}" data-svc="${g.service}" onclick="setMyServiceGrade('${g.service}')" title="${svcLabel(g.service)} — ${accountRoleLabel(g)}">${SERVICE_ICONS[g.service]}</button>`).join("");
   } else {
     switcher.style.display = "none";
     switcher.innerHTML = "";
@@ -4814,6 +4828,7 @@ function renderServiceSwitch() {
 function setAdminService(svc) {
   window._adminViewService = svc;
   updateTopbarBranding();
+  document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
   renderSidenav();
   loadAll();
   toast("✓ Vue basculée sur "+svcLabel(svc));
@@ -4867,6 +4882,7 @@ function logout() {
   clearInterval(_refreshInterval); _refreshInterval=null;
   clearInterval(serviceTimer); serviceTimer=null;
   role=null; currentCompte=null; currentAgent=null; serviceEnCours=null;
+  window._myGrades=null; window._adminViewService=null;
   closeSidenav();
   document.getElementById("app").style.display="none";
   document.getElementById("screen-login").style.display="flex";
@@ -4906,7 +4922,9 @@ async function confirmLogin() {
         return;
       }
       if(grades.length>1) { showProfilePicker(compte, grades); return; }
-      finalizeLogin(compte, grades[0], grades);
+      const allGr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+compte.id+"&select=*", { headers:H, mode:"cors" });
+      const allGrades = await allGr.json();
+      finalizeLogin(compte, grades[0], allGrades);
     } catch(e) {
       err.textContent="Erreur de connexion : "+e.message;
       err.style.display="block";
