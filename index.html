@@ -4273,6 +4273,16 @@ function updateTopbarRoleDisplay() {
   topbarRole.style.background = ROLE_COLORS[role]||"rgba(255,255,255,0.08)";
   topbarRole.style.color = ROLE_TEXT[role]||"#fff";
 }
+function refreshCurrentPage() {
+  const activePage = document.querySelector(".page.active");
+  const pid = activePage ? activePage.id.replace("page-","") : null;
+  if(pid && getNavConfig().some(it=>it.page===pid && it.roles.includes(role))) {
+    goPage(pid); // goPage sait déclencher le bon chargement pour CHAQUE page (pas juste les historiques)
+  } else {
+    goPage("patrouilles");
+  }
+  loadAll();
+}
 function setMyServiceGrade(svc) {
   const g = (window._myGrades||[]).find(x=>x.service===svc);
   if(!g || !currentCompte) return;
@@ -4285,12 +4295,7 @@ function setMyServiceGrade(svc) {
   const bell = document.getElementById("notif-bell");
   if(bell) bell.style.display = (role==="responsable"||role==="pdg"||role==="admin") ? "flex" : "none";
   renderSidenav();
-  const stillAllowed = getNavConfig().some(it=>it.roles.includes(role) && document.getElementById("page-"+it.page)?.classList.contains("active"));
-  if(!stillAllowed) {
-    goPage("patrouilles");
-  } else {
-    loadAll();
-  }
+  refreshCurrentPage();
   renderMaintPagesList();
   toast("✓ Passage sur "+svcLabel(svc)+" — "+accountRoleLabel(g));
 }
@@ -4832,7 +4837,7 @@ function setAdminService(svc) {
   updateTopbarBranding();
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
   renderSidenav();
-  loadAll();
+  refreshCurrentPage();
   renderMaintPagesList();
   toast("✓ Vue basculée sur "+svcLabel(svc));
 }
