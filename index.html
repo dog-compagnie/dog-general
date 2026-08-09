@@ -101,7 +101,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .hamburger-btn{display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:16px;line-height:1;margin-right:4px;flex-shrink:0;}
 .sidenav-backdrop{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:80;}
 .sidenav-backdrop.show{display:block;}
-.notif-bell{position:relative;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:11px;padding:6px 12px;font-size:14px;color:var(--text2);transition:all 0.2s;}
+.notif-bell{position:relative;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:50%;font-size:15px;color:var(--text2);transition:all 0.2s;}
 .notif-bell:hover{background:rgba(255,255,255,0.09);color:#fff;transform:translateY(-1px);}
 .notif-bell.has-notif{color:var(--orange-light);border-color:rgba(211,84,0,0.35);background:rgba(211,84,0,0.12);animation:bellPulse 2.4s ease-in-out infinite;}
 @keyframes bellPulse{0%,100%{box-shadow:0 0 0 0 rgba(211,84,0,0.35);}50%{box-shadow:0 0 0 5px rgba(211,84,0,0);}}
@@ -548,7 +548,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
         <div id="notif-panel-list"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="logout()">⟵ Changer</button>
+    <button class="logout-btn" onclick="logout()"><span style="font-size:13px;">🔄</span> Changer</button>
   </div>
 </div>
 
@@ -567,7 +567,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="agents-manage" id="agents-manage-wrap">
       <div style="font-size:11px;font-weight:700;color:#A8CFEA;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        Dépanneurs disponibles (menus déroulants)
+        <span id="agents-manage-title">Dépanneurs disponibles (menus déroulants)</span>
       </div>
       <div class="agents-chips" id="agents-chips"></div>
       <div class="add-agent-row" id="add-agent-row" style="display:none;">
@@ -623,7 +623,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
   <!-- PAGE ABSENCES (gestion) -->
   <div class="page" id="page-absences-gestion">
     <div class="page-title">Gestion des <span>absences</span></div>
-    <div class="page-sub">Toutes les déclarations d'absence soumises par les dépanneurs.</div>
+    <div class="page-sub" id="absences-page-sub">Toutes les déclarations d'absence soumises par les dépanneurs.</div>
     <div class="stats-bar" id="absence-stats"></div>
     <div id="absences-list"></div>
   </div>
@@ -729,7 +729,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
   <!-- PAGE LOGS DE SERVICE (PDG + Responsable) -->
   <div class="page" id="page-logs-service">
     <div class="page-title">Logs de <span>service</span></div>
-    <div class="page-sub">Historique complet des prises et fins de service de tous les dépanneurs.</div>
+    <div class="page-sub" id="logs-page-sub">Historique complet des prises et fins de service de tous les dépanneurs.</div>
     <div class="stats-bar" id="logs-stats"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;" id="logs-sort-bar"></div>
     <div class="card">
@@ -752,14 +752,20 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="admin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px;">
       <div>
         <div class="card">
-          <div class="card-hdr"><div class="card-hdr-title">🔍 Trouver ou créer une personne</div></div>
+          <div class="card-hdr">
+            <div class="card-hdr-title">👥 Personnes</div>
+            <span id="comptes-count" style="font-size:11px;color:var(--text2);">0 personne(s)</span>
+          </div>
           <div class="card-body">
-            <div class="field"><label>Nom ou prénom</label><input id="ac-search" oninput="renderPersonneSearch()" placeholder="Tapez pour rechercher…"></div>
-            <div id="ac-search-results" style="max-height:220px;overflow-y:auto;"></div>
-            <button class="btn btn-ghost btn-full" style="margin-top:10px;" onclick="startNewPersonne()">+ Nouvelle personne</button>
+            <div class="field" style="margin-bottom:12px;"><input id="ac-search" oninput="renderComptes()" placeholder="🔍 Rechercher une personne…"></div>
+            <button class="btn btn-ghost btn-full" style="margin-bottom:14px;" onclick="startNewPersonne()">+ Nouvelle personne</button>
+            <div id="comptes-list" style="max-height:520px;overflow-y:auto;">
+              <div class="empty"><p>Aucun compte créé.</p></div>
+            </div>
           </div>
         </div>
-
+      </div>
+      <div>
         <div class="card" id="ac-personne-card" style="display:none;">
           <div class="card-hdr"><div class="card-hdr-title" id="ac-personne-title">Personne</div></div>
           <div class="card-body">
@@ -796,17 +802,12 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
               </div>
             </div>
             <button class="btn btn-primary btn-full" onclick="ajouterGrade()">Ajouter ce grade</button>
+            <button class="btn btn-danger btn-full" style="margin-top:14px;" onclick="supprimerCompte(currentPersonneId)" id="ac-delete-btn">🗑 Supprimer ce compte</button>
           </div>
         </div>
-      </div>
-      <div>
-        <div class="card">
-          <div class="card-hdr">
-            <div class="card-hdr-title">👥 Personnes</div>
-            <span id="comptes-count" style="font-size:11px;color:var(--text2);">0 personne(s)</span>
-          </div>
-          <div class="card-body" id="comptes-list">
-            <div class="empty"><p>Aucun compte créé.</p></div>
+        <div class="card" id="ac-empty-hint">
+          <div class="card-body">
+            <div class="empty"><div class="empty-icon">👈</div><p>Sélectionnez une personne dans la liste, ou créez-en une nouvelle.</p></div>
           </div>
         </div>
       </div>
@@ -844,7 +845,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
           <div class="card-hdr"><div class="card-hdr-title">🏢 Informations émetteur</div></div>
           <div class="card-body">
             <div class="field-row-2">
-              <div class="field"><label>Société</label><input id="devis-em-societe" value="Dog Dépannage"></div>
+              <div class="field"><label>Société</label><input id="devis-em-societe" value="Dog Dépannage" oninput="this.dataset.touched=1"></div>
               <div class="field"><label>Adresse</label><input id="devis-em-adresse" value="33 rue du général de gaulle, Perrytonia"></div>
             </div>
             <div class="field-row-2">
@@ -941,7 +942,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
           <div class="card-hdr"><div class="card-hdr-title">🏢 Informations émetteur</div></div>
           <div class="card-body">
             <div class="field-row-2">
-              <div class="field"><label>Société</label><input id="fact-em-societe" value="Dog Dépannage"></div>
+              <div class="field"><label>Société</label><input id="fact-em-societe" value="Dog Dépannage" oninput="this.dataset.touched=1"></div>
               <div class="field"><label>Adresse</label><input id="fact-em-adresse" value="33 rue du général de gaulle, Perrytonia"></div>
             </div>
             <div class="field-row-2">
@@ -1338,7 +1339,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
   <!-- PAGE ÉVALUATIONS AGENTS (Responsable/PDG) -->
   <div class="page" id="page-evaluations">
     <div class="page-title">Évaluations <span>des agents</span></div>
-    <div class="page-sub">Grille de notation standardisée pour les dépanneurs.</div>
+    <div class="page-sub" id="eval-page-sub">Grille de notation standardisée pour les dépanneurs.</div>
     <div class="card" style="max-width:920px;">
       <div class="card-hdr">
         <div class="card-hdr-title">☑ Grille d'évaluation en cours</div>
@@ -2108,7 +2109,7 @@ function renderEvalHistory(rows) {
     window._evalSort = window._evalSort||"date";
     sortEl.innerHTML = `
       <button class="btn btn-sm ${window._evalSort==="date"?"btn-primary":"btn-ghost"}" onclick="setEvalSort('date')">📅 Par date</button>
-      <button class="btn btn-sm ${window._evalSort==="nom"?"btn-primary":"btn-ghost"}" onclick="setEvalSort('nom')">🔤 Par dépanneur</button>`;
+      <button class="btn btn-sm ${window._evalSort==="nom"?"btn-primary":"btn-ghost"}" onclick="setEvalSort('nom')">🔤 Par ${agentLabel().toLowerCase()}</button>`;
   }
   if(!el) return;
   if(!allEvals.length) { el.innerHTML = '<div class="empty"><p>Aucune évaluation enregistrée.</p></div>'; return; }
@@ -4252,11 +4253,14 @@ function renderSidenav() {
   const svc = myService();
   const initials = currentCompte && currentCompte.prenom ? `${(currentCompte.prenom[0]||"")}${(currentCompte.nom||"?")[0]||""}`.toUpperCase() : (role==="admin"?"AD":"??");
   const who = currentCompte && currentCompte.prenom ? `${currentCompte.prenom} ${currentCompte.nom}` : specialRoleLabel();
+  const svcBadge = (role==="candidat")
+    ? `<div class="sidenav-svc-badge"><span>🐾</span>Dog Compagnie</div>`
+    : `<div class="sidenav-svc-badge"><span>${SERVICE_ICONS[svc]}</span>${svcLabel(svc)}</div>`;
   let html = `<div class="sidenav-profile">
     <div class="sidenav-avatar" style="background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 40%,black));">${initials}</div>
     <div style="min-width:0;">
       <div class="sidenav-name">${who}</div>
-      <div class="sidenav-svc-badge"><span>${SERVICE_ICONS[svc]}</span>${svcLabel(svc)}</div>
+      ${svcBadge}
     </div>
   </div>`;
   const items = getNavConfig().filter(it=>it.roles.includes(role));
@@ -4762,6 +4766,20 @@ function updateTopbarBranding() {
   if(evalLbl) evalLbl.textContent = agentLabel(svc)+" évalué *";
   const incLbl = document.getElementById("inc-agents-label");
   if(incLbl) incLbl.textContent = agentLabel(svc)+"(s) impliqué(s)";
+  const absSub = document.getElementById("absences-page-sub");
+  if(absSub) absSub.textContent = `Toutes les déclarations d'absence soumises par les ${agentLabel(svc).toLowerCase()}s.`;
+  const logsSub = document.getElementById("logs-page-sub");
+  if(logsSub) logsSub.textContent = `Historique complet des prises et fins de service de tous les ${agentLabel(svc).toLowerCase()}s.`;
+  const evalSub = document.getElementById("eval-page-sub");
+  if(evalSub) evalSub.textContent = `Grille de notation standardisée pour les ${agentLabel(svc).toLowerCase()}s.`;
+  const agentsMgmtTitle = document.getElementById("agents-manage-title");
+  if(agentsMgmtTitle) agentsMgmtTitle.textContent = `${agentLabel(svc)}s disponibles (menus déroulants)`;
+  const newAgentInp = document.getElementById("new-agent-inp");
+  if(newAgentInp) newAgentInp.placeholder = `Ajouter un ${agentLabel(svc).toLowerCase()}…`;
+  const devisSoc = document.getElementById("devis-em-societe");
+  if(devisSoc && !devisSoc.dataset.touched) devisSoc.value = svcLabel(svc);
+  const factSoc = document.getElementById("fact-em-societe");
+  if(factSoc && !factSoc.dataset.touched) factSoc.value = svcLabel(svc);
 }
 
 function logout() {
@@ -6164,7 +6182,7 @@ async function loadEffectifsList() {
     allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
     effectifsLogsCache = logs||[];
     effectifsAjustementsCache = ajustements||[];
-    effectifsComptesCache = flatGrades().filter(g=>!TEST_ACCOUNT_NAMES.includes(`${g.prenom||""} ${g.nom||""}`.trim()));
+    effectifsComptesCache = flatGrades().filter(g=>g.service===myService() && !TEST_ACCOUNT_NAMES.includes(`${g.prenom||""} ${g.nom||""}`.trim()));
     renderEffectifsList(effectifsComptesCache);
     loadAnciensAgents();
   } catch(e) { if(el) el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
@@ -6268,7 +6286,7 @@ async function loadAnciensAgents() {
   if(!el) return;
   try {
     const rows = await sb("anciens_agents?select=*&order=nom");
-    const archive = (rows||[]).filter(a=>!TEST_ACCOUNT_NAMES.includes(`${a.prenom||""} ${a.nom||""}`.trim()));
+    const archive = (rows||[]).filter(a=>a.service===myService() && !TEST_ACCOUNT_NAMES.includes(`${a.prenom||""} ${a.nom||""}`.trim()));
     // Un ancien agent dont l'identité correspond à un compte actuellement actif (statut ≠ Démission/Licencié) est considéré comme revenu
     const revenus = new Set(
       effectifsComptesCache
@@ -6352,13 +6370,13 @@ async function updateStatutEffectif(id, statut) {
 async function archiverAncienAgent(c, statut) {
   try {
     const payload = {
-      nom: c.nom, prenom: c.prenom, role: c.role,
+      nom: c.nom, prenom: c.prenom, role: c.role, service: c.service,
       date_recrutement: c.date_recrutement||null,
       date_depart: c.date_depart || todayISO(),
       statut_depart: statut,
       archived_at: new Date().toISOString(),
     };
-    const existing = await sb(`anciens_agents?nom=eq.${encodeURIComponent(c.nom)}&prenom=eq.${encodeURIComponent(c.prenom)}&select=id`);
+    const existing = await sb(`anciens_agents?nom=eq.${encodeURIComponent(c.nom)}&prenom=eq.${encodeURIComponent(c.prenom)}&service=eq.${c.service}&select=id`);
     if(existing && existing.length) {
       await sb(`anciens_agents?id=eq.${existing[0].id}`, {method:"PATCH", body:JSON.stringify(payload)});
     } else {
@@ -6829,14 +6847,12 @@ const HIER_LABELS = {pdg:"PDG", responsable:"Responsable", agent:"Agent"};
 async function loadHierarchie() {
   const el = document.getElementById("hierarchie-list");
   try {
-    if(!allPersonnes.length) {
-      const [personnes, grades] = await Promise.all([
-        sb("agents_comptes?select=*&order=nom"),
-        sb("agents_grades?select=*"),
-      ]);
-      allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
-    }
-    renderHierarchie(flatGrades());
+    const [personnes, grades] = await Promise.all([
+      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_grades?select=*"),
+    ]);
+    allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
+    renderHierarchie(flatGrades().filter(g=>g.service===myService()));
   } catch(e) {
     if(el) el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>';
   }
@@ -6957,12 +6973,16 @@ function renderComptes() {
   const el = document.getElementById("comptes-list");
   const cnt = document.getElementById("comptes-count");
   if(!el) return;
-  const visibles = allPersonnes.filter(p=>!TEST_ACCOUNT_NAMES.includes(`${p.prenom||""} ${p.nom||""}`.trim()));
+  const q = (document.getElementById("ac-search")?.value||"").trim().toLowerCase();
+  let visibles = allPersonnes.filter(p=>!TEST_ACCOUNT_NAMES.includes(`${p.prenom||""} ${p.nom||""}`.trim()));
+  if(q) visibles = visibles.filter(p=>`${p.prenom||""} ${p.nom||""}`.toLowerCase().includes(q));
   if(cnt) cnt.textContent = visibles.length+" personne(s)";
-  if(!visibles.length){ el.innerHTML='<div class="empty"><p>Aucun compte créé.</p></div>'; return; }
+  if(!visibles.length){ el.innerHTML=`<div class="empty"><p>${q?"Aucun résultat pour cette recherche.":"Aucun compte créé."}</p></div>`; return; }
   const isAdmin = role==="admin";
-  el.innerHTML = visibles.map(p=>`
-    <div class="admin-compte" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:8px;" onclick="openPersonne('${p.id}')">
+  const byName = (a,b)=>`${a.prenom||""} ${a.nom||""}`.trim().localeCompare(`${b.prenom||""} ${b.nom||""}`.trim(),"fr",{sensitivity:"base"});
+
+  const personCard = p => `
+    <div class="admin-compte" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:8px;${String(currentPersonneId)===String(p.id)?`border-color:${ACCENT_BY_SERVICE[myService()].main}66;`:""}" onclick="openPersonne('${p.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
         <div class="ac-nom">${esc(p.prenom)} ${esc(p.nom)}</div>
         ${isAdmin ? `
@@ -6976,22 +6996,43 @@ function renderComptes() {
         ${(p.grades||[]).length ? p.grades.map(g=>`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:color-mix(in srgb, ${ACCENT_BY_SERVICE[g.service].main} 20%, transparent);color:${ACCENT_BY_SERVICE[g.service].light};border:1px solid color-mix(in srgb, ${ACCENT_BY_SERVICE[g.service].main} 40%, transparent);">${SERVICE_ICONS[g.service]} ${esc(accountRoleLabel(g))}</span>`).join("")
           : `<span style="font-size:10px;color:var(--text3);font-style:italic;">Aucun grade — cliquez pour en ajouter</span>`}
       </div>
-    </div>`).join("");
-}
+    </div>`;
 
-function renderPersonneSearch() {
-  const q = (document.getElementById("ac-search")?.value||"").trim().toLowerCase();
-  const el = document.getElementById("ac-search-results");
-  if(!el) return;
-  if(!q) { el.innerHTML = ""; return; }
-  const matches = allPersonnes.filter(p=>`${p.prenom||""} ${p.nom||""}`.toLowerCase().includes(q)).slice(0,8);
-  el.innerHTML = matches.length ? matches.map(p=>`
-    <div style="padding:9px 6px;cursor:pointer;font-size:12.5px;color:var(--text);border-top:1px solid var(--border);" onclick="openPersonne('${p.id}')">${esc(p.prenom)} ${esc(p.nom)}</div>
-  `).join("") : '<div style="font-size:11px;color:var(--text3);padding:8px 4px;">Aucun résultat — utilisez "+ Nouvelle personne" si besoin.</div>';
+  if(q) {
+    // Recherche active : liste plate, peu importe le service
+    el.innerHTML = visibles.sort(byName).map(personCard).join("");
+    return;
+  }
+  // Pas de recherche : regroupement par service pour mieux s'y retrouver, service courant déplié en premier
+  const groups = {
+    [myService()]: visibles.filter(p=>(p.grades||[]).some(g=>g.service===myService())),
+  };
+  SERVICES.filter(s=>s!==myService()).forEach(s=>{ groups[s] = visibles.filter(p=>(p.grades||[]).some(g=>g.service===s)); });
+  const sansGrade = visibles.filter(p=>!(p.grades||[]).length);
+  let html = "";
+  Object.keys(groups).forEach(svc=>{
+    const membres = groups[svc].sort(byName);
+    if(!membres.length) return;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:${html?"16px":"0"} 0 8px;">
+      <span style="font-size:14px;">${SERVICE_ICONS[svc]}</span>
+      <span style="font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;">${svcLabel(svc)}</span>
+      <span style="font-size:10px;color:var(--text3);">(${membres.length})</span>
+    </div>`;
+    html += membres.map(personCard).join("");
+  });
+  if(sansGrade.length) {
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:${html?"16px":"0"} 0 8px;">
+      <span style="font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;">Sans grade</span>
+      <span style="font-size:10px;color:var(--text3);">(${sansGrade.length})</span>
+    </div>`;
+    html += sansGrade.sort(byName).map(personCard).join("");
+  }
+  el.innerHTML = html || `<div class="empty"><p>Aucun compte créé.</p></div>`;
 }
 
 function startNewPersonne() {
   currentPersonneId = null;
+  document.getElementById("ac-empty-hint").style.display = "none";
   document.getElementById("ac-personne-card").style.display = "block";
   document.getElementById("ac-personne-title").textContent = "Nouvelle personne";
   document.getElementById("ac-new-fields").style.display = "block";
@@ -6999,16 +7040,21 @@ function startNewPersonne() {
   document.getElementById("ac-nom").value = "";
   document.getElementById("ac-pin").value = "";
   document.getElementById("ac-grades-list").innerHTML = '<div style="font-size:11.5px;color:var(--text3);margin-bottom:6px;">Renseignez son identité et son PIN, puis ajoutez son premier grade ci-dessous — un seul clic suffit pour créer la personne et son grade en même temps.</div>';
+  document.getElementById("ac-delete-btn").style.display = "none";
+  renderComptes();
 }
 
 function openPersonne(id) {
   const p = allPersonnes.find(x=>String(x.id)===String(id));
   if(!p) return;
   currentPersonneId = p.id;
+  document.getElementById("ac-empty-hint").style.display = "none";
   document.getElementById("ac-personne-card").style.display = "block";
   document.getElementById("ac-personne-title").textContent = `${p.prenom} ${p.nom}`;
   document.getElementById("ac-new-fields").style.display = "none";
+  document.getElementById("ac-delete-btn").style.display = "block";
   renderGradesList(p);
+  renderComptes();
 }
 
 function renderGradesList(p) {
@@ -7062,7 +7108,6 @@ async function ajouterGrade() {
     await loadComptes();
     openPersonne(personneId);
     document.getElementById("ac-search").value = "";
-    document.getElementById("ac-search-results").innerHTML = "";
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
@@ -7100,6 +7145,7 @@ async function supprimerCompte(id) {
     if(p) logActivity("compte_supprime", `Compte supprimé : ${p.prenom} ${p.nom}`);
     toast("✓ Compte supprimé");
     document.getElementById("ac-personne-card").style.display = "none";
+    document.getElementById("ac-empty-hint").style.display = "block";
     currentPersonneId = null;
     await loadComptes();
   } catch(e){ toast("Erreur suppression","#E74C3C"); }
