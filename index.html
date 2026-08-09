@@ -144,7 +144,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* ═══ MAIN ═══ */
 .main{margin-left:212px;padding-top:58px;min-height:100vh;position:relative;z-index:1;}
 .page{display:none;padding:28px;position:relative;}
-.page-maint-overlay{display:none;position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(20,26,36,0.98) 0%, rgba(8,11,16,0.99) 100%);z-index:50;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;backdrop-filter:blur(3px);}
+.page-maint-overlay{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:radial-gradient(ellipse at top, rgba(20,26,36,0.98) 0%, rgba(8,11,16,0.99) 100%);z-index:50;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:min(9vh,70px);text-align:center;padding-left:30px;padding-right:30px;padding-bottom:30px;backdrop-filter:blur(6px);overflow-y:auto;}
 .page-maint-overlay.show{display:flex;}
 .page-maint-card{background:linear-gradient(165deg,rgba(30,40,55,0.92),rgba(16,22,32,0.96));border:1px solid rgba(240,168,64,0.3);border-radius:20px;padding:0 0 32px;max-width:400px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 60px -20px rgba(240,168,64,0.25);overflow:hidden;backdrop-filter:blur(6px);}
 .page-maint-icon-wrap{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(240,168,64,0.2),rgba(240,168,64,0.04));border:2px solid rgba(240,168,64,0.4);display:flex;align-items:center;justify-content:center;margin:28px auto 18px;animation:maint-pulse 2.4s ease-in-out infinite;font-size:30px;}
@@ -4616,7 +4616,7 @@ function setupPageMaintOverlays() {
   });
 }
 // Comptes de test exclus de la maintenance ET de l'organigramme
-const TEST_ACCOUNT_NAMES = ["Test Test1", "Test Test2", "Test Test3"];
+const TEST_ACCOUNT_NAMES = ["Test TEST1", "Test TEST2", "Test TEST3"];
 function isMaintenanceExempt() {
   if(role==="admin") return true;
   if(currentAgent) {
