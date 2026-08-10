@@ -12,7 +12,7 @@
 :root{
   --bg:#0A0E14;--bg2:#141B26;--bg3:#1C2635;
   --border:rgba(93,173,226,0.14);
-  --accent:#2980B9;--accent-light:#5DADE2;
+  --accent:#2980B9;--accent-light:#5DADE2;--accent-rgb:41,128,185;--accent-deep:#164665;
   --blue:#2980B9;--blue-light:#5DADE2;
   --green:#1E8449;--green-light:#52D98B;
   --red:#C0392B;--red-light:#F08080;
@@ -33,7 +33,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* BG */
 .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 65% 55% at 12% 8%, color-mix(in srgb,var(--accent) 26%,transparent) 0%, transparent 58%),
+    radial-gradient(ellipse 65% 55% at 12% 8%, rgba(var(--accent-rgb),0.26) 0%, transparent 58%),
     radial-gradient(ellipse 50% 45% at 92% 12%, rgba(211,84,0,0.16) 0%, transparent 55%),
     radial-gradient(ellipse 55% 48% at 88% 92%, rgba(192,57,43,0.15) 0%, transparent 55%),
     radial-gradient(ellipse 45% 40% at 8% 90%, rgba(30,132,73,0.1) 0%, transparent 55%),
@@ -99,7 +99,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
 .sync-badge{font-size:11px;padding:3px 9px;border-radius:12px;background:rgba(30,132,73,0.1);border:1px solid rgba(30,132,73,0.2);color:#4A7F5E;}
 .logout-btn{background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:6px 14px;font-size:11.5px;font-weight:700;font-family:var(--font-display);letter-spacing:0.01em;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
-.logout-btn:hover{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:color-mix(in srgb,var(--accent) 35%,transparent);color:#fff;transform:translateY(-1px);}
+.logout-btn:hover{background:rgba(var(--accent-rgb),0.16);border-color:rgba(var(--accent-rgb),0.35);color:#fff;transform:translateY(-1px);}
 .hamburger-btn{display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:16px;line-height:1;margin-right:4px;flex-shrink:0;}
 .sidenav-backdrop{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:80;}
 .sidenav-backdrop.show{display:block;}
@@ -115,7 +115,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .notif-item:last-child{border-bottom:none;}
 .notif-item-btn{display:flex;align-items:flex-start;gap:11px;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;transition:background 0.15s;}
 .notif-item-btn:hover{background:rgba(93,173,226,0.08);}
-.notif-item-icon{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent) 18%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.notif-item-icon{width:30px;height:30px;border-radius:9px;background:rgba(var(--accent-rgb),0.18);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .notif-item-body{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .notif-item-text{font-size:12px;color:var(--text);line-height:1.5;}
 .notif-item-time{font-size:10px;color:var(--text3);}
@@ -132,11 +132,11 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .sidenav-svc-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);margin-top:2px;font-weight:600;}
 .nav-item{position:relative;display:flex;align-items:center;gap:11px;padding:9px 14px 9px 17px;margin:2px 8px;border-radius:11px;cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;transition:all 0.2s cubic-bezier(.2,.8,.3,1);}
 .nav-item:hover{background:rgba(93,173,226,0.08);transform:translateX(2px);}
-.nav-item.active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%,transparent),color-mix(in srgb,var(--accent) 4%,transparent));box-shadow:0 4px 14px -4px color-mix(in srgb,var(--accent) 45%,transparent);}
+.nav-item.active{background:linear-gradient(90deg,rgba(var(--accent-rgb),0.20),rgba(var(--accent-rgb),0.04));box-shadow:0 4px 14px -4px rgba(var(--accent-rgb),0.45);}
 .nav-item.active::before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:3px;border-radius:3px;background:var(--accent-light);box-shadow:0 0 8px var(--accent-light);}
 .nav-icon{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:rgba(255,255,255,0.04);transition:all 0.2s;}
 .nav-item:hover .nav-icon{background:rgba(255,255,255,0.08);transform:scale(1.06);}
-.nav-item.active .nav-icon{background:color-mix(in srgb,var(--accent) 28%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent) inset;}
+.nav-item.active .nav-icon{background:rgba(var(--accent-rgb),0.28);box-shadow:0 0 0 1px rgba(var(--accent-rgb),0.35) inset;}
 .nav-label{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:0.005em;transition:color 0.2s;}
 .nav-item:hover .nav-label{color:#D8E4F0;}
 .nav-item.active .nav-label{color:#fff;font-weight:700;}
@@ -174,8 +174,8 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 @keyframes maint-dot{0%,100%{opacity:0.3;}50%{opacity:1;}}
 .page.active{display:block;}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#fff;margin-bottom:5px;display:flex;align-items:center;gap:12px;}
-.page-title::before{content:"";width:5px;height:26px;border-radius:4px;background:linear-gradient(180deg,var(--accent-light),var(--accent));box-shadow:0 0 12px color-mix(in srgb,var(--accent) 55%,transparent);flex-shrink:0;}
-.page-title span{background:linear-gradient(120deg,var(--accent-light),color-mix(in srgb,var(--accent-light) 60%,#fff));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.page-title::before{content:"";width:5px;height:26px;border-radius:4px;background:linear-gradient(180deg,var(--accent-light),var(--accent));box-shadow:0 0 12px rgba(var(--accent-rgb),0.55);flex-shrink:0;}
+.page-title span{background:linear-gradient(120deg,var(--accent-light),#BFE0F5);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .page-sub{font-size:13px;color:var(--text2);margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid var(--border);margin-left:17px;}
 
 /* ═══ CARDS ═══ */
@@ -191,7 +191,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .field label{font-family:var(--font-display);font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;}
 .field input,.field select,.field textarea{background:rgba(6,9,14,0.6);border:1.5px solid rgba(93,173,226,0.12);border-radius:10px;color:var(--text);font-size:13px;padding:10px 13px;outline:none;width:100%;transition:all 0.2s cubic-bezier(.2,.8,.3,1);-webkit-appearance:none;box-shadow:0 1px 2px rgba(0,0,0,0.2) inset;}
 .field input:hover,.field select:hover,.field textarea:hover{border-color:rgba(93,173,226,0.24);}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent-light);color:#fff;background:rgba(6,9,14,0.85);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent),0 1px 2px rgba(0,0,0,0.2) inset;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent-light);color:#fff;background:rgba(6,9,14,0.85);box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.18),0 1px 2px rgba(0,0,0,0.2) inset;}
 .field input::placeholder,.field textarea::placeholder{color:var(--text3);}
 .field select option{background:#161E2A;}
 .field textarea{resize:vertical;min-height:80px;line-height:1.6;}
@@ -214,7 +214,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 /* ═══ PATROUILLES TABLE ═══ */
 .patrol-table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:linear-gradient(165deg,rgba(28,38,53,0.7),rgba(18,25,36,0.85));}
 table{width:100%;border-collapse:collapse;min-width:800px;}
-thead tr{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 22%,transparent),rgba(22,30,42,0.2));border-bottom:2px solid color-mix(in srgb,var(--accent) 35%,transparent);}
+thead tr{background:linear-gradient(90deg,rgba(var(--accent-rgb),0.22),rgba(22,30,42,0.2));border-bottom:2px solid rgba(var(--accent-rgb),0.35);}
 thead th{padding:12px 12px;font-family:var(--font-display);font-size:9.5px;font-weight:700;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.1em;text-align:left;white-space:nowrap;}
 thead th.center{text-align:center;}
 tbody tr{border-bottom:1px solid rgba(93,173,226,0.06);transition:background 0.15s;}
@@ -245,8 +245,8 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 /* ═══ AGENTS CHIPS ═══ */
 .agents-manage{background:rgba(9,13,20,0.5);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;}
 .agents-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
-.agent-chip{display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-radius:20px;padding:4px 10px 4px 8px;font-size:11px;color:var(--text);}
-.agent-chip-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 45%,black));display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0;}
+.agent-chip{display:flex;align-items:center;gap:6px;background:rgba(var(--accent-rgb),0.14);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:20px;padding:4px 10px 4px 8px;font-size:11px;color:var(--text);}
+.agent-chip-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-deep));display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0;}
 .agent-chip-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0;line-height:1;margin-left:2px;}
 .agent-chip-del:hover{color:var(--red-light);}
 .add-agent-row{display:flex;gap:8px;}
@@ -284,7 +284,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 .cand-new-badge{background:rgba(211,84,0,0.2);color:var(--orange-light);border:1px solid rgba(211,84,0,0.3);font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;}
 .cand-date{font-size:11px;color:var(--text3);}
 .cand-info{font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:11px;}
-.cand-motivation{font-size:12.5px;color:var(--text);background:color-mix(in srgb,var(--accent) 7%,transparent);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:11px;line-height:1.65;font-style:italic;}
+.cand-motivation{font-size:12.5px;color:var(--text);background:rgba(var(--accent-rgb),0.07);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:11px;line-height:1.65;font-style:italic;}
 .cand-statut-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .cand-statut-btn{padding:6px 13px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:filter 0.15s;}
 .cand-statut-btn:hover{filter:brightness(1.25);}
@@ -4349,7 +4349,7 @@ function renderSidenav() {
     ? `<div class="sidenav-svc-badge"><span>🐾</span>Dog Compagnie</div>`
     : `<div class="sidenav-svc-badge"><span>${SERVICE_ICONS[svc]}</span>${svcLabel(svc)}</div>`;
   let html = `<div class="sidenav-profile">
-    <div class="sidenav-avatar" style="background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 40%,black));">${initials}</div>
+    <div class="sidenav-avatar" style="background:linear-gradient(150deg,var(--accent),var(--accent-deep));">${initials}</div>
     <div style="min-width:0;">
       <div class="sidenav-name">${who}</div>
       ${svcBadge}
@@ -4845,9 +4845,9 @@ function setAdminService(svc) {
   toast("✓ Vue basculée sur "+svcLabel(svc));
 }
 const ACCENT_BY_SERVICE = {
-  securite:  {main:"#2980B9", light:"#5DADE2"},
-  depannage: {main:"#D35400", light:"#F0A840"},
-  rescue:    {main:"#C0392B", light:"#F08080"},
+  securite:  {main:"#2980B9", light:"#5DADE2", rgb:"41,128,185", deep:"#164665"},
+  depannage: {main:"#D35400", light:"#F0A840", rgb:"211,84,0",   deep:"#742E00"},
+  rescue:    {main:"#C0392B", light:"#F08080", rgb:"192,57,43",  deep:"#691F17"},
 };
 function updateTopbarBranding() {
   const el = document.getElementById("topbar-logo");
@@ -4863,6 +4863,8 @@ function updateTopbarBranding() {
   const accent = ACCENT_BY_SERVICE[svc]||ACCENT_BY_SERVICE.securite;
   document.documentElement.style.setProperty("--accent", accent.main);
   document.documentElement.style.setProperty("--accent-light", accent.light);
+  document.documentElement.style.setProperty("--accent-rgb", accent.rgb);
+  document.documentElement.style.setProperty("--accent-deep", accent.deep);
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
   DOC_LABEL.courrier = COURRIER_LABEL_BY_SERVICE[svc];
   const tabBtn = document.getElementById("doc-tab-courrier");
@@ -7113,7 +7115,7 @@ function renderComptes() {
         : `<div class="ac-pin">PIN : ${"•".repeat((p.pin||"").length)}</div>`}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${(p.grades||[]).length ? p.grades.map(g=>`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:color-mix(in srgb, ${ACCENT_BY_SERVICE[g.service].main} 20%, transparent);color:${ACCENT_BY_SERVICE[g.service].light};border:1px solid color-mix(in srgb, ${ACCENT_BY_SERVICE[g.service].main} 40%, transparent);">${SERVICE_ICONS[g.service]} ${esc(accountRoleLabel(g))}</span>`).join("")
+        ${(p.grades||[]).length ? p.grades.map(g=>`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(${ACCENT_BY_SERVICE[g.service].rgb},0.2);color:${ACCENT_BY_SERVICE[g.service].light};border:1px solid rgba(${ACCENT_BY_SERVICE[g.service].rgb},0.4);">${SERVICE_ICONS[g.service]} ${esc(accountRoleLabel(g))}</span>`).join("")
           : `<span style="font-size:10px;color:var(--text3);font-style:italic;">Aucun grade — cliquez pour en ajouter</span>`}
       </div>
     </div>`;
