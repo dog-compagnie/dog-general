@@ -50,7 +50,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 }
 
 /* ═══ LOGIN SCREEN ═══ */
-#screen-login{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:
+#screen-login{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:min(6vh,50px);padding-bottom:30px;overflow-y:auto;background:
     radial-gradient(ellipse 60% 50% at 15% 20%, rgba(41,128,185,0.16) 0%, transparent 60%),
     radial-gradient(ellipse 55% 45% at 85% 15%, rgba(211,84,0,0.13) 0%, transparent 55%),
     radial-gradient(ellipse 60% 50% at 80% 90%, rgba(192,57,43,0.12) 0%, transparent 55%),
@@ -5005,7 +5005,7 @@ async function confirmLogin() {
       const data = await r.json();
       if(data && data.length) {
         if(data[0].promu) {
-          err.textContent="Votre candidature a été retenue ! Connectez-vous désormais avec le bouton « "+agentLabel(data[0].service)+" », en utilisant ce même code PIN.";
+          err.textContent="Votre candidature a été retenue en tant que "+agentLabel(data[0].service)+" ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.";
           err.style.display="block";
           return;
         }
@@ -5471,7 +5471,7 @@ async function initCandidatSpace() {
 function renderCandStatus(c) {
   const meta = CAND_STATUT_DISPLAY[c.statut] || CAND_STATUT_DISPLAY.Nouvelle;
   const desc = c.statut==="Retenu"
-    ? `Félicitations, votre candidature a été retenue ! Connectez-vous désormais avec le bouton « ${agentLabel(c.service)} », en utilisant ce même code PIN.`
+    ? `Félicitations, votre candidature a été retenue en tant que ${agentLabel(c.service)} ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.`
     : meta.desc;
   const el = document.getElementById("cand-status-content");
   if(!el) return;
@@ -7315,8 +7315,13 @@ async function supprimerCompte(id) {
   const p = allPersonnes.find(x=>String(x.id)===String(id));
   try {
     await sb("agents_comptes?id=eq."+id,{method:"DELETE"});
-    if(p) logActivity("compte_supprime", `Compte supprimé : ${p.prenom} ${p.nom}`);
-    toast("✓ Compte supprimé");
+    // Libère le PIN côté portail candidat : sans ça, un ancien dossier "déjà promu" avec
+    // le même code bloquerait silencieusement toute nouvelle candidature avec ce PIN.
+    if(p && p.pin) {
+      try { await sb(`candidats_comptes?pin=eq.${encodeURIComponent(p.pin)}`, {method:"DELETE"}); } catch(e2) {}
+    }
+    if(p) logActivity("compte_supprime", `Compte supprimé : ${p.prenom} ${p.nom} (PIN libéré pour une nouvelle candidature)`);
+    toast("✓ Compte supprimé — le PIN est de nouveau disponible");
     document.getElementById("ac-personne-card").style.display = "none";
     document.getElementById("ac-empty-hint").style.display = "block";
     currentPersonneId = null;
