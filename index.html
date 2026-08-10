@@ -427,10 +427,15 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 860px) {
   .hamburger-btn{display:block;}
-  .topbar{padding:0 10px;gap:8px;}
+  .topbar{padding:0 10px;gap:6px;}
   .topbar-logo{font-size:12px;}
   .topbar-role{display:none;}
   .sync-badge{display:none;}
+  .svc-switch{gap:3px;padding:3px;}
+  .svc-switch-btn{width:30px;height:28px;font-size:14px;}
+  .svc-switch-btn[data-svc="securite"]{font-size:16px;}
+  .logout-btn span{display:none;}
+  .logout-btn{padding:7px 10px;}
 
   .sidenav{
     transform:translateX(-105%);
@@ -451,6 +456,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
   .role-grid{grid-template-columns:1fr;}
   .field-row-2,.field-row-3{grid-template-columns:1fr;}
   .admin-grid{grid-template-columns:1fr!important;}
+  #clients-list-container,#patients-list-container{grid-template-columns:1fr!important;}
 
   .login-box{padding:28px 20px;}
 
@@ -462,6 +468,14 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 @media (max-width: 480px) {
   .stat-pill{min-width:100%;}
   .cand-top,.cand-statut-btns{flex-direction:column;align-items:flex-start!important;}
+  .topbar{gap:4px;}
+  .topbar-logo{font-size:11px;}
+  .svc-switch{display:none;}
+  .sidenav-profile{padding:14px 12px;}
+  .sidenav-name{max-width:100px;}
+  .page-title{font-size:17px;gap:9px;}
+  .page-title::before{width:4px;height:20px;}
+  .alert-popup-box{padding:24px 18px;}
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -574,7 +588,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
         <div id="notif-panel-list"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="logout()"><span style="font-size:13px;">🔄</span> Changer</button>
+    <button class="logout-btn" onclick="logout()">🔄<span> Changer</span></button>
   </div>
 </div>
 
@@ -1591,9 +1605,16 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 
 <!-- ═══ APERÇU DOCUMENT (JPG) ═══ -->
 <div id="doc-preview-modal" class="alert-popup">
-  <div class="alert-popup-box" style="max-width:560px;">
+  <div class="alert-popup-box" style="max-width:640px;max-height:88vh;display:flex;flex-direction:column;">
     <div class="alert-popup-title">👁 Aperçu du document</div>
-    <img id="doc-preview-img" style="max-width:100%;border-radius:8px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.35);">
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="zoomDocPreview(-25)">➖ Zoom</button>
+      <button class="btn btn-ghost btn-sm" onclick="zoomDocPreview(0)">🔄 Réinitialiser</button>
+      <button class="btn btn-ghost btn-sm" onclick="zoomDocPreview(25)">➕ Zoom</button>
+    </div>
+    <div id="doc-preview-viewport" style="flex:1;min-height:0;overflow:auto;border-radius:8px;margin-bottom:16px;background:rgba(0,0,0,0.25);cursor:grab;touch-action:none;">
+      <img id="doc-preview-img" style="display:block;width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.35);user-select:none;-webkit-user-drag:none;">
+    </div>
     <button class="btn btn-primary btn-full" onclick="downloadDocPreview()">⬇️ Télécharger en JPG</button>
     <button class="btn btn-ghost btn-full" onclick="closeDocPreview()" style="margin-top:8px;">Fermer</button>
   </div>
@@ -2534,13 +2555,43 @@ async function enregistrerDoc(formKind) {
 
 let _docPreviewUrl = null;
 let _docPreviewRef = null;
+let _docPreviewZoom = 100;
 function showDocPreview(url, ref) {
   _docPreviewUrl = url;
   _docPreviewRef = ref;
   const img = document.getElementById("doc-preview-img");
-  if(img) img.src = url;
+  if(img) { img.src = url; img.style.width = "100%"; }
+  _docPreviewZoom = 100;
+  const vp = document.getElementById("doc-preview-viewport");
+  if(vp) { vp.scrollLeft = 0; vp.scrollTop = 0; }
   document.getElementById("doc-preview-modal")?.classList.add("show");
 }
+function zoomDocPreview(deltaPercent) {
+  _docPreviewZoom = deltaPercent===0 ? 100 : Math.max(50, Math.min(400, _docPreviewZoom + deltaPercent));
+  const img = document.getElementById("doc-preview-img");
+  if(img) img.style.width = _docPreviewZoom+"%";
+}
+(function setupDocPreviewPan(){
+  const vp = document.getElementById("doc-preview-viewport");
+  if(!vp) return;
+  let isDown=false, startX=0, startY=0, startScrollLeft=0, startScrollTop=0;
+  const start = (x,y) => {
+    isDown=true; vp.style.cursor="grabbing";
+    startX=x; startY=y; startScrollLeft=vp.scrollLeft; startScrollTop=vp.scrollTop;
+  };
+  const move = (x,y) => {
+    if(!isDown) return;
+    vp.scrollLeft = startScrollLeft - (x-startX);
+    vp.scrollTop = startScrollTop - (y-startY);
+  };
+  const end = () => { isDown=false; vp.style.cursor="grab"; };
+  vp.addEventListener("mousedown", e=>{ start(e.pageX, e.pageY); e.preventDefault(); });
+  window.addEventListener("mousemove", e=>{ if(isDown){ move(e.pageX, e.pageY); e.preventDefault(); } });
+  window.addEventListener("mouseup", end);
+  vp.addEventListener("touchstart", e=>{ const t=e.touches[0]; start(t.pageX, t.pageY); }, {passive:true});
+  vp.addEventListener("touchmove", e=>{ const t=e.touches[0]; move(t.pageX, t.pageY); e.preventDefault(); }, {passive:false});
+  vp.addEventListener("touchend", end);
+})();
 function closeDocPreview() {
   document.getElementById("doc-preview-modal")?.classList.remove("show");
 }
