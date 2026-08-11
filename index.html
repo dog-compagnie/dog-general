@@ -5066,7 +5066,7 @@ async function loadAll() {
       tryLoad("documents?select=id,reference,agent_nom,data,auteur,vus_par,statut,statut_changed_at,suivi,created_at&type=eq.incident&order=created_at.desc&limit=100", incidentDocs),
       tryLoad("evaluations?select=id,agent_nom,verdict,pourcentage,vus_par,created_at&order=created_at.desc&limit=100", evalsForNotif),
     ]);
-    patrols      = p;
+    patrols      = p.map(x=>({...x, patrol_id:(x.patrol_id||"").replace(new RegExp("^"+myService()+"-"),"")}));
     absences     = a;
     candidatures = c;
     agents       = ag.map(x=>x.nom).sort((x,y)=>x.localeCompare(y,"fr",{sensitivity:"base"}));
@@ -5224,11 +5224,12 @@ function identityLabel() {
 }
 async function updatePatrol(patrol_id, field, value) {
   syncBadge("⏳ Sauvegarde…","#5D8AA8");
+  const dbPatrolId = myService()+"-"+patrol_id;
   try {
     const exists = patrols.find(p=>p.patrol_id===patrol_id);
     const payload = {[field]:value, updated_at:new Date().toISOString(), updated_by: identityLabel()};
     if(exists) {
-      const r = await fetch(SB_URL+"/rest/v1/patrouilles_live?patrol_id=eq."+patrol_id, {
+      const r = await fetch(SB_URL+"/rest/v1/patrouilles_live?patrol_id=eq."+dbPatrolId, {
         method:"PATCH", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
         body:JSON.stringify(payload)
       });
@@ -5236,7 +5237,7 @@ async function updatePatrol(patrol_id, field, value) {
     } else {
       const r = await fetch(SB_URL+"/rest/v1/patrouilles_live", {
         method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
-        body:JSON.stringify({patrol_id,...payload})
+        body:JSON.stringify({patrol_id:dbPatrolId, service:myService(), ...payload})
       });
       if(!r.ok){ const t=await r.text(); throw new Error(t); }
     }
