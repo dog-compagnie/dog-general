@@ -60,7 +60,10 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 
 /* ═══ POPUP ALERTE ADMIN ═══ */
 .alert-popup{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;background:rgba(10,14,20,0.88);backdrop-filter:blur(8px);}
-#maintenance-screen.service-scope{top:58px;inset:auto;left:0;right:0;bottom:0;z-index:90;}
+#maintenance-screen.service-scope{top:58px;inset:auto;left:212px;right:0;bottom:0;z-index:95;}
+@media (max-width: 860px) {
+  #maintenance-screen.service-scope{left:0;}
+}
 .alert-popup.show{display:flex;}
 .alert-popup-box{background:var(--bg2);border:1px solid rgba(211,84,0,0.4);border-radius:18px;padding:32px 28px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
 .alert-popup-icon{font-size:40px;margin-bottom:10px;}
@@ -4810,7 +4813,7 @@ function applyMaintenanceOverlays() {
     const ov = p.querySelector(".page-maint-overlay");
     if(!ov) return;
     const pid = p.id.replace("page-","");
-    const affected = !isMaintenanceExempt() && (maintenancePages.includes("ALL") || maintenancePages.includes("SVC:"+myService()) || maintenancePages.includes(pid));
+    const affected = !isMaintenanceExempt() && !maintenancePages.includes("ALL") && !maintenancePages.includes("SVC:"+myService()) && maintenancePages.includes(pid);
     if(affected) {
       ov.querySelector(".page-maint-msg").textContent = maintenanceMessage || "Cette section est temporairement indisponible pour une mise à jour.";
       ov.classList.add("show");
