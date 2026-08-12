@@ -60,7 +60,8 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 
 /* ═══ POPUP ALERTE ADMIN ═══ */
 .alert-popup{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;background:rgba(10,14,20,0.88);backdrop-filter:blur(8px);}
-#maintenance-screen.service-scope{top:58px;inset:auto;left:212px;right:0;bottom:0;z-index:95;}
+#maintenance-screen{z-index:900;align-items:flex-start;justify-content:center;padding-top:min(9vh,70px);padding-bottom:30px;overflow-y:auto;}
+#maintenance-screen.service-scope{align-items:flex-start;justify-content:center;top:58px;right:0;bottom:0;left:212px;padding-top:min(9vh,70px);z-index:95;background:rgba(10,14,20,0.92);backdrop-filter:blur(6px);}
 @media (max-width: 860px) {
   #maintenance-screen.service-scope{left:0;}
 }
@@ -487,7 +488,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
 <div class="bg"></div>
 
 <!-- ═══ ÉCRAN DE MAINTENANCE (non fermable, tout le monde sauf Admin) ═══ -->
-<div id="maintenance-screen" class="alert-popup" style="z-index:900;align-items:flex-start;padding-top:min(9vh,70px);overflow-y:auto;">
+<div id="maintenance-screen" class="alert-popup">
   <div class="page-maint-card" style="max-width:400px;">
     <div class="maint-radar">
       <div class="maint-radar-ring r1"></div>
