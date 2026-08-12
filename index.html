@@ -526,7 +526,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
       <span title="Dog Balisage" style="font-size:26px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle,rgba(183,149,11,0.22),rgba(183,149,11,0.04));box-shadow:0 0 20px rgba(183,149,11,0.2);">🚧</span>
     </div>
     <div class="login-title">Dog Compagnie</div>
-    <div class="login-sub">Sécurité · Dépannage · Secours — Choisissez votre espace puis entrez votre code PIN</div>
+    <div class="login-sub">Sécurité · Dépannage · Secours · Balisage — Choisissez votre espace puis entrez votre code PIN</div>
 
     <!-- ÉTAPE 1 : choix du rôle -->
     <div id="login-step1">
@@ -552,7 +552,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
           <span class="role-name">Admin</span>
         </button>
       </div>
-      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;">Votre service (Sécurité / Dépannage / Rescue) est reconnu automatiquement d'après votre compte.</div>
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;">Votre service (Sécurité / Dépannage / Rescue / Balisage) est reconnu automatiquement d'après votre compte.</div>
     </div>
 
     <!-- ÉTAPE 2 : saisie PIN -->
@@ -1353,7 +1353,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
         <span id="maint-status-badge" style="font-size:11px;color:var(--text2);"></span>
       </div>
       <div class="card-body">
-        <div class="page-sub" style="margin-bottom:14px;">Choisissez la ou les pages à bloquer pour tout le monde sauf Admin (ou "Tout le site" pour un blocage complet). L'état est stocké côté serveur : il ne se réinitialise ni au rafraîchissement, ni à une mise à jour du site.</div>
+        <div class="page-sub" style="margin-bottom:14px;">Choisissez la ou les pages à bloquer pour tout le monde sauf Admin ("Tout le site" pour un blocage complet, ou "Tout le service X" pour ne bloquer qu'une seule division). L'état est stocké côté serveur : il ne se réinitialise ni au rafraîchissement, ni à une mise à jour du site.</div>
         <div id="maint-pages-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;"></div>
         <div class="field">
           <label>Message affiché (optionnel)</label>
@@ -1750,7 +1750,8 @@ const H = {"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Be
 
 const SERVICE_SCOPED_TABLES = new Set([
   "patrouilles_live","absences","candidatures","documents","evaluations",
-  "devis","factures","cartes_fidelite","bilans","patients","agents_liste"
+  "devis","factures","cartes_fidelite","bilans","patients","agents_liste",
+  "services_logs"
 ]);
 const sb = async (path, opts={}) => {
   let finalPath = path;
@@ -1833,7 +1834,7 @@ const PATROL_LABELS_BY_SERVICE = {
   securite:  {centrale:"Dog Centrale",cmd:"Dog Commandement","01":"Dog 01","02":"Dog 02","03":"Dog 03","04":"Dog 04"},
   depannage: {centrale:"Dog Centrale","01":"Dog 01","02":"Dog 02","03":"Dog 03","04":"Dog 04",cmd:"Chef Dog"},
   rescue:    {centrale:"Dog Régulation","01":"Dog 01","02":"Dog 02","03":"Dog 03","04":"Dog 04",cmd:"Dog Commandement"},
-  balisage:  {centrale:"Dog Régulation","01":"Dog 01","02":"Dog 02","03":"Dog 03","04":"Dog 04",cmd:"Dog Commandement"},
+  balisage:  {centrale:"Dog Central","01":"Dog 01","02":"Dog 02","03":"Dog 03","04":"Dog 04",cmd:"Chef Dog"},
 };
 function patrolLabels(svc) { return PATROL_LABELS_BY_SERVICE[svc||myService()]; }
 const FIELD_LABELS = {conducteur:"Conducteur",e1:"Équipier 1",e2:"Équipier 2",e3:"Équipier 3",vehicule:"Véhicule",statut:"Statut",notes:"Notes"};
@@ -1958,7 +1959,7 @@ async function enregistrerWebhookDiscord() {
 }
 async function testerWebhookDiscord() {
   if(!discordWebhookUrl) { toast("Aucun webhook enregistré.","#E74C3C"); return; }
-  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis Dog Dépannage.", 0x2980B9);
+  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+svcLabel(myService())+".", parseInt(ACCENT_BY_SERVICE[myService()].main.slice(1),16));
   toast("✓ Message de test envoyé (vérifiez le salon Discord)");
 }
 async function sendDiscordWebhook(title, description, color) {
@@ -4384,7 +4385,7 @@ function updateTopbarRoleDisplay() {
   topbarRole.style.background = ROLE_COLORS[role]||"rgba(255,255,255,0.08)";
   topbarRole.style.color = ROLE_TEXT[role]||"#fff";
 }
-function refreshCurrentPage() {
+async function refreshCurrentPage() {
   const activePage = document.querySelector(".page.active");
   const pid = activePage ? activePage.id.replace("page-","") : null;
   if(pid && getNavConfig().some(it=>it.page===pid && it.roles.includes(role))) {
@@ -4393,6 +4394,10 @@ function refreshCurrentPage() {
     goPage("patrouilles");
   }
   loadAll();
+  if(!isMaintenanceExempt()) {
+    const blocked = await checkMaintenanceGate();
+    document.getElementById("app").style.display = blocked ? "none" : "block";
+  }
 }
 function setMyServiceGrade(svc) {
   const g = (window._myGrades||[]).find(x=>x.service===svc);
@@ -4732,6 +4737,9 @@ function getMaintenancePageOptions() {
   // apparaît ici sans intervention manuelle. "journal" est exclu (page Admin elle-même).
   const seen = new Set();
   const opts = [{id:"ALL", label:"🌐 Tout le site"}];
+  SERVICES.forEach(s=>{
+    opts.push({id:"SVC:"+s, label:`${SERVICE_ICONS[s]} Tout le service ${svcLabel(s).replace(/^Dog\s+/,"")}`});
+  });
   getNavConfig().forEach(item=>{
     if(item.page==="journal" || seen.has(item.page)) return;
     seen.add(item.page);
@@ -4798,7 +4806,7 @@ function applyMaintenanceOverlays() {
     const ov = p.querySelector(".page-maint-overlay");
     if(!ov) return;
     const pid = p.id.replace("page-","");
-    const affected = !isMaintenanceExempt() && (maintenancePages.includes("ALL") || maintenancePages.includes(pid));
+    const affected = !isMaintenanceExempt() && (maintenancePages.includes("ALL") || maintenancePages.includes("SVC:"+myService()) || maintenancePages.includes(pid));
     if(affected) {
       ov.querySelector(".page-maint-msg").textContent = maintenanceMessage || "Cette section est temporairement indisponible pour une mise à jour.";
       ov.classList.add("show");
@@ -4808,21 +4816,23 @@ function applyMaintenanceOverlays() {
   });
 }
 
-// Renvoie true si la maintenance concerne TOUT le site (blocage complet, non fermable)
+// Renvoie true si la maintenance concerne TOUT le site OU tout le service actuellement affiché
+// (blocage complet, non fermable)
 async function checkMaintenanceGate() {
   if(isMaintenanceExempt()) { hideMaintenanceScreen(); return false; }
   const status = await fetchMaintenanceStatus();
   maintenancePages = status.pages;
   maintenanceMessage = status.message;
   applyMaintenanceOverlays();
-  if(maintenancePages.includes("ALL")) {
+  const svcBlocked = maintenancePages.includes("SVC:"+myService());
+  if(maintenancePages.includes("ALL") || svcBlocked) {
     showMaintenanceScreen(maintenanceMessage);
     if(!_maintenancePoll) {
       _maintenancePoll = setInterval(async ()=>{
         const s2 = await fetchMaintenanceStatus();
         maintenancePages = s2.pages;
         maintenanceMessage = s2.message;
-        if(!maintenancePages.includes("ALL")) {
+        if(!maintenancePages.includes("ALL") && !maintenancePages.includes("SVC:"+myService())) {
           clearInterval(_maintenancePoll); _maintenancePoll = null;
           hideMaintenanceScreen();
           finishLaunch();
@@ -4883,9 +4893,13 @@ async function refreshMaintStatusBadge() {
   applyMaintenanceOverlays();
   const badge = document.getElementById("maint-status-badge");
   if(badge) {
+    const svcBlocked = maintenancePages.filter(p=>p.startsWith("SVC:")).map(p=>p.slice(4));
+    const pageCount = maintenancePages.filter(p=>p!=="ALL" && !p.startsWith("SVC:")).length;
     if(!maintenancePages.length) badge.textContent = "🟢 Site normal (pas de maintenance)";
     else if(maintenancePages.includes("ALL")) badge.textContent = "🔴 Tout le site est en maintenance";
-    else badge.textContent = `🟠 ${maintenancePages.length} page(s) en maintenance`;
+    else if(svcBlocked.length && !pageCount) badge.textContent = `🔴 Service(s) en maintenance : ${svcBlocked.map(s=>svcLabel(s).replace(/^Dog\s+/,"")).join(", ")}`;
+    else if(svcBlocked.length) badge.textContent = `🟠 ${svcBlocked.length} service(s) + ${pageCount} page(s) en maintenance`;
+    else badge.textContent = `🟠 ${pageCount} page(s) en maintenance`;
   }
 }
 
@@ -5199,12 +5213,12 @@ function renderPatrols() {
       {id:"cmd",     label:"Dog Commandement", freq:"158 / 117.1 / 158.9",color:"#E74C3C"},
     ],
     balisage: [
-      {id:"centrale",label:"Dog Régulation", freq:"159 / 118.1",color:"#9B59B6"},
-      {id:"01",      label:"Dog 01",         freq:"159 / 159.1",color:"#2980B9"},
-      {id:"02",      label:"Dog 02",         freq:"159 / 159.2",color:"#2980B9"},
-      {id:"03",      label:"Dog 03",         freq:"159 / 159.3",color:"#2980B9"},
-      {id:"04",      label:"Dog 04",         freq:"159 / 159.4",color:"#2980B9"},
-      {id:"cmd",     label:"Dog Commandement", freq:"159 / 118.1 / 159.9",color:"#E74C3C"},
+      {id:"centrale",label:"Dog Central", freq:"155 / 118.1",color:"#9B59B6"},
+      {id:"01",      label:"Dog 01",      freq:"155 / 155.1",color:"#2980B9"},
+      {id:"02",      label:"Dog 02",      freq:"155 / 155.2",color:"#2980B9"},
+      {id:"03",      label:"Dog 03",      freq:"155 / 155.3",color:"#2980B9"},
+      {id:"04",      label:"Dog 04",      freq:"155 / 155.4",color:"#2980B9"},
+      {id:"cmd",     label:"Chef Dog",    freq:"155 / 118.1 / 155.9",color:"#E74C3C"},
     ],
   };
   const PATROL_DEFS = PATROL_DEFS_ALL[myService()];
