@@ -60,6 +60,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 
 /* ═══ POPUP ALERTE ADMIN ═══ */
 .alert-popup{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;background:rgba(10,14,20,0.88);backdrop-filter:blur(8px);}
+#maintenance-screen.service-scope{top:58px;inset:auto;left:0;right:0;bottom:0;z-index:90;}
 .alert-popup.show{display:flex;}
 .alert-popup-box{background:var(--bg2);border:1px solid rgba(211,84,0,0.4);border-radius:18px;padding:32px 28px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
 .alert-popup-icon{font-size:40px;margin-bottom:10px;}
@@ -494,7 +495,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="page-maint-title" style="font-size:19px;">Maintenance en cours</div>
     <div class="page-maint-msg" id="maintenance-message">Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.</div>
     <div class="maint-services-row" id="maint-services-row"></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Cette page se réactivera automatiquement dès la fin de la maintenance.</div>
+    <div id="maintenance-hint" style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Cette page se réactivera automatiquement dès la fin de la maintenance.</div>
   </div>
 </div>
 
@@ -4389,7 +4390,7 @@ async function refreshCurrentPage() {
   loadAll();
   if(!isMaintenanceExempt()) {
     const blocked = await checkMaintenanceGate();
-    document.getElementById("app").style.display = blocked ? "none" : "block";
+    document.getElementById("app").style.display = blocked==="all" ? "none" : "block";
   }
 }
 function setMyServiceGrade(svc) {
@@ -4755,14 +4756,20 @@ async function fetchMaintenanceStatus() {
   }
 }
 
-function showMaintenanceScreen(message) {
+function showMaintenanceScreen(message, scope) {
   const msgEl = document.getElementById("maintenance-message");
   if(msgEl) msgEl.textContent = message || "Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.";
   const rowEl = document.getElementById("maint-services-row");
   if(rowEl) rowEl.innerHTML = SERVICES.map(s=>
     `<div class="maint-svc-pill" style="--dot-color:${ACCENT_BY_SERVICE[s].main}"><span class="dot" style="background:${ACCENT_BY_SERVICE[s].main};animation-delay:${SERVICES.indexOf(s)*0.3}s;"></span>${svcLabel(s).replace(/^Dog\s+/,"")}</div>`
   ).join("");
-  document.getElementById("maintenance-screen")?.classList.add("show");
+  const screenEl = document.getElementById("maintenance-screen");
+  screenEl?.classList.toggle("service-scope", scope==="service");
+  const hintEl = document.getElementById("maintenance-hint");
+  if(hintEl) hintEl.textContent = scope==="service"
+    ? "Vous pouvez changer de service ou de compte via la barre du haut en attendant la fin de la maintenance."
+    : "Cette page se réactivera automatiquement dès la fin de la maintenance.";
+  screenEl?.classList.add("show");
 }
 function hideMaintenanceScreen() {
   document.getElementById("maintenance-screen")?.classList.remove("show");
@@ -4821,24 +4828,31 @@ async function checkMaintenanceGate() {
   maintenancePages = status.pages;
   maintenanceMessage = status.message;
   applyMaintenanceOverlays();
-  const svcBlocked = maintenancePages.includes("SVC:"+myService());
-  if(maintenancePages.includes("ALL") || svcBlocked) {
-    showMaintenanceScreen(maintenanceMessage);
+  const isAll = maintenancePages.includes("ALL");
+  const isSvc = maintenancePages.includes("SVC:"+myService());
+  if(isAll || isSvc) {
+    const scope = isAll ? "all" : "service";
+    showMaintenanceScreen(maintenanceMessage, scope);
     if(!_maintenancePoll) {
       _maintenancePoll = setInterval(async ()=>{
         const s2 = await fetchMaintenanceStatus();
         maintenancePages = s2.pages;
         maintenanceMessage = s2.message;
-        if(!maintenancePages.includes("ALL") && !maintenancePages.includes("SVC:"+myService())) {
+        const stillAll = maintenancePages.includes("ALL");
+        const stillSvc = maintenancePages.includes("SVC:"+myService());
+        if(!stillAll && !stillSvc) {
           clearInterval(_maintenancePoll); _maintenancePoll = null;
           hideMaintenanceScreen();
           finishLaunch();
+        } else {
+          showMaintenanceScreen(maintenanceMessage, stillAll ? "all" : "service");
         }
       }, 8000);
     }
-    return true;
+    return scope;
   }
   hideMaintenanceScreen();
+  clearInterval(_maintenancePoll); _maintenancePoll = null;
   return false;
 }
 
@@ -4935,7 +4949,7 @@ async function launchApp() {
 
   if(!isMaintenanceExempt()) {
     const blocked = await checkMaintenanceGate();
-    if(blocked) { document.getElementById("app").style.display="none"; return; }
+    if(blocked==="all") { document.getElementById("app").style.display="none"; return; }
   }
 
   finishLaunch();
@@ -5122,8 +5136,8 @@ async function loadAll() {
   if(!isMaintenanceExempt() && role!=="candidat") {
     const blocked = await checkMaintenanceGate();
     if(blocked) {
-      document.getElementById("app").style.display="none";
-      clearInterval(_refreshInterval); _refreshInterval=null;
+      document.getElementById("app").style.display = blocked==="all" ? "none" : "block";
+      if(blocked==="all") { clearInterval(_refreshInterval); _refreshInterval=null; }
       return;
     }
   }
