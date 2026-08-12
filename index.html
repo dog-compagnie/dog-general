@@ -1125,7 +1125,19 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
       <div class="alert-popup-title" style="text-align:center;">💰 Fiche de paie</div>
       <div class="field-row-2">
         <div class="field"><label>Agent</label><input id="paie-agent" disabled></div>
-        <div class="field"><label>Période (mois précédent)</label><input id="paie-periode" disabled></div>
+        <div class="field"><label>Service</label><input id="paie-service" disabled></div>
+      </div>
+      <div class="field-row-2">
+        <div class="field">
+          <label>Mois <span style="color:#52D98B;font-weight:700;">— modifiable pour rattraper un mois passé</span></label>
+          <select id="paie-mois-select" onchange="onPaiePeriodeChange()">
+            <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
+            <option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option>
+            <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
+            <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+          </select>
+        </div>
+        <div class="field"><label>Année</label><input type="number" id="paie-annee-select" onchange="onPaiePeriodeChange()"></div>
       </div>
 
       <div class="card-hdr" style="border-radius:10px;margin:16px 0 10px;"><div class="card-hdr-title">🕐 Salaire de base</div></div>
@@ -1849,6 +1861,7 @@ const JOURNAL_TYPES = {
   evenement_cree:       {color:"#9B59B6", label:"Effectifs"},
   evenement_supprime:   {color:"#F08080", label:"Effectifs"},
   fiche_paie_creee:     {color:"#52D98B", label:"Effectifs"},
+  fiche_paie_statut:    {color:"#F0A840", label:"Effectifs"},
   fiche_paie_suppr:     {color:"#F08080", label:"Effectifs"},
   facture_enregistree:  {color:"#D35400", label:"Facturation"},
   facture_supprimee:    {color:"#F08080", label:"Facturation"},
@@ -1901,7 +1914,7 @@ async function logActivity(type, message, acteur) {
   try {
     await fetch(SB_URL+"/rest/v1/activity_logs", {
       method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
-      body: JSON.stringify({type, message, acteur: acteur || currentActeurLabel()})
+      body: JSON.stringify({type, message, acteur: acteur || currentActeurLabel(), service: myService()})
     });
   } catch(e) { console.warn("logActivity error:", e.message); }
 }
@@ -4199,25 +4212,36 @@ function renderJournal() {
       cats.map(cat=>{
         const n = allLogsJournal.filter(l=>journalMeta(l.type).label===cat).length;
         return `<button class="btn btn-sm btn-ghost" onclick="filterJournal('${cat}')">${cat} (${n})</button>`;
+      }).join("") +
+      `<span style="width:1px;background:var(--border);margin:0 4px;"></span>` +
+      SERVICES.map(s=>{
+        const n = allLogsJournal.filter(l=>l.service===s).length;
+        return `<button class="btn btn-sm btn-ghost" onclick="filterJournalService('${s}')">${SERVICE_ICONS[s]} ${svcLabel(s).replace(/^Dog\s+/,"")} (${n})</button>`;
       }).join("");
   }
   if(!allLogsJournal.length) { el.innerHTML='<div class="empty"><div class="empty-icon">🗒️</div><p>Aucune activité enregistrée pour l\'instant.</p></div>'; return; }
   window._journalFilter = window._journalFilter||null;
-  const shown = window._journalFilter ? allLogsJournal.filter(l=>journalMeta(l.type).label===window._journalFilter) : allLogsJournal;
+  window._journalServiceFilter = window._journalServiceFilter||null;
+  let shown = window._journalFilter ? allLogsJournal.filter(l=>journalMeta(l.type).label===window._journalFilter) : allLogsJournal;
+  if(window._journalServiceFilter) shown = shown.filter(l=>l.service===window._journalServiceFilter);
   if(!shown.length) { el.innerHTML='<div class="empty"><p>Aucun résultat pour ce filtre.</p></div>'; return; }
   el.innerHTML = shown.map(l=>{
     const meta = journalMeta(l.type);
     const time = new Date(l.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    const svcBadge = l.service
+      ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9px;margin-left:7px;background:rgba(${(ACCENT_BY_SERVICE[l.service]||{}).rgb||"127,154,176"},0.16);color:${(ACCENT_BY_SERVICE[l.service]||{}).light||"#7F9AB0"};border:1px solid rgba(${(ACCENT_BY_SERVICE[l.service]||{}).rgb||"127,154,176"},0.32);">${SERVICE_ICONS[l.service]||"🐾"} ${svcLabel(l.service).replace(/^Dog\s+/,"")}</span>`
+      : `<span style="font-size:10px;color:var(--text3);margin-left:7px;">— service inconnu</span>`;
     return `<div class="journal-item" style="border-left-color:${meta.color}">
       <div>
         <div class="journal-msg">${esc(l.message)}</div>
-        <div class="journal-meta">${esc(l.acteur||"—")} · <span style="color:${meta.color};font-weight:700;">${meta.label}</span></div>
+        <div class="journal-meta">${esc(l.acteur||"—")} · <span style="color:${meta.color};font-weight:700;">${meta.label}</span>${svcBadge}</div>
       </div>
       <div class="journal-time">${time}</div>
     </div>`;
   }).join("");
 }
 function filterJournal(cat) { window._journalFilter = cat; renderJournal(); }
+function filterJournalService(svc) { window._journalServiceFilter = (window._journalServiceFilter===svc) ? null : svc; renderJournal(); }
 
 // ─── TOAST ─────────────────────────────────────────────────────────
 function toast(msg, color="#52D98B") {
@@ -6714,15 +6738,28 @@ async function ouvrirFichePaie(agentNom, svc) {
   currentPaieAgent = agentNom;
   currentPaieService = svc;
   const now = new Date();
-  let mois = now.getMonth() - 1; // mois précédent (0-indexé)
+  let mois = now.getMonth() - 1; // mois précédent par défaut (0-indexé)
   let annee = now.getFullYear();
   if(mois<0) { mois = 11; annee -= 1; }
-  currentPaieMois = mois;
-  currentPaieAnnee = annee;
-  const moisNoms = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
   document.getElementById("paie-agent").value = agentNom;
-  document.getElementById("paie-periode").value = `${moisNoms[mois]} ${annee} — ${svcLabel(svc)}`;
+  document.getElementById("paie-service").value = svcLabel(svc);
+  document.getElementById("paie-mois-select").value = String(mois);
+  document.getElementById("paie-annee-select").value = String(annee);
+
+  await refreshPaieForm(mois, annee);
+  document.getElementById("paie-modal")?.classList.add("show");
+}
+async function onPaiePeriodeChange() {
+  const mois = parseInt(document.getElementById("paie-mois-select").value);
+  const annee = parseInt(document.getElementById("paie-annee-select").value)||new Date().getFullYear();
+  await refreshPaieForm(mois, annee);
+}
+async function refreshPaieForm(mois, annee) {
+  currentPaieMois = mois;
+  currentPaieAnnee = annee;
+  const svc = currentPaieService;
+  const agentNom = currentPaieAgent;
   const heuresCalc = Math.round(heuresPourAgent(agentNom, mois, annee, svc)/60);
   document.getElementById("paie-heures").value = heuresCalc;
 
@@ -6745,7 +6782,6 @@ async function ouvrirFichePaie(agentNom, svc) {
   } catch(e) { console.warn("chargement primes événements:", e.message); }
 
   recomputePaie();
-  document.getElementById("paie-modal")?.classList.add("show");
 }
 function closePaieModal() {
   document.getElementById("paie-modal")?.classList.remove("show");
@@ -6805,7 +6841,7 @@ async function enregistrerFichePaie() {
   const data = collectPaieData();
   if(!data.agent_nom) return;
   try {
-    const payload = {...data, created_by: identityLabel()};
+    const payload = {...data, created_by: identityLabel(), statut: "En attente"};
     const r = await fetch(SB_URL+"/rest/v1/fiches_paie", {method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors", body:JSON.stringify(payload)});
     if(!r.ok) throw new Error(await r.text());
     logActivity("fiche_paie_creee", `Fiche de paie créée pour ${data.agent_nom} (${data.periode_label}) — ${fmtEuro(data.total)}`);
@@ -6871,15 +6907,45 @@ async function loadPaieHistory() {
     const rows = (await sb("fiches_paie?select=*&order=created_at.desc&limit=200")).filter(r=>!r.service || r.service===myService());
     if(!el) return;
     if(!rows.length) { el.innerHTML = '<div class="empty"><p>Aucune fiche de paie créée.</p></div>'; return; }
-    el.innerHTML = rows.map(r=>`
+    const canManage = (role==="pdg"||role==="admin");
+    el.innerHTML = rows.map(r=>{
+      const statut = r.statut || "En attente";
+      const joursEcoules = r.created_at ? Math.floor((Date.now()-new Date(r.created_at).getTime())/(1000*3600*24)) : 0;
+      const estDepassee = statut==="En attente" && joursEcoules>14;
+      const statutAffiche = estDepassee ? "Délai dépassé" : statut;
+      const meta = {
+        "Versée":     {bg:"rgba(30,132,73,0.15)",  color:"#52D98B"},
+        "Refusée":    {bg:"rgba(192,57,43,0.15)",  color:"#F08080"},
+        "Délai dépassé": {bg:"rgba(211,84,0,0.18)", color:"#F0A840"},
+        "En attente": {bg:"rgba(93,173,226,0.13)", color:"#5DADE2"},
+      }[statutAffiche];
+      return `
       <div class="log-item">
-        <div><div class="log-agent">${esc(r.agent_nom)} — ${esc(r.periode_label)}</div><div class="log-dates">${fmtEuro(r.total)} · par ${esc(r.created_by||"—")}</div></div>
+        <div>
+          <div class="log-agent">${esc(r.agent_nom)} — ${esc(r.periode_label)}</div>
+          <div class="log-dates">${fmtEuro(r.total)} · par ${esc(r.created_by||"—")}</div>
+          <span class="absence-statut" style="background:${meta.bg};color:${meta.color};border:1px solid ${meta.color}55;margin-top:5px;display:inline-block;">${statutAffiche==="Délai dépassé"?"⏰ ":statutAffiche==="Versée"?"✓ ":statutAffiche==="Refusée"?"✗ ":""}${statutAffiche}</span>
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${canManage && statut==="En attente" ? `
+            <button class="btn btn-sm btn-ghost" style="color:#52D98B;" onclick="changerStatutPaie('${r.id}','Versée')">✓ Versée</button>
+            <button class="btn btn-sm btn-ghost" style="color:#F08080;" onclick="changerStatutPaie('${r.id}','Refusée')">✗ Refusée</button>
+          ` : ""}
+          ${canManage && statut!=="En attente" ? `<button class="btn btn-sm btn-ghost" onclick="changerStatutPaie('${r.id}','En attente')">↩️ Remettre en attente</button>` : ""}
           <button class="btn btn-primary btn-sm" onclick="reprintPaie('${r.id}')">👁 Revoir</button>
           <button class="btn btn-danger btn-sm" onclick="supprimerPaie('${r.id}')">🗑</button>
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   } catch(e) { if(el) el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+async function changerStatutPaie(id, statut) {
+  try {
+    await sb(`fiches_paie?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({statut})});
+    logActivity("fiche_paie_statut", `Une fiche de paie est passée au statut : ${statut}`);
+    toast("✓ Statut mis à jour : "+statut);
+    loadPaieHistory();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 async function reprintPaie(id) {
   try {
