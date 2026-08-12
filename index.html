@@ -170,9 +170,6 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .maint-services-row{display:flex;justify-content:center;gap:10px;margin-top:20px;padding:0 24px;}
 .maint-svc-pill{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--text2);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:5px 11px;}
 .maint-svc-pill .dot{width:6px;height:6px;border-radius:50%;animation:maint-dot 1.8s ease-in-out infinite;}
-.maint-svc-pill.s1 .dot{background:#5DADE2;animation-delay:0s;}
-.maint-svc-pill.s2 .dot{background:#F0A840;animation-delay:0.3s;}
-.maint-svc-pill.s3 .dot{background:#F08080;animation-delay:0.6s;}
 @keyframes maint-dot{0%,100%{opacity:0.3;}50%{opacity:1;}}
 .page.active{display:block;}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#fff;margin-bottom:5px;display:flex;align-items:center;gap:12px;}
@@ -496,11 +493,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     </div>
     <div class="page-maint-title" style="font-size:19px;">Synchronisation en cours</div>
     <div class="page-maint-msg" id="maintenance-message">Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.</div>
-    <div class="maint-services-row">
-      <div class="maint-svc-pill s1"><span class="dot"></span>Sécurité</div>
-      <div class="maint-svc-pill s2"><span class="dot"></span>Dépannage</div>
-      <div class="maint-svc-pill s3"><span class="dot"></span>Rescue</div>
-    </div>
+    <div class="maint-services-row" id="maint-services-row"></div>
     <div style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Cette page se réactivera automatiquement dès la fin de la maintenance.</div>
   </div>
 </div>
@@ -4765,6 +4758,10 @@ async function fetchMaintenanceStatus() {
 function showMaintenanceScreen(message) {
   const msgEl = document.getElementById("maintenance-message");
   if(msgEl) msgEl.textContent = message || "Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.";
+  const rowEl = document.getElementById("maint-services-row");
+  if(rowEl) rowEl.innerHTML = SERVICES.map(s=>
+    `<div class="maint-svc-pill" style="--dot-color:${ACCENT_BY_SERVICE[s].main}"><span class="dot" style="background:${ACCENT_BY_SERVICE[s].main};animation-delay:${SERVICES.indexOf(s)*0.3}s;"></span>${svcLabel(s).replace(/^Dog\s+/,"")}</div>`
+  ).join("");
   document.getElementById("maintenance-screen")?.classList.add("show");
 }
 function hideMaintenanceScreen() {
