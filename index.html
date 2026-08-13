@@ -1802,6 +1802,11 @@ function myService() {
   return (currentCompte && currentCompte.service) || "securite";
 }
 function agentLabel(svc) { return AGENT_LABEL_BY_SERVICE[svc||myService()] || "Agent"; }
+function agentLabelPlural(svc) {
+  const words = agentLabel(svc).split(" ");
+  words[0] = words[0]+"s";
+  return words.join(" ");
+}
 const LICENCE_QUESTION_BY_SERVICE = {
   securite:  "Possédez-vous une licence d'agent de sécurité ?",
   depannage: "Possédez-vous une licence de dépanneur ?",
@@ -5022,13 +5027,13 @@ function updateTopbarBranding() {
   const licLbl = document.getElementById("lic-agent-label");
   if(licLbl) licLbl.textContent = "Nom "+duOuDeL+" *";
   const absSub = document.getElementById("absences-page-sub");
-  if(absSub) absSub.textContent = `Toutes les déclarations d'absence soumises par les ${agentLabel(svc).toLowerCase()}s.`;
+  if(absSub) absSub.textContent = `Toutes les déclarations d'absence soumises par les ${agentLabelPlural(svc).toLowerCase()}.`;
   const logsSub = document.getElementById("logs-page-sub");
-  if(logsSub) logsSub.textContent = `Historique complet des prises et fins de service de tous les ${agentLabel(svc).toLowerCase()}s.`;
+  if(logsSub) logsSub.textContent = `Historique complet des prises et fins de service de tous les ${agentLabelPlural(svc).toLowerCase()}.`;
   const evalSub = document.getElementById("eval-page-sub");
-  if(evalSub) evalSub.textContent = `Grille de notation standardisée pour les ${agentLabel(svc).toLowerCase()}s.`;
+  if(evalSub) evalSub.textContent = `Grille de notation standardisée pour les ${agentLabelPlural(svc).toLowerCase()}.`;
   const agentsMgmtTitle = document.getElementById("agents-manage-title");
-  if(agentsMgmtTitle) agentsMgmtTitle.textContent = `${agentLabel(svc)}s disponibles (menus déroulants)`;
+  if(agentsMgmtTitle) agentsMgmtTitle.textContent = `${agentLabelPlural(svc)} disponibles (menus déroulants)`;
   const newAgentInp = document.getElementById("new-agent-inp");
   if(newAgentInp) newAgentInp.placeholder = `Ajouter un ${agentLabel(svc).toLowerCase()}…`;
   const devisSoc = document.getElementById("devis-em-societe");
@@ -5199,7 +5204,7 @@ function renderPatrols() {
     <div class="stat-pill"><div class="stat-num" style="color:var(--blue-light)">${active}</div><div class="stat-lbl">Actives</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:#FF6B4A">${inter}</div><div class="stat-lbl">Interventions</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:var(--green-light)">${patrols.filter(p=>p.statut==="Disponible").length}</div><div class="stat-lbl">Disponibles</div></div>
-    <div class="stat-pill"><div class="stat-num" style="color:var(--text2)">${agents.length}</div><div class="stat-lbl">${agentLabel()}s listés</div></div>`;
+    <div class="stat-pill"><div class="stat-num" style="color:var(--text2)">${agents.length}</div><div class="stat-lbl">${agentLabelPlural()} listés</div></div>`;
 
   // Table
   const PATROL_DEFS_ALL = {
@@ -5379,7 +5384,7 @@ function updatePatrolStats() {
     <div class="stat-pill"><div class="stat-num" style="color:var(--blue-light)">${active}</div><div class="stat-lbl">Actives</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:#FF6B4A">${inter}</div><div class="stat-lbl">Interventions</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:var(--green-light)">${dispo}</div><div class="stat-lbl">Disponibles</div></div>
-    <div class="stat-pill"><div class="stat-num" style="color:var(--text2)">${agents.length}</div><div class="stat-lbl">${agentLabel()}s listés</div></div>`;
+    <div class="stat-pill"><div class="stat-num" style="color:var(--text2)">${agents.length}</div><div class="stat-lbl">${agentLabelPlural()} listés</div></div>`;
 }
 
 // ─── ABSENCES ──────────────────────────────────────────────────────
