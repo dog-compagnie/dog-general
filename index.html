@@ -822,10 +822,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
               </div>
             </div>
 
-            <div class="field-row-2">
-              <div class="field"><label>Téléphone</label><input id="ac-telephone" type="tel" placeholder="Ex : 06 12 34 56 78" oninput="this.value=fmtTel(this.value)"></div>
-              <div class="field"><label>Email</label><input id="ac-email" type="email" placeholder="Ex : nom@exemple.fr"></div>
-            </div>
+            <div class="field"><label>Téléphone</label><input id="ac-telephone" type="tel" placeholder="Ex : 06 12 34 56 78" oninput="this.value=fmtTel(this.value)"></div>
             <button class="btn btn-ghost btn-full" id="ac-save-contact-btn" style="display:none;margin-bottom:14px;" onclick="enregistrerContact()">💾 Enregistrer les coordonnées</button>
 
             <div id="ac-grades-list"></div>
@@ -7409,7 +7406,6 @@ function startNewPersonne() {
   document.getElementById("ac-nom").value = "";
   document.getElementById("ac-pin").value = "";
   document.getElementById("ac-telephone").value = "";
-  document.getElementById("ac-email").value = "";
   document.getElementById("ac-save-contact-btn").style.display = "none";
   document.getElementById("ac-grades-list").innerHTML = '<div style="font-size:11.5px;color:var(--text3);margin-bottom:6px;">Renseignez son identité et son PIN, puis ajoutez son premier grade ci-dessous — un seul clic suffit pour créer la personne et son grade en même temps.</div>';
   document.getElementById("ac-delete-btn").style.display = "none";
@@ -7425,7 +7421,6 @@ function openPersonne(id) {
   document.getElementById("ac-personne-title").textContent = `${p.prenom} ${p.nom}`;
   document.getElementById("ac-new-fields").style.display = "none";
   document.getElementById("ac-telephone").value = fmtTel(p.telephone||"");
-  document.getElementById("ac-email").value = p.email||"";
   document.getElementById("ac-save-contact-btn").style.display = "block";
   document.getElementById("ac-delete-btn").style.display = "block";
   renderGradesList(p);
@@ -7434,9 +7429,8 @@ function openPersonne(id) {
 async function enregistrerContact() {
   if(!currentPersonneId) return;
   const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
-  const email = document.getElementById("ac-email").value.trim()||null;
   try {
-    await sb(`agents_comptes?id=eq.${currentPersonneId}`,{method:"PATCH",body:JSON.stringify({telephone, email})});
+    await sb(`agents_comptes?id=eq.${currentPersonneId}`,{method:"PATCH",body:JSON.stringify({telephone})});
     toast("✓ Coordonnées enregistrées");
     await loadComptes();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
@@ -7466,14 +7460,13 @@ async function ajouterGrade() {
     const nom = formatNom(document.getElementById("ac-nom").value);
     const pin = document.getElementById("ac-pin").value.trim();
     const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
-    const email = document.getElementById("ac-email").value.trim()||null;
     if(!prenom||!nom||!pin){ toast("Remplissez prénom, nom et PIN.","#E74C3C"); return; }
     if(pin.length<4){ toast("Le PIN doit faire au moins 4 chiffres.","#E74C3C"); return; }
     if(allPersonnes.some(p=>p.pin===pin)){ toast("Ce PIN est déjà utilisé par quelqu'un d'autre.","#E74C3C"); return; }
     try {
       const r = await fetch(SB_URL+"/rest/v1/agents_comptes",{
         method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-        body:JSON.stringify({prenom,nom,pin,telephone,email})
+        body:JSON.stringify({prenom,nom,pin,telephone})
       });
       if(!r.ok) throw new Error(await r.text());
       const created = await r.json();
