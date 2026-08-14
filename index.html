@@ -2190,7 +2190,8 @@ async function enregistrerEvaluation() {
       body: JSON.stringify({
         agent_nom:agentNom, date_eval:dateEval, evaluateur:identityLabel(),
         criteres:criteresData, score_total:achieved, score_max:max,
-        pourcentage:pct, verdict, notes:document.getElementById("eval-notes").value.trim()||null
+        pourcentage:pct, verdict, notes:document.getElementById("eval-notes").value.trim()||null,
+        service: myService()
       })
     });
     if(!r.ok) throw new Error(await r.text());
@@ -5400,7 +5401,8 @@ async function soumettreAbsence() {
     const payload={
       agent_nom:nom, date_debut:debut, date_fin:fin,
       motif,
-      statut:"En attente"
+      statut:"En attente",
+      service: myService()
     };
     const r=await fetch(SB_URL+"/rest/v1/absences",{
       method:"POST",
@@ -5942,7 +5944,8 @@ async function soumettreAbsence() {
     const payload={
       agent_nom:nom, date_debut:debut, date_fin:fin,
       motif,
-      statut:"En attente"
+      statut:"En attente",
+      service: myService()
     };
     const r=await fetch(SB_URL+"/rest/v1/absences",{
       method:"POST",
