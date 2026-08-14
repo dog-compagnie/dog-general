@@ -823,7 +823,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
             </div>
 
             <div class="field-row-2">
-              <div class="field"><label>Téléphone</label><input id="ac-telephone" type="tel" placeholder="Ex : 06 12 34 56 78"></div>
+              <div class="field"><label>Téléphone</label><input id="ac-telephone" type="tel" placeholder="Ex : 06 12 34 56 78" oninput="this.value=fmtTel(this.value)"></div>
               <div class="field"><label>Email</label><input id="ac-email" type="email" placeholder="Ex : nom@exemple.fr"></div>
             </div>
             <button class="btn btn-ghost btn-full" id="ac-save-contact-btn" style="display:none;margin-bottom:14px;" onclick="enregistrerContact()">💾 Enregistrer les coordonnées</button>
@@ -7424,7 +7424,7 @@ function openPersonne(id) {
   document.getElementById("ac-personne-card").style.display = "block";
   document.getElementById("ac-personne-title").textContent = `${p.prenom} ${p.nom}`;
   document.getElementById("ac-new-fields").style.display = "none";
-  document.getElementById("ac-telephone").value = p.telephone||"";
+  document.getElementById("ac-telephone").value = fmtTel(p.telephone||"");
   document.getElementById("ac-email").value = p.email||"";
   document.getElementById("ac-save-contact-btn").style.display = "block";
   document.getElementById("ac-delete-btn").style.display = "block";
@@ -7433,7 +7433,7 @@ function openPersonne(id) {
 }
 async function enregistrerContact() {
   if(!currentPersonneId) return;
-  const telephone = document.getElementById("ac-telephone").value.trim()||null;
+  const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
   const email = document.getElementById("ac-email").value.trim()||null;
   try {
     await sb(`agents_comptes?id=eq.${currentPersonneId}`,{method:"PATCH",body:JSON.stringify({telephone, email})});
@@ -7465,7 +7465,7 @@ async function ajouterGrade() {
     const prenom = formatPrenom(document.getElementById("ac-prenom").value);
     const nom = formatNom(document.getElementById("ac-nom").value);
     const pin = document.getElementById("ac-pin").value.trim();
-    const telephone = document.getElementById("ac-telephone").value.trim()||null;
+    const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
     const email = document.getElementById("ac-email").value.trim()||null;
     if(!prenom||!nom||!pin){ toast("Remplissez prénom, nom et PIN.","#E74C3C"); return; }
     if(pin.length<4){ toast("Le PIN doit faire au moins 4 chiffres.","#E74C3C"); return; }
