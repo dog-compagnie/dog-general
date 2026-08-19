@@ -1333,18 +1333,11 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="page-title">Journal <span>d'activité</span></div>
     <div class="page-sub">Historique complet des actions : candidatures, absences, patrouilles, comptes.</div>
 
-    <div class="card" style="max-width:620px;">
-      <div class="card-hdr"><div class="card-hdr-title">🔗 Webhook Discord</div></div>
+    <div class="card" style="max-width:640px;">
+      <div class="card-hdr"><div class="card-hdr-title">🔗 Webhooks Discord</div></div>
       <div class="card-body">
-        <div class="page-sub" style="margin-bottom:14px;">Envoie automatiquement un message dans un salon Discord lors d'une nouvelle candidature, d'une absence déclarée, d'une demande de correction de prise de service, ou d'un rapport d'incident. ⚠️ Ce lien est visible par quiconque inspecte le code du site — ne le partagez jamais, et régénérez-le dans Discord en cas de doute sur un usage abusif.</div>
-        <div class="field">
-          <label>URL du webhook</label>
-          <input id="discord-webhook-input" placeholder="https://discord.com/api/webhooks/…">
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="enregistrerWebhookDiscord()">💾 Enregistrer</button>
-          <button class="btn btn-ghost" onclick="testerWebhookDiscord()">📨 Envoyer un test</button>
-        </div>
+        <div class="page-sub" style="margin-bottom:14px;">Envoie automatiquement un message dans un salon Discord lors d'une nouvelle candidature, d'une absence déclarée, d'une demande de correction de prise de service, ou d'un rapport d'incident. Chaque service a son propre webhook — une notification de Dog Rescue n'ira jamais dans le salon de Dog Sécurité. ⚠️ Ces liens sont visibles par quiconque inspecte le code du site — ne les partagez jamais, et régénérez-les dans Discord en cas de doute sur un usage abusif.</div>
+        <div id="discord-webhook-rows"></div>
       </div>
     </div>
 
@@ -1683,7 +1676,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="field-row-2">
       <div class="field"><label>Disponible dès</label><input id="ent-dispo" placeholder="Ex : immédiatement, semaine prochaine…"></div>
       <div class="field">
-        <label>Expérience dépannage</label>
+        <label id="ent-experience-label">Expérience dépannage</label>
         <select id="ent-experience">
           <option value="">— Sélectionner —</option>
           <option value="Aucune">Aucune</option>
@@ -1941,43 +1934,60 @@ async function logActivity(type, message, acteur) {
   } catch(e) { console.warn("logActivity error:", e.message); }
 }
 
-// ─── WEBHOOK DISCORD (Admin) ─────────────────────────────────────────
-let discordWebhookUrl = "";
+// ─── WEBHOOKS DISCORD PAR SERVICE (Admin) ────────────────────────────
+let discordWebhookUrls = {securite:"", depannage:"", rescue:"", balisage:""};
 async function loadDiscordWebhook() {
   try {
-    const rows = await sb("site_config?select=*&cle=eq.discord_webhook&limit=1");
-    discordWebhookUrl = (rows && rows[0] && rows[0].valeur) || "";
-    const inp = document.getElementById("discord-webhook-input");
-    if(inp) inp.value = discordWebhookUrl;
+    const rows = await sb("site_config?select=*&cle=in.(discord_webhook_securite,discord_webhook_depannage,discord_webhook_rescue,discord_webhook_balisage)");
+    SERVICES.forEach(s=>{
+      const row = (rows||[]).find(r=>r.cle==="discord_webhook_"+s);
+      discordWebhookUrls[s] = (row && row.valeur) || "";
+    });
+    renderDiscordWebhookRows();
   } catch(e) { console.warn("loadDiscordWebhook error:", e.message); }
 }
-async function enregistrerWebhookDiscord() {
-  const url = document.getElementById("discord-webhook-input").value.trim();
+function renderDiscordWebhookRows() {
+  const el = document.getElementById("discord-webhook-rows");
+  if(!el) return;
+  el.innerHTML = SERVICES.map(s=>`
+    <div class="field" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
+      <label>${SERVICE_ICONS[s]} ${svcLabel(s)}</label>
+      <input id="discord-webhook-input-${s}" placeholder="https://discord.com/api/webhooks/…" value="${esc(discordWebhookUrls[s]||"")}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="enregistrerWebhookDiscord('${s}')">💾 Enregistrer</button>
+        <button class="btn btn-ghost btn-sm" onclick="testerWebhookDiscord('${s}')">📨 Envoyer un test</button>
+      </div>
+    </div>`).join("");
+}
+async function enregistrerWebhookDiscord(svc) {
+  const url = document.getElementById("discord-webhook-input-"+svc).value.trim();
+  const cle = "discord_webhook_"+svc;
   try {
-    const existing = await sb("site_config?select=id&cle=eq.discord_webhook&limit=1");
+    const existing = await sb(`site_config?select=id&cle=eq.${cle}&limit=1`);
     if(existing && existing.length) {
       await sb(`site_config?id=eq.${existing[0].id}`, {method:"PATCH", body:JSON.stringify({valeur:url||null})});
     } else {
       const r = await fetch(SB_URL+"/rest/v1/site_config", {
         method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
-        body: JSON.stringify({cle:"discord_webhook", valeur:url||null})
+        body: JSON.stringify({cle, valeur:url||null})
       });
       if(!r.ok) throw new Error(await r.text());
     }
-    discordWebhookUrl = url;
-    logActivity("webhook_maj", url ? "URL du webhook Discord mise à jour" : "Webhook Discord désactivé");
-    toast(url ? "✓ Webhook Discord enregistré" : "✓ Webhook Discord désactivé");
+    discordWebhookUrls[svc] = url;
+    logActivity("webhook_maj", `URL du webhook Discord ${svcLabel(svc)} ${url?"mise à jour":"désactivée"}`);
+    toast(url ? "✓ Webhook "+svcLabel(svc)+" enregistré" : "✓ Webhook "+svcLabel(svc)+" désactivé");
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
-async function testerWebhookDiscord() {
-  if(!discordWebhookUrl) { toast("Aucun webhook enregistré.","#E74C3C"); return; }
-  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+svcLabel(myService())+".", parseInt(ACCENT_BY_SERVICE[myService()].main.slice(1),16));
+async function testerWebhookDiscord(svc) {
+  if(!discordWebhookUrls[svc]) { toast("Aucun webhook enregistré pour "+svcLabel(svc)+".","#E74C3C"); return; }
+  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+svcLabel(svc)+".", parseInt(ACCENT_BY_SERVICE[svc].main.slice(1),16), svc);
   toast("✓ Message de test envoyé (vérifiez le salon Discord)");
 }
-async function sendDiscordWebhook(title, description, color) {
-  if(!discordWebhookUrl) return;
+async function sendDiscordWebhook(title, description, color, svc) {
+  const url = discordWebhookUrls[svc||myService()];
+  if(!url) return;
   try {
-    await fetch(discordWebhookUrl, {
+    await fetch(url, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ embeds:[{ title, description, color, timestamp:new Date().toISOString() }] })
@@ -5543,7 +5553,7 @@ async function soumettreCandidat() {
     ynState={};
     document.querySelectorAll(".yn-btn").forEach(b=>b.classList.remove("active"));
     logActivity("candidature_nouvelle", `Nouvelle candidature de ${prenom} ${nom} (${svcLabel(serviceChoisi)})`, `${prenom} ${nom} (candidat)`);
-    sendDiscordWebhook("📨 Nouvelle candidature", `**${prenom} ${nom}**\nService : ${svcLabel(serviceChoisi)}\nDiscord : ${discord}${payload.age?"\nÂge : "+payload.age+" ans":""}`, 0x5DADE2);
+    sendDiscordWebhook("📨 Nouvelle candidature", `**${prenom} ${nom}**\nService : ${svcLabel(serviceChoisi)}\nDiscord : ${discord}${payload.age?"\nÂge : "+payload.age+" ans":""}`, 0x5DADE2, serviceChoisi);
     syncBadge("✓ Envoyé","#4A7F5E");
     if(role==="candidat" && currentCompte && newId) {
       await sb(`candidats_comptes?id=eq.${currentCompte.id}`, {method:"PATCH", body:JSON.stringify({prenom, nom, service:serviceChoisi, candidature_id:newId})});
@@ -5680,7 +5690,7 @@ async function sendCandidatMessage() {
     } catch(e2) { console.warn("msg_count increment failed:", e2.message); }
     inp.value="";
     loadCandidatMessages(currentCompte.candidature_id);
-    sendDiscordWebhook("💬 Nouveau message de candidature", `**${((currentCompte.prenom||"")+" "+(currentCompte.nom||"")).trim()||"Candidat"}** a écrit :\n"${texte}"`, 0x7289DA);
+    sendDiscordWebhook("💬 Nouveau message de candidature", `**${((currentCompte.prenom||"")+" "+(currentCompte.nom||"")).trim()||"Candidat"}** a écrit :\n"${texte}"`, 0x7289DA, currentCompte.service||myService());
   } catch(e) { toast("Erreur lors de l'envoi du message : "+e.message,"#E74C3C"); }
 }
 
@@ -5871,6 +5881,9 @@ async function openEntretien(candidatureId) {
   document.getElementById("ent-meta").textContent = "";
 
   const cRow = candidatures.find(x=>String(x.id)===String(candidatureId));
+  const expLbl = document.getElementById("ent-experience-label");
+  const EXP_DOMAIN = {securite:"sécurité", depannage:"dépannage", rescue:"secours", balisage:"balisage"};
+  if(expLbl) expLbl.textContent = "Expérience "+(EXP_DOMAIN[cRow?.service||myService()]||"");
   if(cRow) {
     document.getElementById("ent-prenom-nom").value = `${cRow.prenom||""} ${cRow.nom||""}`.trim();
     if(cRow.age) document.getElementById("ent-age").value = cRow.age;
