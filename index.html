@@ -728,7 +728,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
         <div class="card-body">
           <div id="cand-chat-thread" style="max-height:320px;overflow-y:auto;margin-bottom:12px;"></div>
           <div id="cand-chat-input-row" style="display:flex;gap:8px;">
-            <input id="cand-chat-input" placeholder="Écrivez un message…" style="flex:1;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:8px;color:#fff;font-size:13px;padding:9px 12px;" onkeydown="if(event.key==='Enter')sendCandidatMessage()">
+            <textarea id="cand-chat-input" placeholder="Écrivez un message… (Ctrl+Entrée pour envoyer)" rows="1" style="flex:1;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:8px;color:#fff;font-size:13px;padding:9px 12px;resize:none;max-height:120px;font-family:inherit;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();sendCandidatMessage();}"></textarea>
             <button class="btn btn-primary" onclick="sendCandidatMessage()">Envoyer</button>
           </div>
           <div id="cand-chat-closed-notice" style="display:none;font-size:12px;color:var(--text3);font-style:italic;text-align:center;">La messagerie est fermée pour cette candidature.</div>
@@ -1657,7 +1657,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
     <div class="alert-popup-title" style="text-align:center;">💬 Échange avec le candidat</div>
     <div id="staff-chat-thread" style="max-height:320px;overflow-y:auto;margin-bottom:12px;"></div>
     <div style="display:flex;gap:8px;">
-      <input id="staff-chat-input" placeholder="Répondre au candidat…" style="flex:1;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:8px;color:#fff;font-size:13px;padding:9px 12px;" onkeydown="if(event.key==='Enter')sendStaffMessage()">
+      <textarea id="staff-chat-input" placeholder="Répondre au candidat… (Ctrl+Entrée pour envoyer)" rows="1" style="flex:1;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:8px;color:#fff;font-size:13px;padding:9px 12px;resize:none;max-height:120px;font-family:inherit;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();sendStaffMessage();}"></textarea>
       <button class="btn btn-primary" onclick="sendStaffMessage()">Envoyer</button>
     </div>
     <button class="btn btn-ghost btn-full" onclick="closeCandChat()" style="margin-top:12px;">Fermer</button>
@@ -4465,7 +4465,7 @@ function getNavConfig() {
     {page:"absences-gestion", icon:"📋", label:"Gestion des absences",  roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-abs"},
     {page:"logs-service",     icon:"📊", label:"Logs de service",       roles:["responsable","pdg","admin"], section:"Gestion"},
     {page:"candidatures",     icon:"📨", label:"Candidatures reçues",   roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-cand"},
-    {page:"evaluations",      icon:"🎯", label:`Évaluations ${agentLbl}s`, roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-eval"},
+    {page:"evaluations",      icon:"🎯", label:`Évaluations ${agentLbl}s`, roles:(currentCompte&&currentCompte.formateur)?["responsable","pdg","admin","agent"]:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-eval"},
     {page:"doc-rh",           icon:"🗂️", label:"Documents RH",          roles:["responsable","pdg","admin"], section:"Gestion"},
     {page:"devis",            icon:"🧾", label:"Devis clients",         roles:["pdg","admin"], section:"Gestion"},
     {page:"effectifs",        icon:"👥", label:"Gestion des effectifs", roles:["responsable","pdg","admin"], section:"Gestion"}
@@ -5138,6 +5138,17 @@ async function confirmLogin() {
         }
         currentCompte = data[0];
       } else {
+        // Vérifie que ce PIN n'est pas déjà utilisé par un compte agent existant,
+        // sans quoi deux personnes différentes pourraient partager le même code.
+        const agentCheck = await fetch(SB_URL+"/rest/v1/agents_comptes?pin=eq."+encodeURIComponent(pin)+"&select=id", {headers:H, mode:"cors"});
+        const agentMatch = await agentCheck.json();
+        if(agentMatch && agentMatch.length) {
+          err.textContent="Ce code PIN est déjà utilisé. Choisissez-en un autre.";
+          err.style.display="block";
+          document.getElementById("pin-input").value="";
+          document.getElementById("pin-input").focus();
+          return;
+        }
         const cr = await fetch(SB_URL+"/rest/v1/candidats_comptes", {
           method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
           body: JSON.stringify({pin})
@@ -5224,6 +5235,17 @@ function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").repla
 function fmtUpd(ts){ if(!ts) return "—"; const d=new Date(ts); return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); }
 
 function renderPatrols() {
+  // Si on est en train d'écrire dans un champ Véhicule ou Notes, on reporte le rafraîchissement
+  // du tableau au prochain cycle plutôt que d'effacer ce qui n'a pas encore été validé.
+  const activeEl = document.activeElement;
+  const tableWrap = document.getElementById("patrol-table-wrap");
+  if(activeEl && tableWrap && tableWrap.contains(activeEl) &&
+     (activeEl.classList.contains("vehicle-inp") || activeEl.classList.contains("notes-inp"))) {
+    clearTimeout(window._patrolsRenderRetry);
+    window._patrolsRenderRetry = setTimeout(renderPatrols, 4000);
+    return;
+  }
+
   // Stats
   const active  = patrols.filter(p=>["Disponible","Intervention","Convoi","Formation"].includes(p.statut)).length;
   const inter   = patrols.filter(p=>p.statut==="Intervention").length;
@@ -5695,7 +5717,7 @@ async function sendCandidatMessage() {
       const cur = (rows && rows[0] && rows[0].msg_count) || 0;
       await sb(`candidatures?id=eq.${currentCompte.candidature_id}`, {method:"PATCH", body:JSON.stringify({msg_count: cur+1})});
     } catch(e2) { console.warn("msg_count increment failed:", e2.message); }
-    inp.value="";
+    inp.value=""; inp.style.height="auto";
     loadCandidatMessages(currentCompte.candidature_id);
     sendDiscordWebhook("💬 Nouveau message de candidature", `**${((currentCompte.prenom||"")+" "+(currentCompte.nom||"")).trim()||"Candidat"}** a écrit :\n"${texte}"`, 0x7289DA, currentCompte.service||myService());
   } catch(e) { toast("Erreur lors de l'envoi du message : "+e.message,"#E74C3C"); }
@@ -5739,7 +5761,7 @@ async function sendStaffMessage() {
       body: JSON.stringify({candidature_id:currentCandChatId, auteur:identityLabel(), auteur_role:specialRoleLabel(), is_staff:true, message:texte})
     });
     if(!r.ok) throw new Error(await r.text());
-    inp.value="";
+    inp.value=""; inp.style.height="auto";
     loadStaffChat(currentCandChatId);
   } catch(e) { toast("Erreur lors de l'envoi du message : "+e.message,"#E74C3C"); }
 }
@@ -7295,6 +7317,11 @@ function renderHierarchie(grades) {
           <input type="checkbox" ${g.adjoint?"checked":""} onchange="togglePdgAdjoint('${g.id}', this.checked, '${nomComplet}')" style="width:13px;height:13px;accent-color:#48C9B0;">
           🏅 PDG Adjoint
         </label>` : "";
+      const formateurToggle = (g.role==="agent" && canManage) ? `
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;color:var(--text2);margin-top:10px;cursor:pointer;">
+          <input type="checkbox" ${g.formateur?"checked":""} onchange="toggleFormateur('${g.id}', this.checked, '${nomComplet}')" style="width:13px;height:13px;accent-color:#5DADE2;">
+          🎯 Formateur
+        </label>` : (g.role==="agent" && g.formateur ? `<div style="font-size:10px;font-weight:700;color:#5DADE2;margin-top:8px;">🎯 Formateur</div>` : "");
       const cdrTag = (isCDR && canManage) ? `<div style="font-size:10px;font-weight:800;color:#F0A840;margin-bottom:6px;">🏛 Comité de Direction</div>` : "";
       const roleDisplay = canManage
         ? roleSelect(g)
@@ -7309,6 +7336,7 @@ function renderHierarchie(grades) {
         ${roleDisplay}
         ${generalToggle}
         ${adjointToggle}
+        ${formateurToggle}
       </div>`;
     }).join("");
     return `${connector}<div class="hier-section">
@@ -7347,6 +7375,19 @@ async function togglePdgAdjoint(gradeId, checked, nomComplet) {
     await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({adjoint:checked})});
     logActivity("hierarchie_adjoint", `${nomComplet.trim()} ${checked?"devient PDG Adjoint":"n'est plus PDG Adjoint"}`);
     toast(checked ? "🏅 "+nomComplet.trim()+" est désormais PDG Adjoint" : "✓ Statut retiré pour "+nomComplet.trim());
+    await loadComptes();
+    loadHierarchie();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function toggleFormateur(gradeId, checked, nomComplet) {
+  try {
+    await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({formateur:checked})});
+    logActivity("hierarchie_formateur", `${nomComplet.trim()} ${checked?"devient Formateur":"n'est plus Formateur"}`);
+    toast(checked ? "🎯 "+nomComplet.trim()+" est désormais Formateur" : "✓ Statut retiré pour "+nomComplet.trim());
+    if(currentCompte && String(currentCompte.id)===String(gradeId)) {
+      currentCompte.formateur = checked;
+      renderSidenav();
+    }
     await loadComptes();
     loadHierarchie();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
@@ -7483,6 +7524,10 @@ async function ajouterGrade() {
     if(!prenom||!nom||!pin){ toast("Remplissez prénom, nom et PIN.","#E74C3C"); return; }
     if(pin.length<4){ toast("Le PIN doit faire au moins 4 chiffres.","#E74C3C"); return; }
     if(allPersonnes.some(p=>p.pin===pin)){ toast("Ce PIN est déjà utilisé par quelqu'un d'autre.","#E74C3C"); return; }
+    try {
+      const candCheck = await sb(`candidats_comptes?pin=eq.${encodeURIComponent(pin)}&promu=eq.false&select=id`);
+      if(candCheck && candCheck.length) { toast("Ce PIN est déjà utilisé par un candidat en attente de réponse.","#E74C3C"); return; }
+    } catch(e) {}
     try {
       const r = await fetch(SB_URL+"/rest/v1/agents_comptes",{
         method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
