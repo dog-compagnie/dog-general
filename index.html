@@ -1208,6 +1208,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
               <div class="field"><label>Nombre de victimes</label><input id="bil-nb-victimes" type="number" min="1" value="1"></div>
             </div>
             <div class="field"><label>Nature de l'intervention</label><input id="bil-nature" placeholder="Ex : AVP, malaise, chute…" oninput="updateSmsPreview()"></div>
+            <div class="field"><label>Lieu d'intervention</label><input id="bil-lieu" placeholder="Ex : Route de la Corniche, angle rue des Pins" oninput="updateSmsPreview()"></div>
             <div class="field-row-2">
               <div class="field"><label>Moyen affecté</label><input id="bil-moyen" placeholder="Ex : Dog 01" oninput="updateSmsPreview()"></div>
               <div class="field"><label>Orientation espace/temps</label><input id="bil-orientation" placeholder="Ex : Bien orientée / Désorientée" oninput="updateSmsPreview()"></div>
@@ -1262,6 +1263,7 @@ tbody tr:hover{background:rgba(93,173,226,0.045);}
               </div>
             </div>
             <div class="field"><label>Notes / Résumé</label><textarea id="bil-notes" rows="4" placeholder="Résumé de la prise en charge, gestes effectués, devenir de la victime…"></textarea></div>
+            <div class="field"><label>CH d'affectation</label><input id="bil-ch" placeholder="Ex : CH de Perrytonia — renseigné après retour des pompiers"></div>
           </div>
         </div>
 
@@ -3701,8 +3703,8 @@ async function nouveauBilan(confirmFirst) {
   currentBilanId = null;
   currentPatientLink = null;
   ["bil-nom","bil-prenom","bil-naissance","bil-poids","bil-taille","bil-groupe","bil-allergie",
-   "bil-nature","bil-moyen","bil-orientation","bil-douleurs","bil-symptomes","bil-constantes",
-   "bil-antecedents","bil-traitement","bil-maladie-chronique","bil-notes"].forEach(id=>{
+   "bil-nature","bil-lieu","bil-moyen","bil-orientation","bil-douleurs","bil-symptomes","bil-constantes",
+   "bil-antecedents","bil-traitement","bil-maladie-chronique","bil-notes","bil-ch"].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value="";
   });
   document.getElementById("bil-nb-victimes").value = 1;
@@ -3718,6 +3720,7 @@ function updateSmsPreview() {
   const val = id => (document.getElementById(id)?.value||"").trim();
   const unite = val("bil-moyen") || "—";
   const nature = val("bil-nature") || "—";
+  const lieu = val("bil-lieu") || "—";
   const identite = `${val("bil-prenom")} ${val("bil-nom")}`.trim() || "—";
   const douleur = val("bil-douleurs") || "Aucune";
   const orientation = val("bil-orientation") || "—";
@@ -3726,7 +3729,7 @@ function updateSmsPreview() {
   const h = val("bil-antecedents") || "Aucun";
   const t = val("bil-traitement") || "Aucun";
   const a = val("bil-allergie") || "Aucune";
-  const msg = `Dog Rescue // ${unite} // ${nature} // ${identite} // Douleur : ${douleur} // Orientation E/T : ${orientation} // Symptômes : ${symptomes} // MHTA : M: ${m} ; H: ${h} ; T: ${t} ; A: ${a} // En attente de régulation.`;
+  const msg = `Dog Rescue // ${unite} // ${nature} // Lieu : ${lieu} // ${identite} // Douleur : ${douleur} // Orientation E/T : ${orientation} // Symptômes : ${symptomes} // MHTA : M: ${m} ; H: ${h} ; T: ${t} ; A: ${a} // En attente de régulation.`;
   const el = document.getElementById("bil-sms-preview");
   if(el) el.textContent = msg;
 }
@@ -3755,6 +3758,7 @@ function collectBilanData() {
     groupe_sanguin: document.getElementById("bil-groupe").value.trim(),
     allergie: document.getElementById("bil-allergie").value.trim(),
     nature_intervention: document.getElementById("bil-nature").value.trim(),
+    lieu_intervention: document.getElementById("bil-lieu").value.trim(),
     nombre_victimes: document.getElementById("bil-nb-victimes").value.trim(),
     moyen_affecte: document.getElementById("bil-moyen").value.trim(),
     orientation: document.getElementById("bil-orientation").value.trim(),
@@ -3770,6 +3774,7 @@ function collectBilanData() {
     drogue: ynState.drogue==="O",
     tabac: ynState.tabac==="O",
     notes: document.getElementById("bil-notes").value.trim(),
+    ch_affectation: document.getElementById("bil-ch").value.trim(),
   };
 }
 
@@ -3883,6 +3888,7 @@ function buildBilanInner(d) {
     <div class="bil-section-title">Intervention</div>
     <div class="bil-grid">
       <div class="full"><div class="lbl">Nature de l'intervention</div><div class="val">${escHtml(d.nature_intervention)||"—"}</div></div>
+      <div class="full"><div class="lbl">Lieu d'intervention</div><div class="val">${escHtml(d.lieu_intervention)||"—"}</div></div>
       <div><div class="lbl">Nombre de victimes</div><div class="val">${escHtml(d.nombre_victimes)||"—"}</div></div>
       <div><div class="lbl">Moyen affecté</div><div class="val">${escHtml(d.moyen_affecte)||"—"}</div></div>
       <div class="full"><div class="lbl">Orientation espace/temps</div><div class="val">${escHtml(d.orientation)||"—"}</div></div>
@@ -3902,6 +3908,7 @@ function buildBilanInner(d) {
       <div><div class="lbl">Tabac</div><div class="val">${oui(d.tabac)}</div></div>
     </div>
     ${d.notes ? `<div class="bil-section-title">Notes / Résumé</div><div style="font-size:12px;line-height:1.6;">${escHtml(d.notes).replace(/\n/g,"<br>")}</div>` : ""}
+    ${d.ch_affectation ? `<div class="bil-section-title">Devenir</div><div class="bil-grid"><div class="full"><div class="lbl">CH d'affectation</div><div class="val">${escHtml(d.ch_affectation)}</div></div></div>` : ""}
     <div class="bil-footer">${escHtml(d.reference)} — Dog Rescue — Bilan rédigé par ${escHtml(auteur)} le ${new Date().toLocaleDateString("fr-FR")}</div>
   </div>`;
   return {css, html};
