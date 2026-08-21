@@ -1916,6 +1916,7 @@ function journalMeta(type) { return JOURNAL_TYPES[type] || {color:"#7F9AB0", lab
 function specialRoleLabel() {
   if(role==="responsable" && currentCompte && currentCompte.general) return "Responsable Général";
   if(role==="pdg" && currentCompte && currentCompte.adjoint) return "PDG Adjoint";
+  if(role==="agent" && currentCompte && currentCompte.formateur) return agentLabel(currentCompte.service)+" (Formateur)";
   if(role==="agent") return agentLabel(currentCompte && currentCompte.service);
   return ROLE_LABELS[role]||role;
 }
@@ -7270,6 +7271,7 @@ const HIER_TIER_META = {
   pdg_adjoint: {icon:"🏅", label:"PDG Adjoint",          gradient:"linear-gradient(135deg,#16A085,#117A65)", accent:"#48C9B0"},
   general:     {icon:"⭐", label:"Responsable Général",  gradient:"linear-gradient(135deg,#D4900A,#A6720A)", accent:"#F0A840"},
   responsable: {icon:"🎖", label:"Responsables",          gradient:"linear-gradient(135deg,#7D3C98,#5B2C74)", accent:"#C8A0E8"},
+  formateur:   {icon:"🎯", label:"Formateurs",            gradient:"linear-gradient(135deg,#1F618D,#154360)", accent:"#5DADE2"},
   agent:       {icon:"🪪", label:"Agents",                 gradient:"linear-gradient(135deg,#2980B9,#1A5276)", accent:"#5DADE2"},
 };
 function renderHierarchie(grades) {
@@ -7291,12 +7293,13 @@ function renderHierarchie(grades) {
     pdg_adjoint: visibles.filter(g=>g.role==="pdg" && g.adjoint),
     general:     visibles.filter(g=>g.role==="responsable" && g.general),
     responsable: visibles.filter(g=>g.role==="responsable" && !g.general),
-    agent:       visibles.filter(g=>g.role==="agent"),
+    formateur:   visibles.filter(g=>g.role==="agent" && g.formateur),
+    agent:       visibles.filter(g=>g.role==="agent" && !g.formateur),
   };
   const byName = (a,b)=>`${a.prenom||""} ${a.nom||""}`.trim().localeCompare(`${b.prenom||""} ${b.nom||""}`.trim(),"fr",{sensitivity:"base"});
 
   let lastRendered = false;
-  el.innerHTML = ["pdg","pdg_adjoint","general","responsable","agent"].map(tierKey=>{
+  el.innerHTML = ["pdg","pdg_adjoint","general","responsable","formateur","agent"].map(tierKey=>{
     const membres = groups[tierKey].sort(byName);
     if(!membres.length) return "";
     const meta = HIER_TIER_META[tierKey];
