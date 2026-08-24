@@ -2335,11 +2335,20 @@ async function ouvrirLecteursNote(noteId) {
     const persons = Object.values(byPerson);
     const lu = persons.filter(p=>p.grades.some(g=>vus[String(g.id)]!==undefined));
     const nonLu = persons.filter(p=>!p.grades.some(g=>vus[String(g.id)]!==undefined));
-    const rowHtml = p => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-      <span style="font-size:12px;">${p.grades.map(g=>SERVICE_ICONS[g.service]||"").join("")}</span>
+    const rowHtml = p => {
+      const roleGroups = {};
+      p.grades.forEach(g=>{
+        const label = accountRoleLabel(g);
+        (roleGroups[label] = roleGroups[label]||[]).push(g.service);
+      });
+      const rolesLine = Object.entries(roleGroups)
+        .map(([label, services])=>`${esc(label)} ${services.map(s=>SERVICE_ICONS[s]||"").join("")}`)
+        .join(" · ");
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;">
       <span style="font-size:12.5px;color:var(--text);">${esc(p.prenom)} ${esc(p.nom)}</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${p.grades.map(g=>esc(accountRoleLabel(g))).join(", ")}</span>
+      <span style="font-size:10px;color:var(--text3);text-align:right;">${rolesLine}</span>
     </div>`;
+    };
     body.innerHTML = `
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">"${esc(n.titre)}" — ${persons.length} destinataire(s) au total</div>
       <div style="font-size:11px;font-weight:700;color:#52D98B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">✓ Ont lu (${lu.length})</div>
@@ -5797,10 +5806,16 @@ function confirmCrop() {
   const canvas = document.createElement("canvas");
   canvas.width = targetW; canvas.height = targetH;
   const ctx = canvas.getContext("2d");
-  const sx = -cropState.offsetX / cropState.scale;
-  const sy = -cropState.offsetY / cropState.scale;
-  const sw = fw / cropState.scale;
-  const sh = fh / cropState.scale;
+  let sx = -cropState.offsetX / cropState.scale;
+  let sy = -cropState.offsetY / cropState.scale;
+  let sw = fw / cropState.scale;
+  let sh = fh / cropState.scale;
+  // Sécurité anti-artefact : le rectangle source ne doit jamais déborder de l'image réelle,
+  // sinon un pixel d'arrondi en bord de cadre laisse une frange irrégulière une fois agrandi.
+  sx = Math.max(0, Math.min(sx, cropState.naturalW - sw));
+  sy = Math.max(0, Math.min(sy, cropState.naturalH - sh));
+  sw = Math.min(sw, cropState.naturalW - sx);
+  sh = Math.min(sh, cropState.naturalH - sy);
   ctx.drawImage(cropState.cropImg, sx, sy, sw, sh, 0, 0, targetW, targetH);
   const field = cropState.field;
   landingEditorDraft[field] = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
