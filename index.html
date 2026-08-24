@@ -71,8 +71,8 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .alert-popup-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:12px;}
 .alert-popup-message{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;}
 /* ═══════════════════════ PAGE D'ACCUEIL ═══════════════════════ */
-#screen-landing{position:fixed;inset:0;overflow-y:auto;background:#080b10;z-index:400;}
-.lp-hero{position:relative;min-height:100vh;display:flex;flex-direction:column;background-size:cover;background-position:center;background-color:#0A0E14;}
+#screen-landing{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;background:#080b10;z-index:400;}
+.lp-hero{position:relative;min-height:100vh;display:flex;flex-direction:column;background-size:cover;background-position:center;background-color:#0A0E14;overflow:hidden;}
 .lp-hero-overlay{position:absolute;inset:-15%;background:
   radial-gradient(ellipse 55% 50% at 15% 20%, rgba(41,128,185,0.45) 0%, transparent 62%),
   radial-gradient(ellipse 50% 45% at 88% 12%, rgba(211,84,0,0.36) 0%, transparent 58%),
@@ -480,26 +480,29 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .compte-pin{font-size:11px;color:var(--text3);font-family:monospace;letter-spacing:2px;}
 
 /* HIÉRARCHIE */
-.hier-connector{width:2px;height:18px;background:linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(var(--accent-rgb),0.4), rgba(255,255,255,0.02));margin:0 auto;}
-.hier-section{margin-bottom:6px;}
-.hier-section-hdr{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
+.hier-connector{width:2px;height:12px;background:linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(var(--accent-rgb),0.4), rgba(255,255,255,0.02));margin:0 auto;}
+.hier-section{margin-bottom:2px;}
+.hier-section-hdr{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:9px;}
 .hier-section-hdr .badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 0 4px rgba(255,255,255,0.035),0 4px 12px -4px rgba(0,0,0,0.5);flex-shrink:0;}
 .hier-section-hdr .label{font-family:var(--font-display);font-size:13px;font-weight:700;color:#fff;letter-spacing:0.01em;}
 .hier-section-hdr .count{background:rgba(255,255,255,0.08);color:var(--text2);font-size:10px;padding:2px 9px;border-radius:10px;font-weight:700;border:1px solid rgba(255,255,255,0.06);}
-.hier-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:18px;max-width:1000px;margin-left:auto;margin-right:auto;}
+.hier-grid{display:grid;grid-template-columns:repeat(auto-fit,320px);justify-content:center;gap:7px;margin-bottom:12px;}
 .hier-row{display:flex;align-items:center;gap:11px;background:linear-gradient(120deg,rgba(32,42,58,0.8),rgba(15,20,29,0.88));border:1px solid var(--border);border-left:3px solid var(--tier-accent, var(--blue));border-radius:11px;padding:8px 12px;text-align:left;transition:transform 0.18s cubic-bezier(.2,.8,.3,1),box-shadow 0.18s,border-color 0.18s;box-shadow:0 6px 16px -10px rgba(0,0,0,0.55);}
 .hier-row:hover{transform:translateY(-2px) translateX(1px);border-left-color:var(--tier-accent, #5DADE2);box-shadow:0 10px 22px -10px var(--tier-accent, #5DADE2),0 6px 16px -10px rgba(0,0,0,0.55);}
 .hier-row.tier-pdg{border-left-width:4px;}
 .hier-row-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:12.5px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,255,255,0.04),0 4px 10px -2px rgba(0,0,0,0.5);}
 .hier-row-avatar.tier-pdg-av{width:42px;height:42px;font-size:14px;}
 .hier-row-info{min-width:0;flex:1;}
-.hier-row-name{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hier-row-name{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:#fff;white-space:normal;overflow-wrap:break-word;line-height:1.3;}
 .hier-row-sub{font-size:10px;color:var(--text3);margin-top:1px;}
 .hier-row-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .hier-toggle-btn{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;filter:grayscale(1);opacity:0.5;}
 .hier-toggle-btn:hover{background:rgba(255,255,255,0.09);filter:grayscale(0.4);opacity:0.8;}
-.hier-toggle-btn.active{filter:grayscale(0);opacity:1;background:rgba(240,168,64,0.16);border-color:rgba(240,168,64,0.4);}
-.hier-role-select{background:linear-gradient(165deg,rgba(21,28,40,0.85),rgba(9,13,20,0.9));border:1.5px solid rgba(93,173,226,0.2);border-radius:8px;color:#fff;font-size:10.5px;padding:5px 6px;text-align:center;font-weight:600;transition:border-color 0.18s,box-shadow 0.18s;max-width:108px;}
+.hier-toggle-btn.active{filter:grayscale(0);opacity:1;}
+.hier-toggle-btn.tg-general.active{background:rgba(240,168,64,0.18);border-color:rgba(240,168,64,0.45);}
+.hier-toggle-btn.tg-adjoint.active{background:rgba(72,201,176,0.18);border-color:rgba(72,201,176,0.45);}
+.hier-toggle-btn.tg-formateur.active{background:rgba(79,216,224,0.18);border-color:rgba(79,216,224,0.45);}
+.hier-role-select{background:linear-gradient(165deg,rgba(21,28,40,0.85),rgba(9,13,20,0.9));border:1.5px solid rgba(93,173,226,0.2);border-radius:8px;color:#fff;font-size:10.5px;padding:5px 4px;text-align:center;font-weight:600;transition:border-color 0.18s,box-shadow 0.18s;max-width:92px;}
 .hier-role-select:focus{outline:none;border-color:rgba(var(--accent-rgb),0.7);box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.18);}
 
 /* GESTION DES EFFECTIFS */
@@ -631,7 +634,8 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="alert-popup-title">Message de l'administration</div>
     <div class="alert-popup-message" id="alert-popup-message"></div>
     <button class="btn btn-primary btn-full" onclick="refreshFromAlert()">🔄 Rafraîchir la page</button>
-    <button class="btn btn-ghost btn-full" onclick="dismissAlertPopup()" style="margin-top:8px;">Fermer</button>
+    <button class="btn btn-ghost btn-full" onclick="dismissAlertPopup()" style="margin-top:8px;">Fermer (pour moi uniquement)</button>
+    <button class="btn btn-danger btn-full" id="alert-popup-admin-deactivate" style="margin-top:8px;display:none;" onclick="desactiverAlerteDepuisPopup()">🗑 Désactiver définitivement pour tout le monde</button>
   </div>
 </div>
 
@@ -1817,6 +1821,39 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     </div>
   </div>
 
+  <!-- PAGE NOTES DE SERVICE -->
+  <div class="page" id="page-notes-service">
+    <div class="page-title">Notes <span>de service</span></div>
+    <div class="page-sub">Consignes, informations importantes et bilans de réunion.</div>
+
+    <div class="card" id="ns-create-card" style="max-width:760px;display:none;">
+      <div class="card-hdr"><div class="card-hdr-title">✏️ Nouvelle publication</div></div>
+      <div class="card-body">
+        <div class="field-row-2">
+          <div class="field">
+            <label>Visibilité</label>
+            <select id="ns-visibilite">
+              <option value="tous">👁 Tout le monde</option>
+              <option value="responsables">🔒 Responsables et PDG uniquement</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Portée</label>
+            <select id="ns-scope">
+              <option value="service">Ce service uniquement</option>
+              <option value="all">🌐 Tous les services</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Titre</label><input id="ns-titre" placeholder="Ex : Nouvelle procédure de prise de service"></div>
+        <div class="field"><label>Contenu</label><textarea id="ns-contenu" rows="6" placeholder="Rédigez votre note ici…"></textarea></div>
+        <button class="btn btn-primary" onclick="publierNoteService()">📤 Publier</button>
+      </div>
+    </div>
+
+    <div id="ns-list"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
   <!-- PAGE CANDIDATURES (gestion) -->
   <div class="page" id="page-candidatures">
     <div class="page-title">Candidatures <span>reçues</span></div>
@@ -2155,6 +2192,114 @@ function isComiteDirection() {
   if(role==="responsable" && currentCompte && currentCompte.general) return true;
   return false;
 }
+
+// ─── NOTES DE SERVICE ─────────────────────────────────────────────────
+let allNotesService = [];
+function initNotesServicePage() {
+  const createCard = document.getElementById("ns-create-card");
+  const canCreate = (role==="responsable"||role==="pdg"||role==="admin");
+  if(createCard) createCard.style.display = canCreate ? "block" : "none";
+  const scopeSel = document.getElementById("ns-scope");
+  if(scopeSel) {
+    const allOpt = scopeSel.querySelector('option[value="all"]');
+    if(allOpt) allOpt.disabled = !isComiteDirection();
+    scopeSel.value = "service";
+  }
+  const typeSel = document.getElementById("ns-visibilite");
+  if(typeSel) typeSel.value = "tous";
+  const titreEl = document.getElementById("ns-titre");
+  if(titreEl) titreEl.value = "";
+  const contenuEl = document.getElementById("ns-contenu");
+  if(contenuEl) contenuEl.value = "";
+  loadNotesService();
+  setTimeout(markVisibleNotesSeen, 600);
+}
+async function markVisibleNotesSeen() {
+  const svc = myService();
+  const canSeeRestricted = (role==="responsable"||role==="pdg"||role==="admin");
+  const toMark = (allNotesService||[]).filter(n=>{
+    if(n.visibilite==="responsables" && !canSeeRestricted) return false;
+    if(n.service && n.service!==svc && role!=="admin") return false;
+    return true;
+  });
+  await Promise.all(toMark.map(n=>markOneSeen("note", n.id)));
+  updateNotifBadges();
+}
+async function loadNotesService() {
+  const el = document.getElementById("ns-list");
+  try {
+    allNotesService = await sb("notes_service?select=*&order=created_at.desc&limit=200");
+    renderNotesService();
+  } catch(e) { if(el) el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+function renderNotesService() {
+  const el = document.getElementById("ns-list");
+  if(!el) return;
+  const svc = myService();
+  const canSeeRestricted = (role==="responsable"||role==="pdg"||role==="admin");
+  const visibles = (allNotesService||[]).filter(n=>{
+    if(n.visibilite==="responsables" && !canSeeRestricted) return false;
+    if(n.service && n.service!==svc && role!=="admin") return false;
+    return true;
+  });
+  if(!visibles.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Aucune note publiée pour le moment.</p></div>'; return; }
+  const canDelete = (role==="pdg"||role==="admin");
+  el.innerHTML = visibles.map(n=>{
+    const isRestricted = n.visibilite==="responsables";
+    const scopeLabel = n.service ? `${SERVICE_ICONS[n.service]||""} ${svcLabel(n.service).replace(/^Dog\s+/,"")}` : "🌐 Tous les services";
+    const date = n.created_at ? new Date(n.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+    return `<div class="card" style="max-width:760px;${isRestricted?"--accent-rgb:192,57,43;":""}">
+      <div class="card-hdr">
+        <div class="card-hdr-title">${isRestricted?"🔒":"📋"} ${esc(n.titre)}</div>
+        <span style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${isRestricted ? `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(192,57,43,0.15);color:#F08080;">Responsables/PDG</span>` : ""}
+          <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(255,255,255,0.06);color:var(--text2);">${scopeLabel}</span>
+        </span>
+      </div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-line;margin-bottom:10px;">${esc(n.contenu)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3);">
+          <span>Par ${esc(n.auteur||"—")} · ${date}</span>
+          ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="supprimerNoteService('${n.id}')">🗑</button>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+async function publierNoteService() {
+  const visibilite = document.getElementById("ns-visibilite").value;
+  const scope = document.getElementById("ns-scope").value;
+  const titre = document.getElementById("ns-titre").value.trim();
+  const contenu = document.getElementById("ns-contenu").value.trim();
+  if(!titre || !contenu) { toast("Merci de remplir le titre et le contenu.","#E74C3C"); return; }
+  if(scope==="all" && !isComiteDirection()) { toast("Seuls le PDG et le Responsable Général peuvent publier pour tous les services.","#E74C3C"); return; }
+  try {
+    const payload = {
+      visibilite, titre, contenu,
+      service: scope==="all" ? null : myService(),
+      auteur: identityLabel(),
+    };
+    const r = await fetch(SB_URL+"/rest/v1/notes_service", {
+      method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors", body:JSON.stringify(payload)
+    });
+    if(!r.ok) throw new Error(await r.text());
+    logActivity("note_service_publiee", `Note de service publiée : "${titre}" (${scope==="all"?"tous les services":svcLabel(myService())}${visibilite==="responsables"?" — Responsables/PDG uniquement":""})`);
+    sendDiscordWebhook("📋 Nouvelle note de service", `**${titre}**\n${contenu.slice(0,200)}${contenu.length>200?"…":""}\nPar ${identityLabel()} — ${scope==="all"?"Tous les services":svcLabel(myService())}`, 0x5DADE2, scope==="all"?myService():myService());
+    toast("✓ Publié");
+    document.getElementById("ns-titre").value = "";
+    document.getElementById("ns-contenu").value = "";
+    loadNotesService();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function supprimerNoteService(id) {
+  if(!confirm("Supprimer définitivement cette publication ?")) return;
+  try {
+    await sb(`notes_service?id=eq.${id}`, {method:"DELETE"});
+    toast("✓ Supprimé");
+    loadNotesService();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+
 function currentActeurLabel() {
   return specialRoleLabel() + (currentAgent ? " — "+currentAgent.prenom+" "+currentAgent.nom : "");
 }
@@ -2237,8 +2382,14 @@ function checkAlerte(alert) {
   _currentAlertId = alert.id;
   const msgEl = document.getElementById("alert-popup-message");
   const popup = document.getElementById("alert-popup");
+  const adminBtn = document.getElementById("alert-popup-admin-deactivate");
   if(msgEl) msgEl.textContent = alert.message;
+  if(adminBtn) adminBtn.style.display = (role==="admin") ? "block" : "none";
   if(popup) popup.classList.add("show");
+}
+async function desactiverAlerteDepuisPopup() {
+  await desactiverAlerte();
+  dismissAlertPopup();
 }
 function dismissAlertPopup() {
   if(_currentAlertId) localStorage.setItem("dog_depannage_alert_dismissed_id", String(_currentAlertId));
@@ -2267,7 +2418,12 @@ async function envoyerAlerte() {
 async function desactiverAlerte() {
   try {
     await sb("alertes?actif=eq.true", {method:"PATCH", body:JSON.stringify({actif:false})});
-    toast("✓ Alerte retirée");
+    const check = await sb("alertes?select=id&actif=eq.true&limit=1");
+    if(check && check.length) {
+      toast("⚠ L'alerte n'a pas pu être désactivée, réessayez.","#E74C3C");
+    } else {
+      toast("✓ Alerte retirée pour tout le monde");
+    }
   } catch(e) { toast("Erreur lors du retrait de l'alerte","#E74C3C"); }
 }
 
@@ -4696,7 +4852,7 @@ function setMyServiceGrade(svc) {
   updateTopbarRoleDisplay();
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
   const bell = document.getElementById("notif-bell");
-  if(bell) bell.style.display = (role==="responsable"||role==="pdg"||role==="admin") ? "flex" : "none";
+  if(bell) bell.style.display = (role!=="candidat") ? "flex" : "none";
   renderSidenav();
   refreshCurrentPage();
   renderMaintPagesList();
@@ -4713,6 +4869,7 @@ function getNavConfig() {
     {page:"mon-service",      icon:"🟢", label:"Mon service",            roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"absence-form",     icon:"📅", label:"Déclarer une absence",   roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"incident",         icon:"🚨", label:"Rapport d'incident",     roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-inc"},
+    {page:"notes-service",    icon:"📋", label:"Notes de service",       roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-notes"},
   ];
   if(svc==="rescue") {
     items.push({page:"bilans",            icon:"🩺", label:"Fiche bilan",       roles:["agent","responsable","pdg","admin"], section:"Opérations"});
@@ -4811,6 +4968,7 @@ function goPage(pageId) {
   if(pageId==="effectifs")         initEffectifsPage();
   if(pageId==="facturation")       initFacturationPage();
   if(pageId==="incident")          { prefillDocDates(); loadDocHistory("incident"); }
+  if(pageId==="notes-service")     initNotesServicePage();
   if(pageId==="mon-service")       initServicePage();
   if(pageId==="absence-form") {
     const nomEl = document.getElementById("abs-nom");
@@ -4838,11 +4996,11 @@ let incidentDocs = [];
 let evalsForNotif = [];
 
 function getNotifications() {
-  const canSee = (role==="responsable"||role==="pdg"||role==="admin");
-  if(!canSee) return [];
+  const canSeeLeadershipStuff = (role==="responsable"||role==="pdg"||role==="admin");
   const vk = viewerKey();
   if(!vk) return [];
   const list = [];
+  if(canSeeLeadershipStuff) {
   candidatures.forEach(c=>{
     const cur = c.statut||"Nouvelle";
     const curMsgCount = c.msg_count||0;
@@ -4898,6 +5056,16 @@ function getNotifications() {
       list.push({type:"eval", id:ev.id, icon:"🎯", text:`Nouvelle évaluation de ${ev.agent_nom} — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
     }
   });
+  } // fin du bloc réservé à Responsable/PDG/Admin
+  const svc = myService();
+  (allNotesService||[]).forEach(n=>{
+    if(n.visibilite==="responsables" && !canSeeLeadershipStuff) return;
+    if(n.service && n.service!==svc && role!=="admin") return;
+    const seen = (n.vus_par||{})[vk];
+    if(seen===undefined) {
+      list.push({type:"note", id:n.id, icon:n.visibilite==="responsables"?"🔒":"📋", text:`Nouvelle note de service : "${n.titre}"`, time:n.created_at});
+    }
+  });
   list.sort((x,y)=> new Date(y.time||0) - new Date(x.time||0));
   return list;
 }
@@ -4908,7 +5076,8 @@ function computeNotifCounts() {
   const abs  = notifs.filter(n=>n.type==="abs").length;
   const inc  = notifs.filter(n=>n.type==="inc").length;
   const evl  = notifs.filter(n=>n.type==="eval").length;
-  return {cand, abs, inc, evl, total:notifs.length};
+  const note = notifs.filter(n=>n.type==="note").length;
+  return {cand, abs, inc, evl, note, total:notifs.length};
 }
 
 function fmtNotifTime(ts) {
@@ -4984,6 +5153,13 @@ async function markOneSeen(type, id) {
     vus[vk] = true;
     try { await sb(`evaluations?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); ev.vus_par = vus; }
     catch(e) { console.warn("markOneSeen eval error:", e.message); }
+  } else if(type==="note") {
+    const n = (allNotesService||[]).find(x=>String(x.id)===String(id));
+    if(!n) return;
+    const vus = Object.assign({}, n.vus_par||{});
+    vus[vk] = true;
+    try { await sb(`notes_service?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); n.vus_par = vus; }
+    catch(e) { console.warn("markOneSeen note error:", e.message); }
   }
 }
 
@@ -4991,7 +5167,7 @@ async function handleNotifClick(type, id) {
   closeNotifPanel();
   await markOneSeen(type, id);
   updateNotifBadges();
-  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations"};
+  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", note:"notes-service"};
   goPage(pages[type]||"candidatures");
 }
 
@@ -5003,7 +5179,7 @@ async function markAllNotifsSeen() {
 }
 
 function updateNotifBadges() {
-  const {cand, abs, inc, evl, total} = computeNotifCounts();
+  const {cand, abs, inc, evl, note, total} = computeNotifCounts();
   const dot = document.getElementById("notif-dot");
   const bell = document.getElementById("notif-bell");
   if(dot)  { dot.textContent = total; dot.style.display = total>0 ? "flex" : "none"; }
@@ -5016,6 +5192,8 @@ function updateNotifBadges() {
   if(navInc)  { navInc.textContent = inc; navInc.style.display = inc>0 ? "inline-flex" : "none"; }
   const navEval = document.getElementById("nav-badge-eval");
   if(navEval) { navEval.textContent = evl; navEval.style.display = evl>0 ? "inline-flex" : "none"; }
+  const navNotes = document.getElementById("nav-badge-notes");
+  if(navNotes) { navNotes.textContent = note; navNotes.style.display = note>0 ? "inline-flex" : "none"; }
   const panel = document.getElementById("notif-panel");
   if(panel && panel.classList.contains("show")) renderNotifPanel();
 }
@@ -5238,7 +5416,7 @@ async function launchApp() {
   updateTopbarRoleDisplay();
 
   const bell = document.getElementById("notif-bell");
-  if(bell) bell.style.display = (role==="responsable"||role==="pdg"||role==="admin") ? "flex" : "none";
+  if(bell) bell.style.display = (role!=="candidat") ? "flex" : "none";
 
   loadDiscordWebhook();
 
@@ -5808,7 +5986,7 @@ async function loadAll() {
       try { const r = await sb(path); return r||[]; }
       catch(e) { console.warn("Load failed (keeping last known data):", path, e.message); return fallback; }
     };
-    const [p,a,c,ag,al,inc,ev] = await Promise.all([
+    const [p,a,c,ag,al,inc,ev,ns] = await Promise.all([
       tryLoad("patrouilles_live?select=*&order=patrol_id", patrols),
       tryLoad("absences?select=*&order=created_at.desc", absences),
       tryLoad("candidatures?select=*&order=created_at.desc", candidatures),
@@ -5816,6 +5994,7 @@ async function loadAll() {
       tryLoad("alertes?select=*&actif=eq.true&order=created_at.desc&limit=1", []),
       tryLoad("documents?select=id,reference,agent_nom,data,auteur,vus_par,statut,statut_changed_at,suivi,created_at&type=eq.incident&order=created_at.desc&limit=100", incidentDocs),
       tryLoad("evaluations?select=id,agent_nom,verdict,pourcentage,vus_par,created_at&order=created_at.desc&limit=100", evalsForNotif),
+      tryLoad("notes_service?select=*&order=created_at.desc&limit=100", allNotesService),
     ]);
     patrols      = p.map(x=>({...x, patrol_id:(x.patrol_id||"").replace(new RegExp("^"+myService()+"-"),"")}));
     absences     = a;
@@ -5823,6 +6002,7 @@ async function loadAll() {
     agents       = ag.map(x=>x.nom).sort((x,y)=>x.localeCompare(y,"fr",{sensitivity:"base"}));
     incidentDocs = inc;
     evalsForNotif = ev;
+    allNotesService = ns;
     syncBadge("✓ En ligne","#4A7F5E");
     updateNotifBadges();
     checkAlerte(al && al[0] ? al[0] : null);
@@ -7923,12 +8103,12 @@ function renderHierarchie(grades) {
       const nomComplet = esc((g.prenom||"")+" "+(g.nom||""));
       const isCDR = g.role==="pdg" || (g.role==="responsable" && g.general);
       const generalToggle = (g.role==="responsable" && canManage) ?
-        `<button class="hier-toggle-btn${g.general?" active":""}" title="Responsable Général" onclick="toggleResponsableGeneral('${g.id}', ${!g.general}, '${nomComplet}')">⭐</button>` : "";
+        `<button class="hier-toggle-btn tg-general${g.general?" active":""}" title="Responsable Général" onclick="toggleResponsableGeneral('${g.id}', ${!g.general}, '${nomComplet}')">⭐</button>` : "";
       const adjointToggle = (g.role==="pdg" && canManage) ?
-        `<button class="hier-toggle-btn${g.adjoint?" active":""}" title="PDG Adjoint" onclick="togglePdgAdjoint('${g.id}', ${!g.adjoint}, '${nomComplet}')">🏅</button>` : "";
+        `<button class="hier-toggle-btn tg-adjoint${g.adjoint?" active":""}" title="PDG Adjoint" onclick="togglePdgAdjoint('${g.id}', ${!g.adjoint}, '${nomComplet}')">🏅</button>` : "";
       const formateurToggle = (g.role==="agent" && canManage) ?
-        `<button class="hier-toggle-btn${g.formateur?" active":""}" title="Formateur" onclick="toggleFormateur('${g.id}', ${!g.formateur}, '${nomComplet}')">🎯</button>`
-        : (g.role==="agent" && g.formateur ? `<span class="hier-toggle-btn active" title="Formateur" style="pointer-events:none;">🎯</span>` : "");
+        `<button class="hier-toggle-btn tg-formateur${g.formateur?" active":""}" title="Formateur" onclick="toggleFormateur('${g.id}', ${!g.formateur}, '${nomComplet}')">🎯</button>`
+        : (g.role==="agent" && g.formateur ? `<span class="hier-toggle-btn tg-formateur active" title="Formateur" style="pointer-events:none;">🎯</span>` : "");
       const cdrTag = isCDR ? `<span title="Comité de Direction" style="margin-left:5px;">🏛</span>` : "";
       const roleDisplay = canManage
         ? roleSelect(g)
