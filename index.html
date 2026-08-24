@@ -2295,7 +2295,12 @@ async function publierNoteService() {
     });
     if(!r.ok) throw new Error(await r.text());
     logActivity("note_service_publiee", `Note de service publiée : "${titre}" (${scope==="all"?"tous les services":svcLabel(myService())}${visibilite==="responsables"?" — Responsables/PDG uniquement":""})`);
-    sendDiscordWebhook("📋 Nouvelle note de service", `**${titre}**\n${contenu.slice(0,200)}${contenu.length>200?"…":""}\nPar ${identityLabel()} — ${scope==="all"?"Tous les services":svcLabel(myService())}`, 0x5DADE2, scope==="all"?myService():myService());
+    const webhookMsg = `**${titre}**\n${contenu.slice(0,200)}${contenu.length>200?"…":""}\nPar ${identityLabel()} — ${scope==="all"?"Tous les services":svcLabel(myService())}`;
+    if(scope==="all") {
+      SERVICES.forEach(s=>sendDiscordWebhook("📋 Nouvelle note de service", webhookMsg, 0x5DADE2, s));
+    } else {
+      sendDiscordWebhook("📋 Nouvelle note de service", webhookMsg, 0x5DADE2, myService());
+    }
     toast("✓ Publié");
     document.getElementById("ns-titre").value = "";
     document.getElementById("ns-contenu").value = "";
@@ -2320,15 +2325,23 @@ async function ouvrirLecteursNote(noteId) {
     if(n.service) audience = audience.filter(g=>g.service===n.service);
     if(n.visibilite==="responsables") audience = audience.filter(g=>g.role==="responsable"||g.role==="pdg");
     const vus = n.vus_par||{};
-    const lu = audience.filter(g=>vus[String(g.id)]!==undefined);
-    const nonLu = audience.filter(g=>vus[String(g.id)]===undefined);
-    const rowHtml = g => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-      <span style="font-size:12px;">${SERVICE_ICONS[g.service]||""}</span>
-      <span style="font-size:12.5px;color:var(--text);">${esc(g.prenom)} ${esc(g.nom)}</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${esc(accountRoleLabel(g))}</span>
+    // Regroupe par personne : quelqu'un avec plusieurs grades (ex : note "tous les services")
+    // ne doit apparaître qu'une seule fois, pas une fois par rôle.
+    const byPerson = {};
+    audience.forEach(g=>{
+      if(!byPerson[g.compte_id]) byPerson[g.compte_id] = {prenom:g.prenom, nom:g.nom, grades:[]};
+      byPerson[g.compte_id].grades.push(g);
+    });
+    const persons = Object.values(byPerson);
+    const lu = persons.filter(p=>p.grades.some(g=>vus[String(g.id)]!==undefined));
+    const nonLu = persons.filter(p=>!p.grades.some(g=>vus[String(g.id)]!==undefined));
+    const rowHtml = p => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+      <span style="font-size:12px;">${p.grades.map(g=>SERVICE_ICONS[g.service]||"").join("")}</span>
+      <span style="font-size:12.5px;color:var(--text);">${esc(p.prenom)} ${esc(p.nom)}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${p.grades.map(g=>esc(accountRoleLabel(g))).join(", ")}</span>
     </div>`;
     body.innerHTML = `
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">"${esc(n.titre)}" — ${audience.length} destinataire(s) au total</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">"${esc(n.titre)}" — ${persons.length} destinataire(s) au total</div>
       <div style="font-size:11px;font-weight:700;color:#52D98B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">✓ Ont lu (${lu.length})</div>
       <div style="border-bottom:1px solid var(--border);margin-bottom:10px;">${lu.length ? lu.map(rowHtml).join("") : '<div style="font-size:11px;color:var(--text3);padding:6px 0;">Personne pour l\'instant.</div>'}</div>
       <div style="font-size:11px;font-weight:700;color:#F08080;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">✗ N'ont pas lu (${nonLu.length})</div>
