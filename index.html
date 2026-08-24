@@ -142,7 +142,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 
 .lp-about{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;}
 .lp-about-text p{font-size:14.5px;color:#B8C8D8;line-height:1.85;white-space:pre-line;}
-.lp-about-img{width:100%;aspect-ratio:4/3;border-radius:18px;background-size:cover;background-position:center;background-color:#141C28;box-shadow:0 24px 60px -12px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);}
+.lp-about-img{width:100%;aspect-ratio:4/3;border-radius:18px;object-fit:cover;display:block;background:linear-gradient(135deg,#141C28,#0A0E14);box-shadow:0 24px 60px -12px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);-webkit-transform:translateZ(0);transform:translateZ(0);}
 
 .lp-services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;perspective:900px;}
 .lp-svc-card{background:linear-gradient(165deg,#131B27,#0D1219);border:1px solid var(--border,rgba(255,255,255,0.08));border-radius:16px;padding:26px 20px;transition:transform 0.15s ease-out,border-color 0.25s,box-shadow 0.25s;position:relative;overflow:hidden;transform-style:preserve-3d;will-change:transform;}
@@ -669,7 +669,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
         <h2 id="lp-about-title">Notre entreprise</h2>
         <p id="lp-about-text"></p>
       </div>
-      <div class="lp-about-img" id="lp-about-img"></div>
+      <img class="lp-about-img" id="lp-about-img" alt="Dog Compagnie">
     </div>
   </div>
 
@@ -5572,7 +5572,8 @@ function renderLanding() {
   document.getElementById("lp-hero-bg").style.backgroundImage = landingContent.hero_img ? `url(data:image/jpeg;base64,${landingContent.hero_img})` : "";
   document.getElementById("lp-about-title").textContent = landingContent.about_title;
   document.getElementById("lp-about-text").textContent = landingContent.about_text;
-  document.getElementById("lp-about-img").style.backgroundImage = landingContent.about_img ? `url(data:image/jpeg;base64,${landingContent.about_img})` : "linear-gradient(135deg,#141C28,#0A0E14)";
+  const aboutImgEl = document.getElementById("lp-about-img");
+  if(aboutImgEl) aboutImgEl.src = landingContent.about_img ? `data:image/jpeg;base64,${landingContent.about_img}` : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='4' height='3'></svg>";
   const yearEl = document.getElementById("lp-year");
   if(yearEl) yearEl.textContent = new Date().getFullYear();
   generateLandingParticles();
