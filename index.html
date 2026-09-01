@@ -1323,7 +1323,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
           <label>Heures de service <span style="color:#52D98B;font-weight:700;">— calculées automatiquement</span></label>
           <input type="number" id="paie-heures" step="1" min="0" oninput="recomputePaie()">
         </div>
-        <div class="field"><label>Salaire de base (200 € / heure)</label><input id="paie-salaire-base" disabled></div>
+        <div class="field"><label id="paie-tarif-label">Salaire de base</label><input id="paie-salaire-base" disabled></div>
       </div>
       <div style="font-size:10.5px;color:var(--text3);margin:-8px 0 4px;">Basées sur les heures réellement pointées sur le mois précédent — modifiable manuellement si besoin.</div>
 
@@ -7348,8 +7348,16 @@ const STATUT_EFFECTIF_COLORS = {
   "En service":"#52D98B", "Absent":"#F0A840", "Sanction":"#E74C3C", "En duo":"#5DADE2",
   "En duo responsable":"#7D3C98", "Hors Service":"#7F9AB0", "Démission":"#C0392B", "Licencié":"#8B1A1A",
 };
-const TARIF_HEURE_SERVICE = 200;
+const TARIF_HEURE_AGENT = 200;
+const TARIF_HEURE_FORMATEUR = 300;
+const TARIF_HEURE_RESPONSABLE = 400;
 const TARIF_HEURE_EVENEMENT = 2200;
+function tarifHeureParGrade(role, formateur) {
+  if(role==="responsable" || role==="pdg" || role==="admin") return TARIF_HEURE_RESPONSABLE;
+  if(role==="agent" && formateur) return TARIF_HEURE_FORMATEUR;
+  return TARIF_HEURE_AGENT;
+}
+let currentPaieTarif = TARIF_HEURE_AGENT;
 let effectifsLogsCache = [];
 let effectifsComptesCache = [];
 
@@ -7467,7 +7475,7 @@ function renderEffectifsList(comptesAll) {
             </div>` : ""}
           </div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="ouvrirFichePaie('${esc(nomComplet)}','${c.service}')">📄 Fiche de paie</button>
+        <button class="btn btn-primary btn-sm" onclick="ouvrirFichePaie('${esc(nomComplet)}','${c.service}','${c.role}',${c.formateur?"true":"false"})">📄 Fiche de paie</button>
       </div>
       <div class="eff-card-body">
         <div class="eff-field-row">
@@ -7760,10 +7768,11 @@ let currentPaieMois = null;
 let currentPaieAnnee = null;
 let paiePrimes = [];
 
-async function ouvrirFichePaie(agentNom, svc) {
+async function ouvrirFichePaie(agentNom, svc, role, formateur) {
   svc = svc || myService();
   currentPaieAgent = agentNom;
   currentPaieService = svc;
+  currentPaieTarif = tarifHeureParGrade(role, formateur===true||formateur==="true");
   const now = new Date();
   let mois = now.getMonth() - 1; // mois précédent par défaut (0-indexé)
   let annee = now.getFullYear();
@@ -7773,6 +7782,8 @@ async function ouvrirFichePaie(agentNom, svc) {
   document.getElementById("paie-service").value = svcLabel(svc);
   document.getElementById("paie-mois-select").value = String(mois);
   document.getElementById("paie-annee-select").value = String(annee);
+  const lbl = document.getElementById("paie-tarif-label");
+  if(lbl) lbl.textContent = `Salaire de base (${fmtEuro(currentPaieTarif)} / heure)`;
 
   await refreshPaieForm(mois, annee);
   document.getElementById("paie-modal")?.classList.add("show");
@@ -7829,7 +7840,7 @@ function supprimerPrimePaie(idx) {
 function recomputePaie() {
   const heures = Math.round(parseFloat(document.getElementById("paie-heures").value)||0);
   document.getElementById("paie-heures").value = heures;
-  const salaireBase = heures*TARIF_HEURE_SERVICE;
+  const salaireBase = heures*currentPaieTarif;
   document.getElementById("paie-salaire-base").value = fmtEuro(salaireBase);
   const primesEl = document.getElementById("paie-primes-liste");
   primesEl.innerHTML = paiePrimes.map((p,i)=>`
@@ -7847,7 +7858,7 @@ function recomputePaie() {
 
 function collectPaieData() {
   const heures = Math.round(parseFloat(document.getElementById("paie-heures").value)||0);
-  const salaireBase = heures*TARIF_HEURE_SERVICE;
+  const salaireBase = heures*currentPaieTarif;
   const totalPrimes = paiePrimes.reduce((s,p)=>s+p.montant,0);
   const moisNoms = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
   return {
@@ -7857,6 +7868,7 @@ function collectPaieData() {
     annee: currentPaieAnnee,
     periode_label: `${moisNoms[currentPaieMois]} ${currentPaieAnnee}`,
     heures_service: heures,
+    tarif_horaire: currentPaieTarif,
     salaire_base: salaireBase,
     primes: paiePrimes,
     total_primes: totalPrimes,
@@ -7900,7 +7912,7 @@ function buildPaieInner(d) {
       <div><div class="lbl">Période</div><div class="val">${escHtml(d.periode_label)}</div></div>
     </div>
     <div class="paie-section-title">Salaire de base</div>
-    <div class="paie-totaux"><div class="row"><span>${d.heures_service} heure(s) de service × ${fmtEuro(TARIF_HEURE_SERVICE)}</span><span>${fmtEuro(d.salaire_base)}</span></div></div>
+    <div class="paie-totaux"><div class="row"><span>${d.heures_service} heure(s) de service × ${fmtEuro(d.tarif_horaire||currentPaieTarif)}</span><span>${fmtEuro(d.salaire_base)}</span></div></div>
     ${(d.primes||[]).length ? `<div class="paie-section-title">Primes</div><div class="paie-totaux">${primesHTML}</div>` : ""}
     <div class="paie-total-final"><span>TOTAL NET</span><span>${fmtEuro(d.total)}</span></div>
     <div style="margin-top:14px;font-size:11px;color:#555;text-align:center;font-style:italic;">Vous disposez de 2 semaines à compter de la réception de cette fiche de paie pour récupérer votre paie auprès d'un PDG.</div>
