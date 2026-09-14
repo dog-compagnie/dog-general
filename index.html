@@ -2015,8 +2015,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 // ═══════════════════════════════════════════════════════════════════
 const ALLOWED_HOSTNAMES = [
   "dog-compagnie.github.io",
-  "localhost", "127.0.0.1", // laissés pour vos propres tests locaux
-  "" // fichier ouvert directement en local (double-clic), sans serveur ni publication
+  "localhost", "127.0.0.1" // laissés pour vos propres tests locaux (lancez un serveur local, ex. `python3 -m http.server`, plutôt que d'ouvrir le fichier par double-clic)
 ];
 if(!ALLOWED_HOSTNAMES.includes(window.location.hostname)) {
   document.documentElement.innerHTML = "";
