@@ -62,8 +62,10 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo,.card-hdr-title{font-family:var(-
 .alert-popup{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;background:rgba(10,14,20,0.88);backdrop-filter:blur(8px);}
 #maintenance-screen{z-index:900;align-items:flex-start;justify-content:center;padding-top:min(9vh,70px);padding-bottom:30px;overflow-y:auto;}
 #maintenance-screen.service-scope{align-items:flex-start;justify-content:center;top:58px;right:0;bottom:0;left:212px;padding-top:min(9vh,70px);z-index:95;background:rgba(10,14,20,0.92);backdrop-filter:blur(6px);}
+#sanction-screen{align-items:flex-start;justify-content:center;top:58px;right:0;bottom:0;left:212px;padding-top:min(9vh,70px);padding-bottom:30px;overflow-y:auto;z-index:94;background:rgba(10,14,20,0.92);backdrop-filter:blur(6px);}
 @media (max-width: 860px) {
   #maintenance-screen.service-scope{left:0;}
+  #sanction-screen{left:0;}
 }
 .alert-popup.show{display:flex;}
 .alert-popup-box{background:var(--bg2);border:1px solid rgba(211,84,0,0.4);border-radius:18px;padding:32px 28px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
@@ -623,6 +625,22 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="page-maint-msg" id="maintenance-message">Le site est temporairement indisponible pour une mise à jour. Merci de réessayer dans quelques instants.</div>
     <div class="maint-services-row" id="maint-services-row"></div>
     <div id="maintenance-hint" style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Cette page se réactivera automatiquement dès la fin de la maintenance.</div>
+    <button class="btn btn-ghost btn-full" style="margin-top:14px;" onclick="logoutToLanding()">🏠 Retour à l'accueil</button>
+  </div>
+</div>
+
+<!-- ═══ ÉCRAN DE SANCTION (agent en statut Sanction sur la filière en cours) ═══ -->
+<div id="sanction-screen" class="alert-popup">
+  <div class="page-maint-card" style="max-width:400px;">
+    <div class="maint-radar">
+      <div class="maint-radar-ring r1" style="border-color:rgba(231,76,60,0.5);"></div>
+      <div class="maint-radar-ring r2" style="border-color:rgba(231,76,60,0.5);"></div>
+      <div class="maint-radar-ring r3" style="border-color:rgba(231,76,60,0.5);"></div>
+      <div class="maint-radar-core">🚫</div>
+    </div>
+    <div class="page-maint-title" style="font-size:19px;">Accès suspendu</div>
+    <div class="page-maint-msg" id="sanction-message">Vous faites actuellement l'objet d'une sanction sur cette filière. Vous ne pouvez pas consulter ses pages tant que la sanction n'a pas été levée.</div>
+    <div id="sanction-hint" style="font-size:11px;color:var(--text3);margin-top:16px;padding:0 24px;">Vous pouvez changer de filière via la barre du haut si vous en avez plusieurs, ou revenir à l'accueil.</div>
     <button class="btn btn-ghost btn-full" style="margin-top:14px;" onclick="logoutToLanding()">🏠 Retour à l'accueil</button>
   </div>
 </div>
@@ -4908,6 +4926,7 @@ async function refreshCurrentPage() {
     const blocked = await checkMaintenanceGate();
     document.getElementById("app").style.display = blocked==="all" ? "none" : "block";
   }
+  await checkSanctionGate();
 }
 function setMyServiceGrade(svc) {
   const g = (window._myGrades||[]).find(x=>x.service===svc);
@@ -5396,6 +5415,34 @@ async function checkMaintenanceGate() {
   return false;
 }
 
+// ─── SANCTION (agent bloqué sur sa filière tant que la sanction n'est pas levée) ──
+function showSanctionScreen(message) {
+  const msgEl = document.getElementById("sanction-message");
+  if(msgEl) msgEl.textContent = message || "Vous faites actuellement l'objet d'une sanction sur cette filière. Vous ne pouvez pas consulter ses pages tant que la sanction n'a pas été levée.";
+  const hintEl = document.getElementById("sanction-hint");
+  if(hintEl) hintEl.textContent = (window._myGrades && window._myGrades.length>1)
+    ? "Vous pouvez changer de filière via la barre du haut si vous en avez plusieurs, ou revenir à l'accueil."
+    : "Vous pouvez revenir à l'accueil en attendant la levée de la sanction.";
+  document.getElementById("sanction-screen")?.classList.add("show");
+}
+function hideSanctionScreen() {
+  document.getElementById("sanction-screen")?.classList.remove("show");
+}
+function isSanctionExempt() {
+  return role==="admin" || role==="candidat" || !currentCompte || !currentCompte.compte_id;
+}
+async function checkSanctionGate() {
+  if(isSanctionExempt()) { hideSanctionScreen(); return false; }
+  try {
+    const rows = await sb(`agents_grades?compte_id=eq.${currentCompte.compte_id}&service=eq.${myService()}&select=statut_effectif`);
+    const statut = (rows && rows[0] && rows[0].statut_effectif) || currentCompte.statut_effectif || "En service";
+    currentCompte.statut_effectif = statut;
+  } catch(e) { console.warn("checkSanctionGate:", e.message); }
+  if(currentCompte.statut_effectif==="Sanction") { showSanctionScreen(); return true; }
+  hideSanctionScreen();
+  return false;
+}
+
 function renderMaintPagesList() {
   const el = document.getElementById("maint-pages-list");
   if(!el) return;
@@ -5470,7 +5517,8 @@ function finishLaunch() {
     }, 15000);
   } else {
     loadAll();
-    _refreshInterval = setInterval(loadAll, 15000);
+    checkSanctionGate();
+    _refreshInterval = setInterval(()=>{ loadAll(); checkSanctionGate(); }, 15000);
   }
 }
 
@@ -5491,6 +5539,7 @@ async function launchApp() {
     const blocked = await checkMaintenanceGate();
     if(blocked==="all") { document.getElementById("app").style.display="none"; return; }
   }
+  await checkSanctionGate();
 
   finishLaunch();
 }
