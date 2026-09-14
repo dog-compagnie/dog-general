@@ -4891,11 +4891,9 @@ function hideProfilePicker() {
 async function selectProfile(i) {
   const g = window._pendingGrades && window._pendingGrades[i];
   if(!g || !window._pendingCompte) return;
-  try {
-    const allGr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+window._pendingCompte.id+"&select=*", { headers:H, mode:"cors" });
-    const allGrades = await allGr.json();
-    finalizeLogin(window._pendingCompte, g, allGrades);
-  } catch(e) { finalizeLogin(window._pendingCompte, g, window._pendingGrades); }
+  // window._pendingGrades est déjà filtré sur le rôle choisi à la connexion —
+  // on le réutilise tel quel pour alimenter le sélecteur de filiale.
+  finalizeLogin(window._pendingCompte, g, window._pendingGrades);
 }
 function finalizeLogin(compte, grade, allGrades) {
   // Fusionne l'identité (prénom/nom/pin) et le grade choisi (service/rôle/statut…) en un seul objet,
@@ -4929,11 +4927,14 @@ async function refreshCurrentPage() {
   await checkSanctionGate();
 }
 function setMyServiceGrade(svc) {
-  const g = (window._myGrades||[]).find(x=>x.service===svc);
+  // window._myGrades ne contient désormais que des grades du MÊME rôle que celui
+  // utilisé à la connexion (voir confirmLogin/selectProfile) : ce switch ne change
+  // donc jamais de rôle, seulement de filiale. Sécurité en plus : on ignore
+  // explicitement tout grade dont le rôle différerait de la session en cours.
+  const g = (window._myGrades||[]).find(x=>x.service===svc && x.role===role);
   if(!g || !currentCompte) return;
   currentCompte = {...currentCompte, ...g};
   currentAgent = currentCompte;
-  role = g.role; // le rôle peut différer d'un service à l'autre (ex : Responsable en Sécurité, Ambulancier en Rescue)
   updateTopbarBranding();
   updateTopbarRoleDisplay();
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
@@ -6032,9 +6033,10 @@ async function confirmLogin() {
         return;
       }
       if(grades.length>1) { showProfilePicker(compte, grades); return; }
-      const allGr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+compte.id+"&select=*", { headers:H, mode:"cors" });
-      const allGrades = await allGr.json();
-      finalizeLogin(compte, grades[0], allGrades);
+      // Le sélecteur de filiale ne doit proposer que les services où la personne
+      // possède CE MÊME rôle — pour changer de rôle, il faut se reconnecter avec
+      // le bon bouton (Agent / Responsable / PDG) et son PIN.
+      finalizeLogin(compte, grades[0], grades);
     } catch(e) {
       err.textContent="Erreur de connexion : "+e.message;
       err.style.display="block";
