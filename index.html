@@ -629,6 +629,34 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
   .page-title::before{width:4px;height:20px;}
   .alert-popup-box{padding:24px 18px;}
 }
+/* ═══════════════════════ CARTE PROFESSIONNELLE ═══════════════════════ */
+.pro-card{
+  --pc-rgb: var(--accent-rgb);
+  width:380px;max-width:100%;aspect-ratio:380/222;border-radius:18px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#0C1119,#05070A);
+  box-shadow:0 22px 50px -14px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06) inset;
+  font-family:var(--font-body);color:#fff;
+}
+.pro-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 88% 18%, rgba(var(--pc-rgb),0.38),transparent 55%);}
+.pro-card .pc-diag{position:absolute;top:-10%;bottom:-10%;right:-15%;width:62%;background:linear-gradient(160deg, rgba(var(--pc-rgb),0.20), rgba(var(--pc-rgb),0.02));clip-path:polygon(38% 0,100% 0,100% 100%,0% 100%);}
+.pro-card .pc-brand{position:absolute;top:14px;left:18px;z-index:2;}
+.pro-card .pc-brand-mini{font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;}
+.pro-card .pc-brand-main{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;margin-top:2px;letter-spacing:.01em;}
+.pro-card .pc-tier{position:absolute;top:14px;right:16px;z-index:2;background:rgba(var(--pc-rgb),0.2);border:1px solid rgba(var(--pc-rgb),0.6);color:var(--accent-light);font-family:var(--font-display);font-size:10px;font-weight:800;padding:4px 11px;border-radius:20px;letter-spacing:.03em;}
+.pro-card .pc-diamond{position:absolute;top:58px;left:22px;width:42px;height:42px;background:linear-gradient(135deg,rgba(var(--pc-rgb),.95),rgba(var(--pc-rgb),.45));transform:rotate(45deg);border-radius:9px;box-shadow:0 8px 18px -6px rgba(var(--pc-rgb),.7);z-index:2;}
+.pro-card .pc-diamond span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-45deg);font-size:18px;}
+.pro-card .pc-pills{position:absolute;top:106px;left:18px;display:flex;flex-direction:column;gap:6px;z-index:2;}
+.pro-card .pc-pill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:9px;font-weight:700;letter-spacing:.03em;padding:4px 10px;border-radius:7px;text-align:center;text-transform:uppercase;color:rgba(255,255,255,.85);}
+.pro-card .pc-portrait{position:absolute;right:28px;top:50%;transform:translateY(-50%);width:104px;height:104px;z-index:1;}
+.pro-card .pc-portrait-ring{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(var(--pc-rgb),.55);}
+.pro-card .pc-portrait-ring2{position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(var(--pc-rgb),.3);}
+.pro-card .pc-portrait-icon{position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle, rgba(var(--pc-rgb),.28), rgba(var(--pc-rgb),.03));display:flex;align-items:center;justify-content:center;font-size:44px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4));}
+.pro-card .pc-name{position:absolute;left:18px;bottom:46px;font-family:var(--font-display);font-size:16.5px;font-weight:800;z-index:2;max-width:220px;line-height:1.15;}
+.pro-card .pc-meta{position:absolute;left:18px;bottom:14px;display:flex;gap:22px;z-index:2;}
+.pro-card .pc-meta div{display:flex;flex-direction:column;gap:2px;}
+.pro-card .pc-meta label{font-size:7.5px;letter-spacing:.1em;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;}
+.pro-card .pc-meta b{font-family:var(--font-display);font-size:11.5px;color:#fff;font-weight:700;letter-spacing:.03em;}
+.pro-card-wrap{display:flex;justify-content:center;padding:6px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -1389,6 +1417,49 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="closePaieModal()">Fermer</button>
     </div>
   </div>
+
+  <div class="page" id="page-cartes-pro-gestion">
+    <div class="page-title">Cartes <span>professionnelles</span></div>
+    <div class="page-sub">Créez et gérez la carte professionnelle de chaque membre de l'effectif de cette filiale.</div>
+    <div id="cpg-list"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
+  <div id="cpg-modal" class="alert-popup">
+    <div class="alert-popup-box" style="max-width:640px;max-height:90vh;overflow-y:auto;text-align:left;">
+      <div class="alert-popup-title" style="text-align:center;">🪪 Carte professionnelle</div>
+      <div class="field-row-2">
+        <div class="field"><label>Nom</label><input id="cpg-nom" disabled></div>
+        <div class="field"><label>Prénom</label><input id="cpg-prenom" disabled></div>
+      </div>
+      <div class="field-row-2">
+        <div class="field"><label>Intitulé du grade (affiché sur la carte)</label><input id="cpg-grade-label"></div>
+        <div class="field">
+          <label>Niveau</label>
+          <select id="cpg-tier" onchange="refreshCartePreview()">
+            <option value="PRO">PRO</option>
+            <option value="PRO+">PRO+</option>
+            <option value="ELITE">ELITE</option>
+            <option value="ELITE+">ELITE+</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row-2">
+        <div class="field"><label>Matricule</label><input id="cpg-matricule"></div>
+        <div class="field"><label>Date d'expiration</label><input type="date" id="cpg-expiration"></div>
+      </div>
+      <div class="card-hdr" style="border-radius:10px;margin:16px 0 10px;"><div class="card-hdr-title">👁 Aperçu</div></div>
+      <div class="pro-card-wrap" id="cpg-preview"></div>
+      <button class="btn btn-success btn-full" style="margin-top:16px;" onclick="saveCartePro()">💾 Enregistrer la carte</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="closeCarteProModal()">Fermer</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-ma-carte-pro">
+    <div class="page-title">Ma <span>carte professionnelle</span></div>
+    <div class="page-sub">Votre carte professionnelle, délivrée par votre responsable pour cette filiale.</div>
+    <div id="mcp-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
 
   <div class="page" id="page-bilans">
     <div class="page-title">Fiche <span>bilan</span></div>
@@ -4989,6 +5060,7 @@ function getNavConfig() {
     {page:"absence-form",     icon:"📅", label:"Déclarer une absence",   roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"incident",         icon:"🚨", label:"Rapport d'incident",     roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-inc"},
     {page:"notes-service",    icon:"📋", label:"Notes de service",       roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-notes"},
+    {page:"ma-carte-pro",     icon:"🪪", label:"Ma carte pro",           roles:["agent","responsable","pdg"], section:"Opérations"},
   ];
   if(svc==="rescue") {
     items.push({page:"bilans",            icon:"🩺", label:"Fiche bilan",       roles:["agent","responsable","pdg","admin"], section:"Opérations"});
@@ -5001,7 +5073,8 @@ function getNavConfig() {
     {page:"evaluations",      icon:"🎯", label:`Évaluations ${agentLbl}s`, roles:(currentCompte&&currentCompte.formateur)?["responsable","pdg","admin","agent"]:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-eval"},
     {page:"doc-rh",           icon:"🗂️", label:"Documents RH",          roles:["responsable","pdg","admin"], section:"Gestion"},
     {page:"devis",            icon:"🧾", label:"Devis clients",         roles:["pdg","admin"], section:"Gestion"},
-    {page:"effectifs",        icon:"👥", label:"Gestion des effectifs", roles:["responsable","pdg","admin"], section:"Gestion"}
+    {page:"effectifs",        icon:"👥", label:"Gestion des effectifs", roles:["responsable","pdg","admin"], section:"Gestion"},
+    {page:"cartes-pro-gestion", icon:"🗂️", label:"Cartes professionnelles", roles:["responsable","pdg","admin"], section:"Gestion"}
   );
   if(svc==="depannage") {
     items.push({page:"facturation",      icon:"💰", label:"Facturation",      roles:["agent","responsable","pdg","admin"], section:"Gestion"});
@@ -5085,6 +5158,8 @@ function goPage(pageId) {
   if(pageId==="dossiers-patients") loadPatientsList();
   if(pageId==="dossiers-clients")  loadClientsList();
   if(pageId==="effectifs")         initEffectifsPage();
+  if(pageId==="cartes-pro-gestion") initCartesProGestion();
+  if(pageId==="ma-carte-pro")       initMaCartePro();
   if(pageId==="facturation")       initFacturationPage();
   if(pageId==="incident")          { prefillDocDates(); loadDocHistory("incident"); }
   if(pageId==="notes-service")     initNotesServicePage();
@@ -8260,6 +8335,191 @@ function flatGrades() {
     (p.grades||[]).forEach(g=>out.push({...g, compte_id:p.id, prenom:p.prenom, nom:p.nom, pin:p.pin, telephone:p.telephone, email:p.email}));
   });
   return out;
+}
+
+// ─── CARTES PROFESSIONNELLES ────────────────────────────────────────────
+function carteDefaultTier(g) {
+  if(g.role==="pdg") return "ELITE+";
+  if(g.role==="responsable") return "ELITE";
+  if(g.formateur) return "PRO+";
+  return "PRO";
+}
+function carteDefaultGradeLabel(g) {
+  let base = accountRoleLabel(g);
+  if(g.role==="agent" && g.formateur) base += " (Formateur)";
+  return base;
+}
+function genMatricule() {
+  return String(Date.now()).slice(-6) + String(Math.floor(1000+Math.random()*9000));
+}
+function buildProCardHTML(d) {
+  const icon = SERVICE_ICONS[d.service] || "🐾";
+  const brand = (svcLabel(d.service)||"Dog Compagnie").replace(/^Dog\s+/i,"").toUpperCase();
+  const expDate = d.date_expiration ? new Date(d.date_expiration+"T00:00:00").toLocaleDateString("fr-FR") : "—";
+  return `<div class="pro-card">
+    <div class="pc-diag"></div>
+    <div class="pc-brand">
+      <div class="pc-brand-mini">Dog Compagnie</div>
+      <div class="pc-brand-main">${esc(brand)}</div>
+    </div>
+    <div class="pc-tier">${esc(d.tier||"PRO")}</div>
+    <div class="pc-diamond"><span>${icon}</span></div>
+    <div class="pc-pills">
+      <div class="pc-pill">${esc(d.grade_label||"Agent")}</div>
+      <div class="pc-pill">Carte pro</div>
+    </div>
+    <div class="pc-portrait">
+      <div class="pc-portrait-ring"></div>
+      <div class="pc-portrait-ring2"></div>
+      <div class="pc-portrait-icon">${icon}</div>
+    </div>
+    <div class="pc-name">${esc(d.prenom||"")} ${esc(d.nom||"")}</div>
+    <div class="pc-meta">
+      <div><label>Matricule</label><b>${esc(d.matricule||"—")}</b></div>
+      <div><label>Exp.</label><b>${expDate}</b></div>
+    </div>
+  </div>`;
+}
+
+let cartesProCache = [];
+let cpgCurrentGrade = null;
+let cpgCurrentCarteId = null;
+
+async function initCartesProGestion() {
+  const el = document.getElementById("cpg-list");
+  el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  try {
+    const [personnes, grades, cartes] = await Promise.all([
+      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_grades?select=*"),
+      sb(`cartes_pro?service=eq.${myService()}&select=*`),
+    ]);
+    allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
+    cartesProCache = cartes||[];
+    const list = flatGrades().filter(g=>g.service===myService() && !TEST_ACCOUNT_NAMES.includes(`${g.prenom||""} ${g.nom||""}`.trim()));
+    renderCartesProList(list);
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+
+function renderCartesProList(list) {
+  const el = document.getElementById("cpg-list");
+  if(!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🪪</div><p>Aucun membre dans cette filiale.</p></div>'; return; }
+  el.innerHTML = list.map(g=>{
+    const carte = cartesProCache.find(c=>String(c.compte_id)===String(g.compte_id));
+    const expLabel = carte ? new Date(carte.date_expiration+"T00:00:00").toLocaleDateString("fr-FR") : null;
+    return `<div class="card" style="margin-bottom:10px;">
+      <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <div style="font-weight:700;color:#fff;">${esc(g.prenom)} ${esc(g.nom)}</div>
+          <div style="font-size:11.5px;color:var(--text3);">${esc(accountRoleLabel(g))}${g.formateur?" · Formateur":""}</div>
+        </div>
+        <div style="font-size:11.5px;color:${carte?"#52D98B":"var(--text3)"};min-width:170px;">
+          ${carte ? `✅ Carte active · exp. ${expLabel}` : "⚠️ Aucune carte créée"}
+        </div>
+        <button class="btn btn-sm ${carte?"btn-ghost":"btn-primary"}" onclick='openCarteProModal(${JSON.stringify(g).replace(/'/g,"&#39;")})'>${carte?"✎ Modifier":"+ Créer la carte"}</button>
+        ${carte?`<button class="btn btn-sm btn-ghost" style="color:#E74C3C;" onclick="supprimerCartePro(${carte.id})">🗑</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function openCarteProModal(g) {
+  cpgCurrentGrade = g;
+  const carte = cartesProCache.find(c=>String(c.compte_id)===String(g.compte_id));
+  cpgCurrentCarteId = carte ? carte.id : null;
+  document.getElementById("cpg-nom").value = g.nom;
+  document.getElementById("cpg-prenom").value = g.prenom;
+  document.getElementById("cpg-grade-label").value = carte?.grade_label || carteDefaultGradeLabel(g);
+  document.getElementById("cpg-tier").value = carte?.tier || carteDefaultTier(g);
+  document.getElementById("cpg-matricule").value = carte?.matricule || genMatricule();
+  const defExp = new Date(); defExp.setFullYear(defExp.getFullYear()+1);
+  document.getElementById("cpg-expiration").value = carte?.date_expiration || defExp.toISOString().slice(0,10);
+  ["cpg-grade-label","cpg-matricule","cpg-expiration"].forEach(id=>{
+    const elx = document.getElementById(id);
+    if(elx && !elx.dataset.bound) { elx.dataset.bound="1"; elx.addEventListener("input", refreshCartePreview); }
+  });
+  refreshCartePreview();
+  document.getElementById("cpg-modal").classList.add("show");
+}
+function closeCarteProModal() { document.getElementById("cpg-modal").classList.remove("show"); cpgCurrentGrade=null; cpgCurrentCarteId=null; }
+function refreshCartePreview() {
+  if(!cpgCurrentGrade) return;
+  const d = {
+    service: myService(),
+    nom: cpgCurrentGrade.nom, prenom: cpgCurrentGrade.prenom,
+    grade_label: document.getElementById("cpg-grade-label").value,
+    tier: document.getElementById("cpg-tier").value,
+    matricule: document.getElementById("cpg-matricule").value,
+    date_expiration: document.getElementById("cpg-expiration").value,
+  };
+  document.getElementById("cpg-preview").innerHTML = buildProCardHTML(d);
+}
+async function saveCartePro() {
+  if(!cpgCurrentGrade) return;
+  const payload = {
+    compte_id: cpgCurrentGrade.compte_id,
+    service: myService(),
+    nom: cpgCurrentGrade.nom,
+    prenom: cpgCurrentGrade.prenom,
+    grade_label: document.getElementById("cpg-grade-label").value.trim() || carteDefaultGradeLabel(cpgCurrentGrade),
+    tier: document.getElementById("cpg-tier").value,
+    matricule: document.getElementById("cpg-matricule").value.trim() || genMatricule(),
+    date_expiration: document.getElementById("cpg-expiration").value,
+    updated_at: new Date().toISOString(),
+    created_by: `${currentAgent?.prenom||""} ${currentAgent?.nom||""}`.trim(),
+  };
+  if(!payload.date_expiration) { toast("Merci de renseigner une date d'expiration.","#E74C3C"); return; }
+  try {
+    if(cpgCurrentCarteId) {
+      await sb(`cartes_pro?id=eq.${cpgCurrentCarteId}`, { method:"PATCH", body: JSON.stringify(payload) });
+    } else {
+      await sb("cartes_pro", { method:"POST", body: JSON.stringify(payload) });
+    }
+    toast("✓ Carte professionnelle enregistrée","#52D98B");
+    closeCarteProModal();
+    initCartesProGestion();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function supprimerCartePro(id) {
+  if(!confirm("Supprimer cette carte professionnelle ?")) return;
+  try {
+    await sb(`cartes_pro?id=eq.${id}`, { method:"DELETE" });
+    toast("Carte supprimée","#52D98B");
+    initCartesProGestion();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+
+async function initMaCartePro() {
+  const el = document.getElementById("mcp-content");
+  el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  if(!currentCompte || !currentCompte.compte_id) { el.innerHTML = '<div class="empty"><p>Non disponible.</p></div>'; return; }
+  try {
+    const rows = await sb(`cartes_pro?compte_id=eq.${currentCompte.compte_id}&service=eq.${myService()}&select=*`);
+    const carte = rows && rows[0];
+    if(!carte) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🪪</div><p>Aucune carte professionnelle n'a encore été créée pour vous sur cette filiale.<br>Elle est délivrée par votre responsable ou le PDG.</p></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="pro-card-wrap">${buildProCardHTML(carte)}</div>
+      <div style="text-align:center;margin-top:18px;">
+        <button class="btn btn-primary" onclick="downloadCartePro(${JSON.stringify(carte).replace(/"/g,"&quot;")})">📥 Télécharger ma carte</button>
+      </div>`;
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+async function downloadCartePro(carte) {
+  try {
+    if(typeof html2canvas==="undefined") throw new Error("Le module de génération d'image n'a pas pu se charger.");
+    const zone = document.getElementById("doc-render-zone");
+    zone.innerHTML = buildProCardHTML(carte);
+    zone.style.left = "0px"; zone.style.top="-9999px";
+    const target = zone.querySelector(".pro-card");
+    const canvas = await html2canvas(target, {scale:3, backgroundColor:null, useCORS:true});
+    zone.innerHTML = ""; zone.style.left="-9999px"; zone.style.top="0px";
+    const url = await new Promise(resolve=>canvas.toBlob(blob=>resolve(URL.createObjectURL(blob)), "image/png"));
+    const a = document.createElement("a");
+    a.href = url; a.download = `carte-pro-${(carte.prenom||"").toLowerCase()}-${(carte.nom||"").toLowerCase()}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
 // ─── HIÉRARCHIE ──────────────────────────────────────────────────────
