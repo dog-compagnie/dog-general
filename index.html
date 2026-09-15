@@ -1877,6 +1877,12 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="page-title">Candidatures <span>reçues</span></div>
     <div class="page-sub">Toutes les candidatures soumises par des personnes externes.</div>
     <div class="stats-bar" id="cand-stats"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 16px;">
+      <button class="btn btn-sm btn-primary" id="cfb-actives" onclick="setCandView('actives')">📋 Actives</button>
+      <button class="btn btn-sm btn-ghost" id="cfb-archives" onclick="setCandView('archives')">📦 Archives</button>
+      <button class="btn btn-sm btn-ghost" id="cfb-toutes" onclick="setCandView('toutes')">Toutes</button>
+      <input id="cand-search" placeholder="🔎 Rechercher un nom…" oninput="renderCandidatures()" style="margin-left:auto;max-width:230px;padding:8px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);font-size:12.5px;">
+    </div>
     <div id="candidatures-list"></div>
   </div>
 
@@ -6522,7 +6528,7 @@ async function soumettreCandidat() {
 const CAND_STATUT_DISPLAY = {
   Nouvelle: {label:"En attente", color:"#F0A840", desc:"Votre candidature a été reçue et sera bientôt étudiée."},
   Vue:      {label:"En cours d'étude", color:"#5DADE2", desc:"Votre candidature est en cours d'étude par notre équipe."},
-  Retenu:   {label:"Retenue !", color:"#52D98B", desc:"Félicitations, votre candidature a été retenue ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN."},
+  Retenue: {label:"Retenue !", color:"#52D98B", desc:"Félicitations, votre candidature a été retenue ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN."},
   Refusée:  {label:"Refusée", color:"#F08080", desc:"Votre candidature n'a malheureusement pas été retenue cette fois-ci."},
 };
 
@@ -6551,7 +6557,7 @@ async function initCandidatSpace() {
 
 function renderCandStatus(c) {
   const meta = CAND_STATUT_DISPLAY[c.statut] || CAND_STATUT_DISPLAY.Nouvelle;
-  const desc = c.statut==="Retenu"
+  const desc = c.statut==="Retenue"
     ? `Félicitations, votre candidature a été retenue en tant que ${agentLabel(c.service)} ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.`
     : meta.desc;
   const el = document.getElementById("cand-status-content");
@@ -7044,25 +7050,54 @@ function toggleYN(btn) {
 }
 
 
+function setCandView(v) {
+  window._candView = v;
+  ["actives","archives","toutes"].forEach(k=>{
+    const b = document.getElementById("cfb-"+k);
+    if(b) { b.classList.toggle("btn-primary", k===v); b.classList.toggle("btn-ghost", k!==v); }
+  });
+  renderCandidatures();
+}
+
 function renderCandidatures() {
+  window._candView = window._candView || "actives";
   const nvx=candidatures.filter(c=>!c.lu).length;
   document.getElementById("cand-stats").innerHTML=`
     <div class="stat-pill"><div class="stat-num" style="color:var(--orange-light)">${nvx}</div><div class="stat-lbl">Nouvelles</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:var(--blue-light)">${candidatures.filter(c=>c.statut==="Vue").length}</div><div class="stat-lbl">Vues</div></div>
-    <div class="stat-pill"><div class="stat-num" style="color:var(--green-light)">${candidatures.filter(c=>c.statut==="Retenu").length}</div><div class="stat-lbl">Retenues</div></div>
+    <div class="stat-pill"><div class="stat-num" style="color:var(--green-light)">${candidatures.filter(c=>c.statut==="Retenue").length}</div><div class="stat-lbl">Retenues</div></div>
     <div class="stat-pill"><div class="stat-num" style="color:var(--red-light)">${candidatures.filter(c=>c.statut==="Refusée").length}</div><div class="stat-lbl">Refusées</div></div>`;
+
+  ["actives","archives","toutes"].forEach(k=>{
+    const b = document.getElementById("cfb-"+k);
+    if(b) { b.classList.toggle("btn-primary", k===window._candView); b.classList.toggle("btn-ghost", k!==window._candView); }
+  });
+
+  const isArchived = c => c.statut==="Retenue" || c.statut==="Refusée";
+  let shown = candidatures;
+  if(window._candView==="actives") shown = candidatures.filter(c=>!isArchived(c));
+  else if(window._candView==="archives") shown = candidatures.filter(isArchived);
+
+  const q = (document.getElementById("cand-search")?.value||"").trim().toLowerCase();
+  if(q) shown = shown.filter(c=>`${c.prenom||""} ${c.nom||""} ${c.discord||""}`.toLowerCase().includes(q));
 
   const list=document.getElementById("candidatures-list");
   if(!candidatures.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>Aucune candidature reçue.</p></div>`;return;}
+  if(!shown.length){
+    const msg = window._candView==="archives" ? "Aucune candidature archivée pour l'instant." : q ? "Aucun résultat pour cette recherche." : "Aucune candidature active.";
+    list.innerHTML=`<div class="empty"><div class="empty-icon">${window._candView==="archives"?"📦":"📭"}</div><p>${msg}</p></div>`;
+    return;
+  }
 
-  const CSTAT={Nouvelle:"csb-new",Vue:"csb-vue",Retenu:"csb-retenu",Refusée:"csb-refuse"};
-  list.innerHTML=candidatures.map(c=>{
+  const CSTAT={Nouvelle:"csb-new",Vue:"csb-vue",Retenue:"csb-retenu",Refusée:"csb-refuse"};
+  list.innerHTML=shown.map(c=>{
     const date=new Date(c.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
     return `<div class="cand-item">
       <div class="cand-top">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span class="cand-name">${esc(c.prenom)} ${esc(c.nom)}</span>
           ${!c.lu?'<span class="cand-new-badge">🔔 Nouvelle</span>':""}
+          ${isArchived(c)?'<span style="font-size:9.5px;font-weight:700;color:var(--text3);background:rgba(127,127,127,0.14);border:1px solid rgba(127,127,127,0.25);padding:2px 8px;border-radius:20px;">📦 Archivée</span>':""}
         </div>
         <span class="cand-date">${date}</span>
       </div>
@@ -7078,8 +7113,9 @@ function renderCandidatures() {
         <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
           <button class="cand-statut-btn" style="background:rgba(114,137,218,0.12);color:#7289DA;border:1px solid rgba(114,137,218,0.3);" onclick="openCandChat('${c.id}')">💬 Discuter</button>
           <button class="cand-statut-btn" style="background:rgba(155,89,182,0.12);color:#C8A0E8;border:1px solid rgba(155,89,182,0.3);" onclick="openEntretien('${c.id}')">📋 Entretien</button>
+          ${isArchived(c)?`<button class="cand-statut-btn" style="background:rgba(41,128,185,0.12);color:#5DADE2;border:1px solid rgba(41,128,185,0.3);" onclick="updateCand('${c.id}','Vue')">↩ Rouvrir</button>`:""}
           ${c.statut!=="Vue"     ?`<button class="cand-statut-btn csb-vue"    onclick="updateCand('${c.id}','Vue')">👁 Vue</button>`:""}
-          ${c.statut!=="Retenu"  ?`<button class="cand-statut-btn csb-retenu" onclick="updateCand('${c.id}','Retenu')">✓ Retenir</button>`:""}
+          ${c.statut!=="Retenue" ?`<button class="cand-statut-btn csb-retenu" onclick="updateCand('${c.id}','Retenue')">✓ Retenir</button>`:""}
           ${c.statut!=="Refusée" ?`<button class="cand-statut-btn csb-refuse" onclick="updateCand('${c.id}','Refusée')">✕ Refuser</button>`:""}
           <button class="cand-statut-btn" style="background:rgba(192,57,43,0.08);color:#666;border:1px solid rgba(192,57,43,0.15);" onclick="suppCand('${c.id}')">🗑</button>
         </div>
@@ -7095,7 +7131,7 @@ async function updateCand(id, statut) {
     if(statut==="Refusée") payload.refuse_le = new Date().toISOString();
     await sb(`candidatures?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(payload)});
     if(c) logActivity("candidature_statut", `La candidature de ${c.prenom} ${c.nom} est passée en ${statut.toLowerCase()}`);
-    if(statut==="Retenu" && c) await promouvoirCandidat(c);
+    if(statut==="Retenue" && c) await promouvoirCandidat(c);
     await loadAll();
   }
   catch(e){toast("Erreur","#E74C3C");}
