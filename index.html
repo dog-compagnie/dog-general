@@ -8704,9 +8704,12 @@ async function initMaCartePro() {
       return;
     }
     el.innerHTML = `<div class="pro-card-wrap">${buildProCardHTML(carte)}</div>
-      <div style="text-align:center;margin-top:18px;">
+      <div style="text-align:center;margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="downloadCartePro()">📥 Télécharger ma carte (PNG)</button>
-      </div>`;
+        <button class="btn btn-ghost" onclick="shareCartePro()">🔗 Copier le lien de partage</button>
+        ${carte.share_token?`<button class="btn btn-ghost" style="color:#E74C3C;" onclick="revokeCarteShareLink()">✕ Invalider le lien</button>`:""}
+      </div>
+      <div style="text-align:center;font-size:10.5px;color:var(--text3);margin-top:10px;max-width:380px;margin-left:auto;margin-right:auto;">Le lien de partage montre uniquement la carte, en lecture seule (pas de connexion, pas de téléchargement possible depuis le lien).</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
 async function downloadCartePro() {
@@ -9073,8 +9076,75 @@ async function supprimerCompte(id) {
   } catch(e){ toast("Erreur suppression","#E74C3C"); }
 }
 
-setupPageMaintOverlays();
-loadLandingContent();
+function genShareToken() {
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,"");
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+}
+async function shareCartePro() {
+  const carte = currentMaCarteData;
+  if(!carte) return;
+  try {
+    let token = carte.share_token;
+    if(!token) {
+      token = genShareToken();
+      await sb(`cartes_pro?id=eq.${carte.id}`, { method:"PATCH", body: JSON.stringify({share_token: token}) });
+      carte.share_token = token;
+      currentMaCarteData = carte;
+    }
+    const url = `${window.location.origin}${window.location.pathname}?carte=${token}`;
+    if(navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      toast("✓ Lien copié — collez-le où vous voulez le transmettre");
+    } else {
+      prompt("Copiez ce lien :", url);
+    }
+    initMaCartePro();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function revokeCarteShareLink() {
+  const carte = currentMaCarteData;
+  if(!carte || !carte.share_token) return;
+  if(!confirm("L'ancien lien ne fonctionnera plus. Continuer ?")) return;
+  try {
+    await sb(`cartes_pro?id=eq.${carte.id}`, { method:"PATCH", body: JSON.stringify({share_token: null}) });
+    carte.share_token = null;
+    currentMaCarteData = carte;
+    toast("✓ Lien invalidé");
+    initMaCartePro();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+
+// ─── VUE PUBLIQUE D'UNE CARTE PARTAGÉE (?carte=TOKEN) — lecture seule, sans connexion ───
+async function initPublicCarteView(token) {
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;background:#05070A;">
+      <div id="pcv-content" style="text-align:center;color:#8899aa;font-size:13px;">Chargement…</div>
+    </div>`;
+  document.oncontextmenu = () => false;
+  try {
+    const rows = await sb(`cartes_pro?share_token=eq.${encodeURIComponent(token)}&select=*`);
+    const carte = rows && rows[0];
+    const el = document.getElementById("pcv-content");
+    if(!carte) { el.innerHTML = `<div style="color:#F08080;">Ce lien n'est plus valide.</div>`; return; }
+    const accent = ACCENT_BY_SERVICE[carte.service] || ACCENT_BY_SERVICE.securite;
+    document.documentElement.style.setProperty("--accent", accent.main);
+    document.documentElement.style.setProperty("--accent-light", accent.light);
+    document.documentElement.style.setProperty("--accent-rgb", accent.rgb);
+    document.documentElement.style.setProperty("--accent-deep", accent.deep);
+    el.innerHTML = `<div class="pro-card-wrap" style="user-select:none;-webkit-user-select:none;pointer-events:none;">${buildProCardHTML(carte)}</div>
+      <div style="color:#4A5A6A;font-size:10.5px;margin-top:14px;">Carte professionnelle Dog Compagnie — consultation uniquement</div>`;
+  } catch(e) {
+    document.getElementById("pcv-content").innerHTML = `<div style="color:#F08080;">Erreur de chargement.</div>`;
+  }
+}
+
+const _sharedCarteToken = new URLSearchParams(window.location.search).get("carte");
+if(_sharedCarteToken) {
+  initPublicCarteView(_sharedCarteToken);
+} else {
+  setupPageMaintOverlays();
+  loadLandingContent();
+}
 
 </script>
 </body>
