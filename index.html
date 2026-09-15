@@ -655,7 +655,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-meta div{display:flex;flex-direction:column;gap:2px;}
 .pro-card .pc-meta label{font-size:7.5px;letter-spacing:.1em;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;}
 .pro-card .pc-meta b{font-family:var(--font-display);font-size:11.5px;color:#fff;font-weight:700;letter-spacing:.03em;}
-.pro-card .pc-watermark{position:absolute;left:112px;bottom:14px;width:150px;z-index:1;opacity:0.9;pointer-events:none;}
+.pro-card .pc-watermark{position:absolute;left:118px;bottom:72px;width:108px;z-index:1;opacity:0.6;pointer-events:none;}
 .pro-card .pc-watermark img{width:100%;height:auto;display:block;}
 .pro-card-wrap{display:flex;justify-content:center;padding:6px;}
 </style>
@@ -8539,6 +8539,22 @@ async function initMaCartePro() {
       </div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
+function clipCanvasRoundedRect(canvas, radius) {
+  const out = document.createElement("canvas");
+  out.width = canvas.width; out.height = canvas.height;
+  const ctx = out.getContext("2d");
+  const w = canvas.width, h = canvas.height, r = Math.min(radius, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(r,0);
+  ctx.arcTo(w,0,w,h,r);
+  ctx.arcTo(w,h,0,h,r);
+  ctx.arcTo(0,h,0,0,r);
+  ctx.arcTo(0,0,w,0,r);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(canvas,0,0);
+  return out;
+}
 async function downloadCartePro() {
   const carte = currentMaCarteData;
   if(!carte) return;
@@ -8548,7 +8564,11 @@ async function downloadCartePro() {
     zone.innerHTML = buildProCardHTML(carte);
     zone.style.left = "0px"; zone.style.top="-9999px";
     const target = zone.querySelector(".pro-card");
-    const canvas = await html2canvas(target, {scale:3, backgroundColor:null, useCORS:true});
+    const scale = 3;
+    const rawCanvas = await html2canvas(target, {scale, backgroundColor:null, useCORS:true});
+    // html2canvas ne découpe pas toujours proprement les coins arrondis (border-radius + overflow:hidden) :
+    // on force le découpage nous-mêmes sur le canvas final pour garantir des coins nets, sans artefact.
+    const canvas = clipCanvasRoundedRect(rawCanvas, 18*scale);
     zone.innerHTML = ""; zone.style.left="-9999px"; zone.style.top="0px";
     const url = await new Promise(resolve=>canvas.toBlob(blob=>resolve(URL.createObjectURL(blob)), "image/png"));
     const a = document.createElement("a");
