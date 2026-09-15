@@ -8384,6 +8384,176 @@ let cpgCurrentGrade = null;
 let cpgCurrentCarteId = null;
 let cpgPhotoB64 = null;
 
+// ─── RENDU CANVAS DIRECT DE LA CARTE PRO (pour l'export PNG) ────────────
+// On dessine la carte nous-mêmes point par point plutôt que de convertir le HTML/CSS en
+// image (ce que faisait html2canvas) : ça élimine complètement les carrés blancs, qui
+// venaient de limitations de cet outil sur les coins arrondis / dégradés / images.
+function loadImageAsync(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Image illisible"));
+    img.src = src;
+  });
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+async function renderCarteProCanvas(d, scale) {
+  scale = scale || 3;
+  const W = 380, H = 222;
+  const canvas = document.createElement("canvas");
+  canvas.width = W*scale; canvas.height = H*scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+
+  const accent = ACCENT_BY_SERVICE[d.service] || ACCENT_BY_SERVICE.securite;
+  const [ar,ag,ab] = accent.rgb.split(",").map(s=>parseInt(s.trim(),10));
+  const rgba = (a) => `rgba(${ar},${ag},${ab},${a})`;
+
+  // Charge les images nécessaires AVANT de dessiner quoi que ce soit (évite tout rendu partiel)
+  const [dogImg, photoImg] = await Promise.all([
+    loadImageAsync("data:image/png;base64,"+CARTE_PRO_DOG_B64).catch(()=>null),
+    d.photo_b64 ? loadImageAsync("data:image/jpeg;base64,"+d.photo_b64).catch(()=>null) : Promise.resolve(null),
+  ]);
+  if(document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(e){} }
+
+  // Fond + coins arrondis (clip dès le départ : tout ce qui suit reste proprement dans la carte)
+  roundRectPath(ctx, 0, 0, W, H, 18);
+  ctx.clip();
+  const bgGrad = ctx.createLinearGradient(0,0,W,H);
+  bgGrad.addColorStop(0, "#0C1119");
+  bgGrad.addColorStop(1, "#05070A");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // Lueur d'accent (haut droit)
+  const glow = ctx.createRadialGradient(W*0.88,H*0.18,0, W*0.88,H*0.18,W*0.55);
+  glow.addColorStop(0, rgba(0.38));
+  glow.addColorStop(1, rgba(0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(0,0,W,H);
+
+  // Diagonale (panneau accentué à droite)
+  const diagGrad = ctx.createLinearGradient(0,0,W,H*0.35);
+  diagGrad.addColorStop(0, rgba(0));
+  diagGrad.addColorStop(0.39, rgba(0));
+  diagGrad.addColorStop(0.55, rgba(0.20));
+  diagGrad.addColorStop(1, rgba(0.07));
+  ctx.fillStyle = diagGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // Filigrane (tête de chien) — sous le reste
+  if(dogImg) {
+    const ww = 124, hh = ww*dogImg.height/dogImg.width;
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(dogImg, 133, H-58-hh, ww, hh);
+    ctx.restore();
+  }
+
+  // Bandeau de marque
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.font = "700 8px 'Manrope', sans-serif";
+  ctx.fillText("DOG COMPAGNIE", 18, 20);
+  const brand = (svcLabel(d.service)||"Dog Compagnie").replace(/^Dog\s+/i,"").toUpperCase();
+  ctx.fillStyle = "#fff";
+  ctx.font = "800 15px 'Space Grotesk', sans-serif";
+  ctx.fillText(brand, 18, 39);
+
+  // Pastille « Carte pro » (haut droit)
+  ctx.font = "800 9px 'Space Grotesk', sans-serif";
+  const tierText = "CARTE PRO";
+  const tierW = ctx.measureText(tierText).width + 22;
+  const tierX = W-16-tierW, tierY = 14, tierH = 20;
+  roundRectPath(ctx, tierX, tierY, tierW, tierH, tierH/2);
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.textAlign = "center";
+  ctx.fillText(tierText, tierX+tierW/2, tierY+13.5);
+  ctx.textAlign = "left";
+
+  // Portrait (carré, coins arrondis)
+  const pW=70, pH=70, pX=W-20-pW, pY=42;
+  roundRectPath(ctx, pX, pY, pW, pH, 12);
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = rgba(0.18);
+  ctx.fillRect(pX,pY,pW,pH);
+  const icon = SERVICE_ICONS[d.service] || "🐾";
+  if(photoImg) {
+    const s = Math.max(pW/photoImg.width, pH/photoImg.height);
+    const iw = photoImg.width*s, ih = photoImg.height*s;
+    ctx.drawImage(photoImg, pX+(pW-iw)/2, pY+(pH-ih)/2, iw, ih);
+  } else {
+    ctx.font = "30px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fff";
+    ctx.fillText(icon, pX+pW/2, pY+pH/2+2);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  ctx.restore();
+  ctx.strokeStyle = rgba(0.4); ctx.lineWidth = 1;
+  roundRectPath(ctx, pX, pY, pW, pH, 12); ctx.stroke();
+
+  // Losange (icône du service)
+  const dCx = 22+21, dCy = 58+21;
+  ctx.save();
+  ctx.translate(dCx, dCy); ctx.rotate(Math.PI/4);
+  roundRectPath(ctx, -21, -21, 42, 42, 9);
+  const dGrad = ctx.createLinearGradient(-21,-21,21,21);
+  dGrad.addColorStop(0, rgba(0.95)); dGrad.addColorStop(1, rgba(0.45));
+  ctx.fillStyle = dGrad; ctx.fill();
+  ctx.restore();
+  ctx.font = "18px sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fff";
+  ctx.fillText(icon, dCx, dCy+1);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+
+  // Pilule de grade
+  const gradeText = (d.grade_label||"Agent").toUpperCase();
+  ctx.font = "700 9px 'Manrope', sans-serif";
+  const gW = ctx.measureText(gradeText).width + 20;
+  const gX = 18, gY = 106, gH = 20;
+  roundRectPath(ctx, gX, gY, gW, gH, 7);
+  ctx.fillStyle = "rgba(255,255,255,0.07)"; ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText(gradeText, gX+10, gY+13.5);
+
+  // Nom
+  ctx.font = "800 16.5px 'Space Grotesk', sans-serif";
+  ctx.fillStyle = "#fff";
+  ctx.fillText(`${d.prenom||""} ${d.nom||""}`, 18, H-46);
+
+  // Matricule / Exp.
+  const expDate = d.date_expiration ? new Date(d.date_expiration+"T00:00:00").toLocaleDateString("fr-FR") : "—";
+  const metaY = H-14;
+  ctx.font = "700 11.5px 'Space Grotesk', sans-serif";
+  const matriculeW = ctx.measureText(d.matricule||"—").width;
+  const col2X = 18 + Math.max(matriculeW, 60) + 22;
+  ctx.font = "700 7.5px 'Manrope', sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.fillText("MATRICULE", 18, metaY-20);
+  ctx.fillText("EXP.", col2X, metaY-20);
+  ctx.font = "700 11.5px 'Space Grotesk', sans-serif";
+  ctx.fillStyle = "#fff";
+  ctx.fillText(d.matricule||"—", 18, metaY);
+  ctx.fillText(expDate, col2X, metaY);
+
+  return canvas;
+}
+
+
 function renderCartePhotoPreview() {
   const el = document.getElementById("cpg-photo-preview");
   if(!el) return;
@@ -8539,46 +8709,20 @@ async function initMaCartePro() {
       </div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
-function clipCanvasRoundedRect(canvas, radius) {
-  const out = document.createElement("canvas");
-  out.width = canvas.width; out.height = canvas.height;
-  const ctx = out.getContext("2d");
-  const w = canvas.width, h = canvas.height, r = Math.min(radius, w/2, h/2);
-  ctx.beginPath();
-  ctx.moveTo(r,0);
-  ctx.arcTo(w,0,w,h,r);
-  ctx.arcTo(w,h,0,h,r);
-  ctx.arcTo(0,h,0,0,r);
-  ctx.arcTo(0,0,w,0,r);
-  ctx.closePath();
-  ctx.clip();
-  ctx.drawImage(canvas,0,0);
-  return out;
-}
 async function downloadCartePro() {
   const carte = currentMaCarteData;
   if(!carte) return;
   try {
-    if(typeof html2canvas==="undefined") throw new Error("Le module de génération d'image n'a pas pu se charger.");
-    const zone = document.getElementById("doc-render-zone");
-    zone.innerHTML = buildProCardHTML(carte);
-    zone.style.left = "0px"; zone.style.top="-9999px";
-    const target = zone.querySelector(".pro-card");
-    // On attend que TOUTES les images (photo, tête du chien) soient bien chargées avant de
-    // capturer : capturer trop tôt (avant décodage complet) est la cause la plus probable
-    // des carrés blancs vus jusqu'ici.
-    const imgs = Array.from(zone.querySelectorAll("img"));
-    await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(res=>{ img.onload=res; img.onerror=res; })));
-    await new Promise(r=>setTimeout(r,150));
-    const scale = 3;
-    const rawCanvas = await html2canvas(target, {scale, backgroundColor:null, useCORS:true});
-    // Sécurité supplémentaire : on redécoupe nous-mêmes les coins arrondis sur le résultat final.
-    const canvas = clipCanvasRoundedRect(rawCanvas, 18*scale);
-    zone.innerHTML = ""; zone.style.left="-9999px"; zone.style.top="0px";
+    const canvas = await renderCarteProCanvas(carte, 3);
     const url = await new Promise(resolve=>canvas.toBlob(blob=>resolve(URL.createObjectURL(blob)), "image/png"));
+    const filename = `carte-pro-${(carte.prenom||"").toLowerCase()}-${(carte.nom||"").toLowerCase()}.png`;
+    // Fenêtre de confirmation qui s'ouvre puis se referme toute seule, le temps que le
+    // téléchargement se déclenche.
+    const w = window.open(url, "_blank");
     const a = document.createElement("a");
-    a.href = url; a.download = `carte-pro-${(carte.prenom||"").toLowerCase()}-${(carte.nom||"").toLowerCase()}.png`;
+    a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
+    if(w) setTimeout(()=>{ try{ w.close(); }catch(e){} }, 900);
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
