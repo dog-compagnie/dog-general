@@ -638,7 +638,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
   font-family:var(--font-body);color:#fff;
 }
 .pro-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 88% 18%, rgba(var(--pc-rgb),0.38),transparent 55%);}
-.pro-card .pc-diag{position:absolute;top:-10%;bottom:-10%;right:-15%;width:62%;background:linear-gradient(160deg, rgba(var(--pc-rgb),0.20), rgba(var(--pc-rgb),0.02));clip-path:polygon(38% 0,100% 0,100% 100%,0% 100%);}
+.pro-card .pc-diag{position:absolute;inset:0;background:linear-gradient(100deg, transparent 0%, transparent 39%, rgba(var(--pc-rgb),0.22) 41%, rgba(var(--pc-rgb),0.07) 100%);}
 .pro-card .pc-brand{position:absolute;top:14px;left:18px;z-index:2;}
 .pro-card .pc-brand-mini{font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;}
 .pro-card .pc-brand-main{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;margin-top:2px;letter-spacing:.01em;}
@@ -655,6 +655,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-meta div{display:flex;flex-direction:column;gap:2px;}
 .pro-card .pc-meta label{font-size:7.5px;letter-spacing:.1em;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;}
 .pro-card .pc-meta b{font-family:var(--font-display);font-size:11.5px;color:#fff;font-weight:700;letter-spacing:.03em;}
+.pro-card .pc-watermark{position:absolute;right:42px;bottom:36px;font-size:60px;line-height:1;opacity:0.15;transform:rotate(-6deg);filter:grayscale(0.25);z-index:1;pointer-events:none;}
 .pro-card-wrap{display:flex;justify-content:center;padding:6px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -8357,6 +8358,7 @@ function buildProCardHTML(d) {
     : `<div class="pc-portrait-icon">${icon}</div>`;
   return `<div class="pro-card">
     <div class="pc-diag"></div>
+    <div class="pc-watermark">🐕‍🦺</div>
     <div class="pc-brand">
       <div class="pc-brand-mini">Dog Compagnie</div>
       <div class="pc-brand-main">${esc(brand)}</div>
