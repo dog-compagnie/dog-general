@@ -642,15 +642,14 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-brand{position:absolute;top:14px;left:18px;z-index:2;}
 .pro-card .pc-brand-mini{font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;}
 .pro-card .pc-brand-main{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;margin-top:2px;letter-spacing:.01em;}
-.pro-card .pc-tier{position:absolute;top:14px;right:16px;z-index:2;background:rgba(var(--pc-rgb),0.2);border:1px solid rgba(var(--pc-rgb),0.6);color:var(--accent-light);font-family:var(--font-display);font-size:10px;font-weight:800;padding:4px 11px;border-radius:20px;letter-spacing:.03em;}
+.pro-card .pc-tier{position:absolute;top:14px;right:16px;z-index:2;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.7);font-family:var(--font-display);font-size:9px;font-weight:800;padding:4px 11px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
 .pro-card .pc-diamond{position:absolute;top:58px;left:22px;width:42px;height:42px;background:linear-gradient(135deg,rgba(var(--pc-rgb),.95),rgba(var(--pc-rgb),.45));transform:rotate(45deg);border-radius:9px;box-shadow:0 8px 18px -6px rgba(var(--pc-rgb),.7);z-index:2;}
 .pro-card .pc-diamond span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-45deg);font-size:18px;}
 .pro-card .pc-pills{position:absolute;top:106px;left:18px;display:flex;flex-direction:column;gap:6px;z-index:2;}
 .pro-card .pc-pill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:9px;font-weight:700;letter-spacing:.03em;padding:4px 10px;border-radius:7px;text-align:center;text-transform:uppercase;color:rgba(255,255,255,.85);}
-.pro-card .pc-portrait{position:absolute;right:28px;top:50%;transform:translateY(-50%);width:104px;height:104px;z-index:1;}
-.pro-card .pc-portrait-ring{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(var(--pc-rgb),.55);}
-.pro-card .pc-portrait-ring2{position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(var(--pc-rgb),.3);}
-.pro-card .pc-portrait-icon{position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle, rgba(var(--pc-rgb),.28), rgba(var(--pc-rgb),.03));display:flex;align-items:center;justify-content:center;font-size:44px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4));}
+.pro-card .pc-portrait{position:absolute;right:20px;top:42px;width:70px;height:70px;z-index:2;border-radius:12px;overflow:hidden;background:linear-gradient(160deg, rgba(var(--pc-rgb),.28), rgba(var(--pc-rgb),.06));border:1px solid rgba(var(--pc-rgb),.4);box-shadow:0 8px 20px -8px rgba(0,0,0,.5);}
+.pro-card .pc-portrait img{width:100%;height:100%;object-fit:cover;display:block;}
+.pro-card .pc-portrait-icon{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;}
 .pro-card .pc-name{position:absolute;left:18px;bottom:46px;font-family:var(--font-display);font-size:16.5px;font-weight:800;z-index:2;max-width:220px;line-height:1.15;}
 .pro-card .pc-meta{position:absolute;left:18px;bottom:14px;display:flex;gap:22px;z-index:2;}
 .pro-card .pc-meta div{display:flex;flex-direction:column;gap:2px;}
@@ -1434,13 +1433,10 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <div class="field-row-2">
         <div class="field"><label>Intitulé du grade (affiché sur la carte)</label><input id="cpg-grade-label"></div>
         <div class="field">
-          <label>Niveau</label>
-          <select id="cpg-tier" onchange="refreshCartePreview()">
-            <option value="PRO">PRO</option>
-            <option value="PRO+">PRO+</option>
-            <option value="ELITE">ELITE</option>
-            <option value="ELITE+">ELITE+</option>
-          </select>
+          <label>Photo de l'agent</label>
+          <div id="cpg-photo-preview"></div>
+          <input type="file" accept="image/*" id="cpg-photo-file" style="display:none;" onchange="handleCartePhotoUpload(this)">
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="document.getElementById('cpg-photo-file').click()">📷 Choisir une photo</button>
         </div>
       </div>
       <div class="field-row-2">
@@ -5074,7 +5070,7 @@ function getNavConfig() {
     {page:"doc-rh",           icon:"🗂️", label:"Documents RH",          roles:["responsable","pdg","admin"], section:"Gestion"},
     {page:"devis",            icon:"🧾", label:"Devis clients",         roles:["pdg","admin"], section:"Gestion"},
     {page:"effectifs",        icon:"👥", label:"Gestion des effectifs", roles:["responsable","pdg","admin"], section:"Gestion"},
-    {page:"cartes-pro-gestion", icon:"🗂️", label:"Cartes professionnelles", roles:["responsable","pdg","admin"], section:"Gestion"}
+    {page:"cartes-pro-gestion", icon:"🆔", label:"Cartes professionnelles", roles:["responsable","pdg","admin"], section:"Gestion"}
   );
   if(svc==="depannage") {
     items.push({page:"facturation",      icon:"💰", label:"Facturation",      roles:["agent","responsable","pdg","admin"], section:"Gestion"});
@@ -5915,7 +5911,7 @@ function openCropModal(dataUrl, field) {
   img.onload = () => {
     document.getElementById("crop-modal").classList.add("show");
     const frame = document.getElementById("crop-frame");
-    frame.style.aspectRatio = field==="hero_img" ? "16/9" : "4/3";
+    frame.style.aspectRatio = field==="hero_img" ? "16/9" : field==="carte_photo" ? "1/1" : "4/3";
     const cropImg = document.getElementById("crop-img");
     cropImg.src = dataUrl;
     requestAnimationFrame(()=>{
@@ -5978,8 +5974,8 @@ function confirmCrop() {
   if(!cropState) return;
   const frame = cropState.frame;
   const fw = frame.clientWidth, fh = frame.clientHeight;
-  const targetW = cropState.field==="hero_img" ? 1600 : 1000;
-  const targetH = cropState.field==="hero_img" ? 900 : 750;
+  const targetW = cropState.field==="hero_img" ? 1600 : cropState.field==="carte_photo" ? 480 : 1000;
+  const targetH = cropState.field==="hero_img" ? 900  : cropState.field==="carte_photo" ? 480 : 750;
   const canvas = document.createElement("canvas");
   canvas.width = targetW; canvas.height = targetH;
   const ctx = canvas.getContext("2d");
@@ -5997,10 +5993,16 @@ function confirmCrop() {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(cropState.cropImg, sx, sy, sw, sh, 0, 0, targetW, targetH);
   const field = cropState.field;
-  landingEditorDraft[field] = canvas.toDataURL("image/jpeg", 0.94).split(",")[1];
-  renderLandingImgPreview(field);
+  if(field==="carte_photo") {
+    cpgPhotoB64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+    renderCartePhotoPreview();
+    refreshCartePreview();
+  } else {
+    landingEditorDraft[field] = canvas.toDataURL("image/jpeg", 0.94).split(",")[1];
+    renderLandingImgPreview(field);
+    toast("✓ Photo cadrée — pensez à Enregistrer");
+  }
   closeCropModal();
-  toast("✓ Photo cadrée — pensez à Enregistrer");
 }
 function closeCropModal() {
   document.getElementById("crop-modal").classList.remove("show");
@@ -8338,12 +8340,6 @@ function flatGrades() {
 }
 
 // ─── CARTES PROFESSIONNELLES ────────────────────────────────────────────
-function carteDefaultTier(g) {
-  if(g.role==="pdg") return "ELITE+";
-  if(g.role==="responsable") return "ELITE";
-  if(g.formateur) return "PRO+";
-  return "PRO";
-}
 function carteDefaultGradeLabel(g) {
   let base = accountRoleLabel(g);
   if(g.role==="agent" && g.formateur) base += " (Formateur)";
@@ -8356,22 +8352,20 @@ function buildProCardHTML(d) {
   const icon = SERVICE_ICONS[d.service] || "🐾";
   const brand = (svcLabel(d.service)||"Dog Compagnie").replace(/^Dog\s+/i,"").toUpperCase();
   const expDate = d.date_expiration ? new Date(d.date_expiration+"T00:00:00").toLocaleDateString("fr-FR") : "—";
+  const portraitInner = d.photo_b64
+    ? `<img src="data:image/jpeg;base64,${d.photo_b64}" alt="">`
+    : `<div class="pc-portrait-icon">${icon}</div>`;
   return `<div class="pro-card">
     <div class="pc-diag"></div>
     <div class="pc-brand">
       <div class="pc-brand-mini">Dog Compagnie</div>
       <div class="pc-brand-main">${esc(brand)}</div>
     </div>
-    <div class="pc-tier">${esc(d.tier||"PRO")}</div>
+    <div class="pc-tier">Carte pro</div>
+    <div class="pc-portrait">${portraitInner}</div>
     <div class="pc-diamond"><span>${icon}</span></div>
     <div class="pc-pills">
       <div class="pc-pill">${esc(d.grade_label||"Agent")}</div>
-      <div class="pc-pill">Carte pro</div>
-    </div>
-    <div class="pc-portrait">
-      <div class="pc-portrait-ring"></div>
-      <div class="pc-portrait-ring2"></div>
-      <div class="pc-portrait-icon">${icon}</div>
     </div>
     <div class="pc-name">${esc(d.prenom||"")} ${esc(d.nom||"")}</div>
     <div class="pc-meta">
@@ -8384,6 +8378,38 @@ function buildProCardHTML(d) {
 let cartesProCache = [];
 let cpgCurrentGrade = null;
 let cpgCurrentCarteId = null;
+let cpgPhotoB64 = null;
+
+function renderCartePhotoPreview() {
+  const el = document.getElementById("cpg-photo-preview");
+  if(!el) return;
+  el.innerHTML = cpgPhotoB64
+    ? `<div style="position:relative;display:inline-block;">
+         <img src="data:image/jpeg;base64,${cpgPhotoB64}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;display:block;border:1px solid var(--border);">
+         <div style="position:absolute;top:-8px;right:-8px;display:flex;gap:4px;">
+           <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 7px;font-size:11px;" onclick="recropCartePhoto()">🖌️</button>
+           <button type="button" class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="removeCartePhoto()">🗑</button>
+         </div>
+       </div>`
+    : `<div style="font-size:11px;color:var(--text3);">Aucune photo — l'icône du service sera utilisée par défaut.</div>`;
+}
+function handleCartePhotoUpload(input) {
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => openCropModal(e.target.result, "carte_photo");
+  reader.readAsDataURL(file);
+  input.value = "";
+}
+function recropCartePhoto() {
+  if(!cpgPhotoB64) return;
+  openCropModal("data:image/jpeg;base64,"+cpgPhotoB64, "carte_photo");
+}
+function removeCartePhoto() {
+  cpgPhotoB64 = null;
+  renderCartePhotoPreview();
+  refreshCartePreview();
+}
 
 async function initCartesProGestion() {
   const el = document.getElementById("cpg-list");
@@ -8427,10 +8453,11 @@ function openCarteProModal(g) {
   cpgCurrentGrade = g;
   const carte = cartesProCache.find(c=>String(c.compte_id)===String(g.compte_id));
   cpgCurrentCarteId = carte ? carte.id : null;
+  cpgPhotoB64 = carte?.photo_b64 || null;
   document.getElementById("cpg-nom").value = g.nom;
   document.getElementById("cpg-prenom").value = g.prenom;
   document.getElementById("cpg-grade-label").value = carte?.grade_label || carteDefaultGradeLabel(g);
-  document.getElementById("cpg-tier").value = carte?.tier || carteDefaultTier(g);
+  renderCartePhotoPreview();
   document.getElementById("cpg-matricule").value = carte?.matricule || genMatricule();
   const defExp = new Date(); defExp.setFullYear(defExp.getFullYear()+1);
   document.getElementById("cpg-expiration").value = carte?.date_expiration || defExp.toISOString().slice(0,10);
@@ -8441,14 +8468,14 @@ function openCarteProModal(g) {
   refreshCartePreview();
   document.getElementById("cpg-modal").classList.add("show");
 }
-function closeCarteProModal() { document.getElementById("cpg-modal").classList.remove("show"); cpgCurrentGrade=null; cpgCurrentCarteId=null; }
+function closeCarteProModal() { document.getElementById("cpg-modal").classList.remove("show"); cpgCurrentGrade=null; cpgCurrentCarteId=null; cpgPhotoB64=null; }
 function refreshCartePreview() {
   if(!cpgCurrentGrade) return;
   const d = {
     service: myService(),
     nom: cpgCurrentGrade.nom, prenom: cpgCurrentGrade.prenom,
     grade_label: document.getElementById("cpg-grade-label").value,
-    tier: document.getElementById("cpg-tier").value,
+    photo_b64: cpgPhotoB64,
     matricule: document.getElementById("cpg-matricule").value,
     date_expiration: document.getElementById("cpg-expiration").value,
   };
@@ -8462,7 +8489,7 @@ async function saveCartePro() {
     nom: cpgCurrentGrade.nom,
     prenom: cpgCurrentGrade.prenom,
     grade_label: document.getElementById("cpg-grade-label").value.trim() || carteDefaultGradeLabel(cpgCurrentGrade),
-    tier: document.getElementById("cpg-tier").value,
+    photo_b64: cpgPhotoB64,
     matricule: document.getElementById("cpg-matricule").value.trim() || genMatricule(),
     date_expiration: document.getElementById("cpg-expiration").value,
     updated_at: new Date().toISOString(),
@@ -8489,6 +8516,7 @@ async function supprimerCartePro(id) {
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
+let currentMaCarteData = null;
 async function initMaCartePro() {
   const el = document.getElementById("mcp-content");
   el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
@@ -8496,17 +8524,20 @@ async function initMaCartePro() {
   try {
     const rows = await sb(`cartes_pro?compte_id=eq.${currentCompte.compte_id}&service=eq.${myService()}&select=*`);
     const carte = rows && rows[0];
+    currentMaCarteData = carte || null;
     if(!carte) {
       el.innerHTML = `<div class="empty"><div class="empty-icon">🪪</div><p>Aucune carte professionnelle n'a encore été créée pour vous sur cette filiale.<br>Elle est délivrée par votre responsable ou le PDG.</p></div>`;
       return;
     }
     el.innerHTML = `<div class="pro-card-wrap">${buildProCardHTML(carte)}</div>
       <div style="text-align:center;margin-top:18px;">
-        <button class="btn btn-primary" onclick="downloadCartePro(${JSON.stringify(carte).replace(/"/g,"&quot;")})">📥 Télécharger ma carte</button>
+        <button class="btn btn-primary" onclick="downloadCartePro()">📥 Télécharger ma carte</button>
       </div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
-async function downloadCartePro(carte) {
+async function downloadCartePro() {
+  const carte = currentMaCarteData;
+  if(!carte) return;
   try {
     if(typeof html2canvas==="undefined") throw new Error("Le module de génération d'image n'a pas pu se charger.");
     const zone = document.getElementById("doc-render-zone");
