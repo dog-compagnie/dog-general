@@ -8559,22 +8559,57 @@ async function downloadCartePro() {
   const carte = currentMaCarteData;
   if(!carte) return;
   try {
-    if(typeof html2canvas==="undefined") throw new Error("Le module de génération d'image n'a pas pu se charger.");
-    const zone = document.getElementById("doc-render-zone");
-    zone.innerHTML = buildProCardHTML(carte);
-    zone.style.left = "0px"; zone.style.top="-9999px";
-    const target = zone.querySelector(".pro-card");
-    const scale = 3;
-    const rawCanvas = await html2canvas(target, {scale, backgroundColor:null, useCORS:true});
-    // L'outil de capture ne découpe pas toujours bien les coins arrondis (border-radius +
-    // overflow:hidden) : on force nous-mêmes le découpage sur le canvas final pour garantir
-    // des coins nets, sans le carré résiduel visible sinon.
-    const canvas = clipCanvasRoundedRect(rawCanvas, 18*scale);
-    zone.innerHTML = ""; zone.style.left="-9999px"; zone.style.top="0px";
-    const url = await new Promise(resolve=>canvas.toBlob(blob=>resolve(URL.createObjectURL(blob)), "image/png"));
-    const a = document.createElement("a");
-    a.href = url; a.download = `carte-pro-${(carte.prenom||"").toLowerCase()}-${(carte.nom||"").toLowerCase()}.png`;
-    document.body.appendChild(a); a.click(); a.remove();
+    const cardCss = document.querySelector("style")?.textContent || "";
+    const rootStyle = (document.documentElement.getAttribute("style") || "").replace(/"/g,"&quot;");
+    const filename = `carte-pro-${(carte.prenom||"").toLowerCase()}-${(carte.nom||"").toLowerCase()}.png`;
+    const w = window.open("", "_blank");
+    if(!w) { toast("Merci d'autoriser les fenêtres pop-up pour télécharger la carte.","#E74C3C"); return; }
+    w.document.open();
+    w.document.write(`<!DOCTYPE html><html style="${rootStyle}"><head><meta charset="utf-8">
+      <title>Carte pro — ${esc(carte.prenom)} ${esc(carte.nom)}</title>
+      <style>
+        ${cardCss}
+        html,body{margin:0;background:#0B0F16;}
+        body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:'DM Sans',-apple-system,sans-serif;}
+        #cp-status{color:#9AD89A;font-size:13px;}
+      </style>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+      </head>
+      <body>
+        ${buildProCardHTML(carte)}
+        <div id="cp-status">Préparation du téléchargement…</div>
+      </body></html>`);
+    w.document.close();
+
+    const runCapture = async () => {
+      try {
+        const statusEl = w.document.getElementById("cp-status");
+        // On attend que TOUTES les images (photo, tête du chien) aient fini de charger avant
+        // de capturer : capturer trop tôt est la cause la plus probable des carrés blancs vus
+        // jusqu'ici (image pas encore décodée au moment de la capture).
+        const imgs = Array.from(w.document.querySelectorAll("img"));
+        await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(res=>{ img.onload=res; img.onerror=res; })));
+        await new Promise(r=>setTimeout(r,120));
+        let tries = 0;
+        while(typeof w.html2canvas==="undefined" && tries<50) { await new Promise(r=>setTimeout(r,100)); tries++; }
+        if(typeof w.html2canvas==="undefined") throw new Error("Le module de génération d'image n'a pas pu se charger.");
+        const target = w.document.querySelector(".pro-card");
+        const scale = 3;
+        const rawCanvas = await w.html2canvas(target, {scale, backgroundColor:null, useCORS:true});
+        // Sécurité supplémentaire : on redécoupe nous-mêmes les coins arrondis sur le résultat final.
+        const canvas = clipCanvasRoundedRect(rawCanvas, 18*scale);
+        const url = await new Promise(resolve=>canvas.toBlob(blob=>resolve(URL.createObjectURL(blob)), "image/png"));
+        const a = w.document.createElement("a");
+        a.href = url; a.download = filename;
+        w.document.body.appendChild(a); a.click();
+        if(statusEl) statusEl.textContent = "✓ Carte téléchargée — vous pouvez fermer cette fenêtre.";
+      } catch(err) {
+        const statusEl = w.document.getElementById("cp-status");
+        if(statusEl) statusEl.textContent = "Erreur : " + err.message;
+      }
+    };
+    if(w.document.readyState==="complete") runCapture();
+    else w.addEventListener("load", runCapture);
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
