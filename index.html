@@ -1018,6 +1018,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="page-title">Logs de <span>service</span></div>
     <div class="page-sub" id="logs-page-sub">Historique complet des prises et fins de service de tous les dépanneurs.</div>
     <div class="stats-bar" id="logs-stats"></div>
+    <div class="stats-bar" id="logs-stats-mois" style="margin-bottom:16px;"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;" id="logs-sort-bar"></div>
     <div class="card">
       <div class="card-hdr">
@@ -8217,7 +8218,34 @@ async function loadLogs() {
     const logs = await sb("services_logs?select=*&order=debut.desc&limit=100");
     allLogs = (logs||[]).filter(l=>!TEST_ACCOUNT_NAMES.includes((l.agent_nom||"").trim()));
     renderLogs();
+    loadLogsMonthlyStats();
   } catch(e) { toast("Erreur chargement logs","#E74C3C"); }
+}
+
+async function loadLogsMonthlyStats() {
+  const el = document.getElementById("logs-stats-mois");
+  if(!el) return;
+  try {
+    const now = new Date();
+    const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startLastMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    // On récupère tout depuis le début du mois précédent — la liste principale est limitée
+    // à 100 lignes, ce qui n'est pas fiable pour un total mensuel complet.
+    const logs = await sb(`services_logs?select=agent_nom,debut,duree_minutes&fin=not.is.null&debut=gte.${startLastMonth.toISOString()}&order=debut.desc`);
+    const rows = (logs||[]).filter(l=>!TEST_ACCOUNT_NAMES.includes((l.agent_nom||"").trim()));
+    let minsThisMonth = 0, minsLastMonth = 0;
+    rows.forEach(l=>{
+      const d = new Date(l.debut);
+      if(d >= startThisMonth) minsThisMonth += (l.duree_minutes||0);
+      else if(d >= startLastMonth) minsLastMonth += (l.duree_minutes||0);
+    });
+    const capitalize = s => s.charAt(0).toUpperCase()+s.slice(1);
+    const labelThisMonth = capitalize(startThisMonth.toLocaleDateString("fr-FR",{month:"long"}));
+    const labelLastMonth = capitalize(startLastMonth.toLocaleDateString("fr-FR",{month:"long"}));
+    el.innerHTML = `
+      <div class="stat-pill"><div class="stat-num" style="color:var(--blue-light)">${fmtDuree(minsLastMonth)}</div><div class="stat-lbl">Heures — ${labelLastMonth}</div></div>
+      <div class="stat-pill"><div class="stat-num" style="color:#52D98B">${fmtDuree(minsThisMonth)}</div><div class="stat-lbl">Heures — ${labelThisMonth} (en cours)</div></div>`;
+  } catch(e) { /* silencieux : les stats globales restent affichées sans ces deux encadrés */ }
 }
 
 async function deleteLog(id) {
