@@ -1005,6 +1005,11 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
         </div>
       </div>
       <div class="card">
+        <div class="card-body" id="mon-service-mois-box" style="padding:16px 0;">
+          <div class="empty"><p>Chargement…</p></div>
+        </div>
+      </div>
+      <div class="card">
         <div class="card-hdr"><div class="card-hdr-title">📋 Mes derniers services</div></div>
         <div class="card-body" id="mes-services-list">
           <div class="empty"><p>Aucun service enregistré.</p></div>
@@ -7320,7 +7325,27 @@ async function initServicePage() {
       setServiceUI(false);
     }
     renderMesServices((logs||[]).slice(0,10));
+    loadMesHeuresMois();
   } catch(e) { console.error("initServicePage:", e); }
+}
+
+async function loadMesHeuresMois() {
+  const el = document.getElementById("mon-service-mois-box");
+  if(!el || !currentAgent) return;
+  try {
+    const now = new Date();
+    const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Requête dédiée (indépendante des 11 derniers services affichés plus bas) pour un total
+    // fiable sur le mois entier, même au-delà de la limite de la liste.
+    const logs = await sb(`services_logs?agent_nom=eq.${encodeURIComponent(currentAgent.prenom+" "+currentAgent.nom)}&select=duree_minutes&fin=not.is.null&debut=gte.${startThisMonth.toISOString()}`);
+    const mins = (logs||[]).reduce((s,l)=>s+(l.duree_minutes||0),0);
+    const capitalize = s => s.charAt(0).toUpperCase()+s.slice(1);
+    const label = capitalize(startThisMonth.toLocaleDateString("fr-FR",{month:"long"}));
+    el.innerHTML = `<div style="text-align:center;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Mes heures de service — ${label} (en cours)</div>
+      <div style="font-size:24px;font-weight:900;color:var(--orange-light);font-variant-numeric:tabular-nums;">${fmtDuree(mins)}</div>
+    </div>`;
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
 
 function setServiceUI(enService) {
