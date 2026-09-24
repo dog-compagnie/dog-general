@@ -5702,99 +5702,56 @@ function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
-// Sting d'accueil façon bande-annonce d'action rythmée (~5s), construit avec de vrais
-// synthés (Tone.js) : basse 808, cuivres FM façon "BRAAM", riff mélodique accrocheur par-dessus
-// le groove, riser avant le drop, delay/réverbération pour la profondeur. Se tait
-// silencieusement si Tone.js n'a pas chargé (ne bloque jamais la connexion).
+// Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
+// mélodique qui glisse d'une note à l'autre (portamento, pas de coups secs), un léger souffle
+// pour le mouvement. Pas de percussion ni de synthèse FM (c'était ça, le côté "jeu vidéo").
+// Se tait silencieusement si Tone.js n'a pas chargé (ne bloque jamais la connexion).
 let _toneReady = false;
 async function playWelcomeMelody() {
   try {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
     const now = Tone.now() + 0.05;
-    Tone.Destination.volume.value = -10;
+    Tone.Destination.volume.value = -8;
 
-    const reverb = new Tone.Reverb({decay:2.2, wet:0.22}).toDestination();
-    const delay = new Tone.PingPongDelay({delayTime:"16n", feedback:0.22, wet:0.16}).connect(reverb);
-    const dist = new Tone.Distortion({distortion:0.22, wet:0.35}).connect(reverb);
-    const comp = new Tone.Compressor({threshold:-18, ratio:4}).connect(dist);
+    const reverb = new Tone.Reverb({decay:2.6, wet:0.30}).toDestination();
 
-    // Cuivres synthétiques façon "BRAAM" de bande-annonce
-    const braam = new Tone.PolySynth(Tone.FMSynth, {
-      harmonicity:1.5, modulationIndex:10,
-      envelope:{attack:0.04, decay:0.25, sustain:0.5, release:1.0},
-      modulationEnvelope:{attack:0.04, decay:0.2, sustain:0.3, release:0.7},
-    }).connect(comp);
-    braam.volume.value = -9;
+    // Nappe chaude, sinusoïdale, qui monte et s'éteint en fondu — mineur vers majeur
+    const pad = new Tone.PolySynth(Tone.Synth, {
+      oscillator:{type:"sine"},
+      envelope:{attack:0.8, decay:0.3, sustain:0.6, release:1.8},
+    }).connect(reverb);
+    pad.volume.value = -9;
 
-    // Riff mélodique accrocheur, avec un peu d'écho pour la profondeur — le "hook" qu'on retient
-    const lead = new Tone.Synth({
+    // Ligne mélodique fluide : chaque note glisse vers la suivante (portamento), sans coup sec
+    const lead = new Tone.MonoSynth({
       oscillator:{type:"triangle"},
-      envelope:{attack:0.01, decay:0.12, sustain:0.15, release:0.35},
-    }).connect(delay);
-    lead.connect(reverb);
-    lead.volume.value = -13;
+      envelope:{attack:0.10, decay:0.15, sustain:0.5, release:0.9},
+      portamento:0.10,
+      filterEnvelope:{attack:0.3, decay:0.4, sustain:0.6, release:1.0, baseFrequency:400, octaves:3},
+    }).connect(reverb);
+    lead.volume.value = -7;
 
-    // Basse / 808
-    const kick = new Tone.MembraneSynth({
-      pitchDecay:0.06, octaves:5,
-      envelope:{attack:0.001, decay:0.35, sustain:0.01, release:1.0},
-    }).connect(dist);
-    kick.volume.value = -16;
+    // Souffle discret pour donner du mouvement, sans percussion
+    const airFilter = new Tone.Filter({frequency:250, type:"bandpass", Q:0.6}).connect(reverb);
+    const air = new Tone.Noise("pink").connect(airFilter);
+    air.volume.value = -34;
+    air.start(now); air.stop(now+2.3);
 
-    // Charleston et caisse claire — pour le côté dansant/rythmé
-    const hat = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.025, sustain:0}}).toDestination();
-    hat.volume.value = -28;
-    const snare = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.18, sustain:0}}).connect(reverb);
-    snare.volume.value = -14;
-    // Riser avant le drop — bruit filtré dont la couleur monte, tension classique de bande-annonce
-    const riserFilt = new Tone.Filter({frequency:300, type:"highpass"}).connect(reverb);
-    const riser = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.5, decay:0.1, sustain:0.3, release:0.1}}).connect(riserFilt);
-    riser.volume.value = -22;
-    // Crash au moment du drop, plus large que la caisse claire seule
-    const crash = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.002, decay:1.1, sustain:0}}).connect(reverb);
-    crash.volume.value = -20;
+    // Deux accords qui s'enchaînent en fondu, mineur puis résolution chaleureuse
+    pad.triggerAttackRelease(["E3","G3","B3"], 1.3, now);
+    pad.triggerAttackRelease(["C4","E4","G4"], 1.5, now+0.95);
 
-    const bpm = 100;
-    const beat = 60/bpm;
-
-    // Pulsation rythmique continue (le "danseur" du morceau), avec charleston qui pétille
-    for(let i=0;i<11;i++) {
-      kick.triggerAttack("A0", now+i*beat*0.5);
-      if(i%2===1) hat.triggerAttack(now+i*beat*0.5+0.01);
-    }
-    snare.triggerAttack(now+beat*1.5);
-    snare.triggerAttack(now+beat*3.5);
-
-    // Cuivres qui montent en tension par-dessus le groove — mineur, façon trailer
-    braam.triggerAttackRelease(["E2","B2","E3"], "8n", now+beat*0);
-    braam.triggerAttackRelease(["G2","D3","G3"], "8n", now+beat*2);
-    braam.triggerAttackRelease(["A2","E3","A3"], "4n", now+beat*4);
-
-    // Riff mélodique par-dessus, accrocheur et syncopé — ce qu'on garde en tête
-    const riffBeats = [0, 0.75, 1.5, 2, 2.75, 3.5, 4, 4.75];
-    const riffNotes = ["E5","G5","B5","A5","G5","E5","G5","B5"];
-    riffNotes.forEach((n,i)=>lead.triggerAttackRelease(n, "16n", now+riffBeats[i]*beat));
-
-    // Riser juste avant le drop
-    riser.triggerAttack(now+beat*4.6);
-
-    // Le drop final : accord large tenu, basse profonde, crash + caisse claire à l'impact,
-    // note aiguë du riff qui résonne par-dessus
-    const drop = now+beat*5.5;
-    kick.triggerAttack("A0", drop);
-    braam.triggerAttackRelease(["E2","B2","E3","G3"], "2n", drop);
-    snare.triggerAttack(drop+0.04);
-    crash.triggerAttack(drop);
-    lead.triggerAttackRelease("E6", "4n", drop+0.05);
-
-    // Fondu final propre plutôt qu'une coupure nette
-    Tone.Destination.volume.rampTo(-40, 1.2, drop+1.0);
+    // La ligne mélodique glisse par-dessus, fluide du début à la fin
+    lead.triggerAttackRelease("E4", 0.45, now+0.10);
+    lead.triggerAttackRelease("G4", 0.45, now+0.52);
+    lead.triggerAttackRelease("B4", 0.55, now+0.95);
+    lead.triggerAttackRelease("E5", 0.95, now+1.45);
 
     setTimeout(()=>{
-      [reverb,delay,dist,comp,braam,lead,kick,hat,snare,riserFilt,riser,crash].forEach(n=>{ try{ n.dispose(); }catch(e){} });
-      Tone.Destination.volume.value = -10;
-    }, (beat*8+2.5)*1000);
+      [reverb,pad,lead,airFilter,air].forEach(n=>{ try{ n.dispose(); }catch(e){} });
+      Tone.Destination.volume.value = -8;
+    }, 3400);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5824,7 +5781,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 5800);
+  setTimeout(()=>overlay.classList.remove("show"), 2900);
 }
 
 async function launchApp() {
