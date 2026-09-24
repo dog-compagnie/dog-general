@@ -5712,16 +5712,18 @@ async function playWelcomeMelody() {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
     const now = Tone.now() + 0.05;
-    Tone.Destination.volume.value = -8;
+    Tone.Destination.volume.value = -14;
 
     const reverb = new Tone.Reverb({decay:2.6, wet:0.30}).toDestination();
+    const chorus = new Tone.Chorus({frequency:0.8, delayTime:3.5, depth:0.5, wet:0.25}).connect(reverb);
+    chorus.start();
 
     // Nappe chaude, sinusoïdale, qui monte et s'éteint en fondu — mineur vers majeur
     const pad = new Tone.PolySynth(Tone.Synth, {
       oscillator:{type:"sine"},
       envelope:{attack:0.8, decay:0.3, sustain:0.6, release:1.8},
     }).connect(reverb);
-    pad.volume.value = -9;
+    pad.volume.value = -11;
 
     // Ligne mélodique fluide : chaque note glisse vers la suivante (portamento), sans coup sec
     const lead = new Tone.MonoSynth({
@@ -5729,8 +5731,8 @@ async function playWelcomeMelody() {
       envelope:{attack:0.10, decay:0.15, sustain:0.5, release:0.9},
       portamento:0.10,
       filterEnvelope:{attack:0.3, decay:0.4, sustain:0.6, release:1.0, baseFrequency:400, octaves:3},
-    }).connect(reverb);
-    lead.volume.value = -7;
+    }).connect(chorus);
+    lead.volume.value = -10;
 
     // Souffle discret pour donner du mouvement, sans percussion
     const airFilter = new Tone.Filter({frequency:250, type:"bandpass", Q:0.6}).connect(reverb);
@@ -5749,8 +5751,8 @@ async function playWelcomeMelody() {
     lead.triggerAttackRelease("E5", 0.95, now+1.45);
 
     setTimeout(()=>{
-      [reverb,pad,lead,airFilter,air].forEach(n=>{ try{ n.dispose(); }catch(e){} });
-      Tone.Destination.volume.value = -8;
+      [reverb,chorus,pad,lead,airFilter,air].forEach(n=>{ try{ n.dispose(); }catch(e){} });
+      Tone.Destination.volume.value = -14;
     }, 3400);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
