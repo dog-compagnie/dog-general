@@ -5694,11 +5694,64 @@ function playChime(notes, opts) {
 // Ces fonctions marchent depuis n'importe quelle page de l'appli : le son n'est pas lié
 // à une page en particulier, seulement à l'onglet du navigateur qui doit être ouvert (et
 // non muet). On peut donc entendre une notification en étant sur une tout autre page.
-function soundWelcome()      { playChime([523.25, 659.25, 783.99], {gap:0.15, vol:0.10, dur:1.1}); }
+function soundWelcome()      { playWelcomeMelody(); }
 function soundServiceStart() { playChime([659.25, 987.77], {gap:0.12, vol:0.09, dur:0.7}); }
 function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, dur:0.7}); }
 function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
+function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
+
+// Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
+// final — bien plus marquant qu'un simple carillon à 3 notes.
+function playWelcomeMelody() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = new AC();
+    const t0 = ctx.currentTime;
+    const notes = [
+      {f:523.25, t:0.00, d:0.30, v:0.10},
+      {f:659.25, t:0.16, d:0.30, v:0.10},
+      {f:783.99, t:0.32, d:0.30, v:0.11},
+      {f:1046.50,t:0.48, d:0.48, v:0.12},
+      {f:783.99, t:0.92, d:0.28, v:0.09},
+      {f:659.25, t:1.14, d:0.30, v:0.09},
+    ];
+    notes.forEach(n=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = n.f;
+      const start = t0+n.t;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(n.v, start+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+n.d);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start); osc.stop(start+n.d+0.05);
+    });
+    // Accord final chaleureux, qui s'étire et s'éteint doucement
+    const chordStart = t0+1.42;
+    [523.25, 659.25, 783.99].forEach(f=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0, chordStart);
+      gain.gain.linearRampToValueAtTime(0.075, chordStart+0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, chordStart+1.6);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(chordStart); osc.stop(chordStart+1.7);
+    });
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 3300);
+  } catch(e) { /* audio indisponible : on continue sans bloquer */ }
+}
+
+// Léger clic sonore sur les boutons et éléments cliquables de toute l'interface — discret,
+// pour ne jamais devenir fatigant même en cliquant vite sur des listes.
+document.addEventListener("click", function(e){
+  const el = e.target.closest("button, .btn, .svc-switch-btn, .role-btn, .nav-item, .formule, .cand-statut-btn");
+  if(el && !el.disabled) soundClick();
+}, true);
 
 function showWelcomeMessage() {
   const overlay = document.getElementById("welcome-overlay");
@@ -5712,7 +5765,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 2600);
+  setTimeout(()=>overlay.classList.remove("show"), 3300);
 }
 
 async function launchApp() {
