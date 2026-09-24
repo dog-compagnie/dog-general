@@ -5703,84 +5703,92 @@ function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
 // final — bien plus marquant qu'un simple carillon à 3 notes.
-// Mélodie d'accueil entraînante (~4s) : kick four-on-the-floor, charleston, ligne de
-// basse groovy et mélodie accrocheuse par-dessus — dansant, pas cinématographique.
+// Sting d'accueil court et percutant (~2.5s) : basse 808, clap, riff sombre et syncopé,
+// drop final — registre trap/club, volume contenu, pas de mélodie "jingle".
 function playWelcomeMelody() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     const ctx = new AC();
     const t0 = ctx.currentTime;
-    const bpm = 128;
-    const beat = 60/bpm;
-    const eighth = beat/2;
+    const master = ctx.createGain();
+    master.gain.value = 0.8;
+    master.connect(ctx.destination);
 
-    function kick(time) {
+    function boom808(time, freq, dur, vol) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(150, time);
-      osc.frequency.exponentialRampToValueAtTime(45, time+0.12);
-      gain.gain.setValueAtTime(0.26, time);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time+0.22);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(time); osc.stop(time+0.25);
+      osc.frequency.setValueAtTime(freq*3, time);
+      osc.frequency.exponentialRampToValueAtTime(freq, time+0.09);
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time+dur);
+      osc.connect(gain).connect(master);
+      osc.start(time); osc.stop(time+dur+0.05);
     }
-    function hat(time, vol) {
-      const bufSize = Math.floor(ctx.sampleRate*0.05);
+    function clap(time, vol) {
+      const bufSize = Math.floor(ctx.sampleRate*0.09);
       const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * (1-i/bufSize);
       const noise = ctx.createBufferSource();
       noise.buffer = buffer;
       const filt = ctx.createBiquadFilter();
-      filt.type = "highpass"; filt.frequency.value = 6500;
+      filt.type = "bandpass"; filt.frequency.value = 1800; filt.Q.value = 1.2;
       const gain = ctx.createGain();
       gain.gain.value = vol;
-      noise.connect(filt).connect(gain).connect(ctx.destination);
+      noise.connect(filt).connect(gain).connect(master);
       noise.start(time);
     }
-    function bassNote(freq, time, dur, vol) {
-      const osc = ctx.createOscillator();
+    function hat(time, vol) {
+      const bufSize = Math.floor(ctx.sampleRate*0.035);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * (1-i/bufSize);
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filt = ctx.createBiquadFilter();
+      filt.type = "highpass"; filt.frequency.value = 7500;
       const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(vol, time+0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time+dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(time); osc.stop(time+dur+0.02);
+      gain.gain.value = vol;
+      noise.connect(filt).connect(gain).connect(master);
+      noise.start(time);
     }
-    function pluck(freq, time, dur, vol) {
+    function stab(freq, time, dur, vol) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       const filt = ctx.createBiquadFilter();
-      osc.type = "square";
+      osc.type = "sawtooth";
       osc.frequency.value = freq;
-      filt.type = "lowpass"; filt.frequency.value = 3200;
+      filt.type = "lowpass"; filt.frequency.value = 1500; filt.Q.value = 2;
       gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(vol, time+0.006);
+      gain.gain.linearRampToValueAtTime(vol, time+0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, time+dur);
-      osc.connect(filt).connect(gain).connect(ctx.destination);
-      osc.start(time); osc.stop(time+dur+0.02);
+      osc.connect(filt).connect(gain).connect(master);
+      osc.start(time); osc.stop(time+dur+0.03);
     }
 
-    // Kick four-on-the-floor sur 2 mesures (8 temps)
-    for(let i=0;i<8;i++) kick(t0+i*beat);
-    // Charleston en croches, accents alternés
-    for(let i=0;i<16;i++) hat(t0+i*eighth, i%2===0?0.05:0.032);
-    // Ligne de basse groovy et syncopée
-    const bassSeq = [130.81,130.81,196.00,220.00,130.81,130.81,174.61,196.00];
-    bassSeq.forEach((f,i)=>bassNote(f, t0+i*beat, beat*0.55, 0.15));
-    // Mélodie accrocheuse par-dessus, en croches syncopées — le vrai "hook"
-    const mel = [
-      {f:523.25,t:0},{f:659.25,t:2},{f:783.99,t:3},{f:659.25,t:5},
-      {f:587.33,t:6},{f:523.25,t:8},{f:659.25,t:10},{f:783.99,t:11},
-      {f:880.00,t:13},{f:783.99,t:14},{f:659.25,t:15},
-    ];
-    mel.forEach(n=>pluck(n.f, t0+n.t*eighth, eighth*1.15, 0.12));
+    // Riff sombre et syncopé (Mi mineur) — le hook, tranchant plutôt que guilleret
+    const E=164.81, G=196.00, D=293.66;
+    boom808(t0+0.00, 41.2, 0.35, 0.26);
+    stab(E, t0+0.00, 0.16, 0.11);
+    hat(t0+0.17, 0.045);
+    stab(G, t0+0.26, 0.14, 0.11);
+    clap(t0+0.35, 0.08); hat(t0+0.35, 0.04);
+    stab(E, t0+0.44, 0.14, 0.10);
+    hat(t0+0.53, 0.04);
+    boom808(t0+0.61, 36.7, 0.32, 0.24);
+    stab(D, t0+0.61, 0.20, 0.12);
+    hat(t0+0.70, 0.035); hat(t0+0.77, 0.035);
+    clap(t0+0.83, 0.09);
 
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, (8*beat+0.6)*1000);
+    // Le drop final — accord tenu, plus court qu'avant, avec un dernier 808 profond
+    const drop = t0+0.95;
+    [164.81,196.00,246.94].forEach(f=>stab(f, drop, 0.85, 0.12));
+    boom808(drop, 41.2, 0.95, 0.28);
+    clap(drop+0.02, 0.10);
+
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 2400);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5810,7 +5818,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 4100);
+  setTimeout(()=>overlay.classList.remove("show"), 2200);
 }
 
 async function launchApp() {
