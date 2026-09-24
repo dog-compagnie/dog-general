@@ -21,7 +21,8 @@
   --purple:#7D3C98;--purple-light:#C8A0E8;
   --text:#EDEAE2;--text2:#9C9789;--text3:#4A473E;
   --radius:14px;
-  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-display:'Space Grotesk',-apple-system,sans-serif;
+  --font-serif:'Cormorant Garamond',Georgia,serif;
   --font-body:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-user-select:none;user-select:none;}
@@ -141,7 +142,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 .lp-hero-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px 24px 80px;}
 .lp-hero-badges{display:flex;gap:14px;margin-bottom:26px;}
 .lp-hero-badges img{width:56px;height:56px;object-fit:cover;border-radius:50%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.16);box-shadow:0 6px 18px -4px rgba(0,0,0,0.5);}
-.lp-hero-title{font-family:var(--font-display);font-size:clamp(42px,8vw,76px);font-weight:800;letter-spacing:-0.02em;margin-bottom:16px;line-height:1.05;
+.lp-hero-title{font-family:var(--font-serif);font-size:clamp(42px,8vw,76px);font-weight:700;letter-spacing:-0.01em;margin-bottom:16px;line-height:1.05;
   background:linear-gradient(90deg,#fff 0%,#8ecdf7 20%,#fff 40%,#f5b878 60%,#fff 80%,#8ecdf7 100%);
   background-size:250% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:lp-title-shine 7s linear infinite;
@@ -169,7 +170,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 .lp-section-alt{background:#0C1017;}
 .lp-section-inner{max-width:1080px;margin:0 auto;}
 .lp-eyebrow{font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#5DADE2;margin-bottom:10px;}
-.lp-section h2{font-family:var(--font-display);font-size:clamp(24px,3.5vw,34px);font-weight:700;color:#fff;margin-bottom:18px;}
+.lp-section h2{font-family:var(--font-serif);font-size:clamp(24px,3.5vw,34px);font-weight:700;color:#fff;margin-bottom:18px;}
 
 .lp-about{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;}
 .lp-about-text p{font-size:14.5px;color:#B8C8D8;line-height:1.85;white-space:pre-line;}
@@ -207,7 +208,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 .crop-frame img{position:absolute;top:0;left:0;max-width:none;user-select:none;-webkit-user-drag:none;}
 .login-box::before{content:"";position:absolute;top:-1px;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent,rgba(41,128,185,0.7),rgba(211,84,0,0.5),rgba(192,57,43,0.7),transparent);}
 .login-logo{margin-bottom:18px;filter:drop-shadow(0 4px 16px rgba(41,128,185,0.25));}
-.login-title{font-family:var(--font-display);font-size:27px;font-weight:700;letter-spacing:-0.02em;background:linear-gradient(120deg,#fff 30%,var(--blue-light) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px;}
+.login-title{font-family:var(--font-serif);font-size:30px;font-weight:700;letter-spacing:-0.01em;background:linear-gradient(120deg,#fff 30%,var(--blue-light) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px;}
 .login-sub{font-size:12.5px;color:var(--text2);margin-bottom:34px;letter-spacing:0.01em;}
 .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:10px;}
 .role-btn{padding:20px 12px;border-radius:14px;border:1.5px solid var(--border);background:rgba(9,13,20,0.55);color:var(--text2);font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:9px;transition:all 0.2s cubic-bezier(.2,.8,.3,1);cursor:pointer;position:relative;overflow:hidden;}
@@ -316,7 +317,7 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 @keyframes maint-dot{0%,100%{opacity:0.3;}50%{opacity:1;}}
 .page.active{display:block;animation:page-fade-in 0.3s cubic-bezier(.2,.8,.3,1);}
 @keyframes page-fade-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-.page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#fff;margin-bottom:5px;display:flex;align-items:center;gap:12px;}
+.page-title{font-family:var(--font-serif);font-size:29px;font-weight:700;letter-spacing:-0.005em;color:#fff;margin-bottom:5px;display:flex;align-items:center;gap:12px;}
 .page-title::before{content:"";width:5px;height:26px;border-radius:4px;background:linear-gradient(180deg,var(--accent-light),var(--accent));box-shadow:0 0 12px rgba(var(--accent-rgb),0.55);flex-shrink:0;}
 .page-title span{background:linear-gradient(120deg,var(--accent-light),#BFE0F5);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .page-sub{font-size:13px;color:var(--text2);margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid var(--border);margin-left:17px;}
@@ -667,12 +668,13 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-watermark{position:absolute;left:133px;bottom:58px;width:124px;z-index:1;opacity:0.55;pointer-events:none;}
 .pro-card .pc-watermark img{width:100%;height:auto;display:block;}
 .pro-card-wrap{display:flex;justify-content:center;padding:6px;}
-#welcome-overlay{position:fixed;inset:0;z-index:998;display:flex;align-items:center;justify-content:center;background:rgba(5,6,8,0);pointer-events:none;opacity:0;transition:opacity 0.6s ease, background 0.6s ease;}
+#welcome-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(5,6,8,0);pointer-events:none;opacity:0;transition:opacity 0.6s ease, background 0.6s ease;}
+#welcome-overlay.show{pointer-events:auto;cursor:wait;}
 #welcome-overlay.show{opacity:1;background:rgba(5,6,8,0.72);backdrop-filter:blur(6px);}
 #welcome-box{text-align:center;transform:translateY(14px) scale(0.97);opacity:0;transition:transform 0.7s cubic-bezier(.2,.8,.25,1), opacity 0.7s ease;}
 #welcome-overlay.show #welcome-box{transform:translateY(0) scale(1);opacity:1;}
 #welcome-eyebrow{font-family:'DM Mono',monospace,var(--font-body);font-size:11px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
-#welcome-text{font-family:var(--font-display);font-size:clamp(32px,5vw,52px);font-weight:700;color:#F3EFE6;letter-spacing:.005em;}
+#welcome-text{font-family:var(--font-serif);font-size:clamp(32px,5vw,52px);font-weight:700;color:#F3EFE6;letter-spacing:.005em;}
 #welcome-text em{font-style:italic;color:var(--accent-light);}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2451,6 +2453,7 @@ async function publierNoteService() {
       sendDiscordWebhook("📋 Nouvelle note de service", webhookMsg, 0x5DADE2, myService());
     }
     toast("✓ Publié");
+    soundDocCreated();
     document.getElementById("ns-titre").value = "";
     document.getElementById("ns-contenu").value = "";
     loadNotesService();
@@ -4453,6 +4456,7 @@ async function sauvegarderBilan() {
     logActivity("bilan_enregistre", `Bilan ${data.reference} enregistré pour ${data.prenom} ${data.nom}`);
     sendDiscordWebhook("🩺 Nouveau bilan enregistré", `**${data.reference}**\nVictime : ${data.prenom} ${data.nom}\nNature de l'intervention : ${data.nature_intervention||"—"}\nPar : ${identityLabel()}`, 0xC0392B);
     toast("✓ Bilan enregistré : "+data.reference);
+    soundDocCreated();
     loadBilanHistory();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
@@ -5402,6 +5406,10 @@ async function markAllNotifsSeen() {
 
 function updateNotifBadges() {
   const {cand, abs, inc, evl, note, total} = computeNotifCounts();
+  if(typeof window._lastNotifTotal === "number" && total > window._lastNotifTotal) {
+    soundNotif();
+  }
+  window._lastNotifTotal = total;
   const dot = document.getElementById("notif-dot");
   const bell = document.getElementById("notif-bell");
   if(dot)  { dot.textContent = total; dot.style.display = total>0 ? "flex" : "none"; }
@@ -5659,27 +5667,39 @@ function finishLaunch() {
 }
 
 // ─── SON & MESSAGE DE BIENVENUE (à la connexion) ────────────────────────
-function playChime(notes) {
+function playChime(notes, opts) {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     const ctx = new AC();
     const now = ctx.currentTime;
+    const gap = (opts&&opts.gap) || 0.15;
+    const vol = (opts&&opts.vol) || 0.10;
+    const dur = (opts&&opts.dur) || 1.1;
     (notes||[523.25, 659.25, 783.99]).forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = "sine";
+      osc.type = (opts&&opts.wave) || "sine";
       osc.frequency.value = freq;
-      const start = now + i*0.15;
+      const start = now + i*gap;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.10, start+0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start+1.1);
+      gain.gain.linearRampToValueAtTime(vol, start+0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(start); osc.stop(start+1.2);
+      osc.start(start); osc.stop(start+dur+0.1);
     });
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 1800);
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, (dur+notes.length*gap)*1000+400);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
+// Ces fonctions marchent depuis n'importe quelle page de l'appli : le son n'est pas lié
+// à une page en particulier, seulement à l'onglet du navigateur qui doit être ouvert (et
+// non muet). On peut donc entendre une notification en étant sur une tout autre page.
+function soundWelcome()      { playChime([523.25, 659.25, 783.99], {gap:0.15, vol:0.10, dur:1.1}); }
+function soundServiceStart() { playChime([659.25, 987.77], {gap:0.12, vol:0.09, dur:0.7}); }
+function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, dur:0.7}); }
+function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
+function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
+
 function showWelcomeMessage() {
   const overlay = document.getElementById("welcome-overlay");
   const textEl = document.getElementById("welcome-text");
@@ -5691,7 +5711,7 @@ function showWelcomeMessage() {
   textEl.innerHTML = prenom ? `${salut}, <em>${esc(prenom)}</em>.` : `${salut}.`;
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
-  playChime();
+  soundWelcome();
   setTimeout(()=>overlay.classList.remove("show"), 2600);
 }
 
@@ -7459,6 +7479,7 @@ async function toggleService() {
       serviceEnCours = null;
       setServiceUI(false);
       toast("✓ Service terminé — durée : "+fmtDuree(duree));
+      soundServiceEnd();
       initServicePage();
     } catch(e) { toast("Erreur fin de service","#E74C3C"); }
   } else {
@@ -7474,6 +7495,7 @@ async function toggleService() {
       serviceEnCours = { id: rows[0].id, debut };
       setServiceUI(true);
       toast("✓ Prise de service enregistrée");
+      soundServiceStart();
       initServicePage();
     } catch(e) { console.error(e); toast("Erreur prise de service : "+e.message,"#E74C3C"); }
   }
@@ -7542,6 +7564,7 @@ async function forceEndService(id) {
     await sb(`services_logs?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({fin:fin.toISOString(),duree_minutes:duree})});
     logActivity("service_force_fin", `Service de ${l.agent_nom} terminé de force par ${identityLabel()}`);
     toast("✓ Service terminé");
+    soundServiceEnd();
     await loadLogs();
   } catch(e) { toast("Erreur","#E74C3C"); }
 }
@@ -8184,6 +8207,7 @@ async function enregistrerFichePaie() {
     if(!r.ok) throw new Error(await r.text());
     logActivity("fiche_paie_creee", `Fiche de paie créée pour ${data.agent_nom} (${data.periode_label}) — ${fmtEuro(data.total)}`);
     toast("✓ Fiche de paie enregistrée");
+    soundDocCreated();
     closePaieModal();
     loadPaieHistory();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
@@ -8819,6 +8843,7 @@ async function saveCartePro() {
       await sb("cartes_pro", { method:"POST", body: JSON.stringify(payload) });
     }
     toast("✓ Carte professionnelle enregistrée","#52D98B");
+    soundDocCreated();
     closeCarteProModal();
     initCartesProGestion();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
