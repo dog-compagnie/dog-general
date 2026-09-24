@@ -5713,9 +5713,10 @@ async function playWelcomeMelody() {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
     const now = Tone.now() + 0.05;
+    Tone.Destination.volume.value = -10;
 
-    const reverb = new Tone.Reverb({decay:2.0, wet:0.22}).toDestination();
-    const dist = new Tone.Distortion({distortion:0.35, wet:0.5}).connect(reverb);
+    const reverb = new Tone.Reverb({decay:2.0, wet:0.20}).toDestination();
+    const dist = new Tone.Distortion({distortion:0.22, wet:0.35}).connect(reverb);
     const comp = new Tone.Compressor({threshold:-18, ratio:4}).connect(dist);
 
     // Cuivres synthétiques façon "BRAAM" de bande-annonce
@@ -5724,20 +5725,20 @@ async function playWelcomeMelody() {
       envelope:{attack:0.04, decay:0.25, sustain:0.5, release:1.0},
       modulationEnvelope:{attack:0.04, decay:0.2, sustain:0.3, release:0.7},
     }).connect(comp);
-    braam.volume.value = -5;
+    braam.volume.value = -9;
 
     // Basse / 808
     const kick = new Tone.MembraneSynth({
       pitchDecay:0.06, octaves:5,
       envelope:{attack:0.001, decay:0.35, sustain:0.01, release:1.0},
     }).connect(dist);
-    kick.volume.value = -2;
+    kick.volume.value = -16;
 
     // Charleston et caisse claire — pour le côté dansant/rythmé
     const hat = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.025, sustain:0}}).toDestination();
-    hat.volume.value = -24;
+    hat.volume.value = -28;
     const snare = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.18, sustain:0}}).connect(reverb);
-    snare.volume.value = -10;
+    snare.volume.value = -14;
 
     const bpm = 100;
     const beat = 60/bpm;
