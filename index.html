@@ -5703,77 +5703,61 @@ function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
 // final — bien plus marquant qu'un simple carillon à 3 notes.
-// Sting d'accueil cinématique (~4s) : montée en tension, trois coups de puissance martiaux,
-// et un accord final large avec sub-bass — dans l'esprit d'une bande-annonce, pas d'une clochette.
+// Nappe d'accueil cinématique (~5.5s) : accords qui s'enchaînent en fondu, façon nappe de
+// cordes de bande originale — pas de coups percussifs, pas d'ondes en dents de scie
+// (c'est précisément ce qui donnait ce côté "jeu vidéo").
 function playWelcomeMelody() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     const ctx = new AC();
     const t0 = ctx.currentTime;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1600;
+    lp.connect(ctx.destination);
 
-    function stab(freqs, start, dur, vol) {
+    // Chaque accord = plusieurs oscillateurs légèrement désaccordés entre eux (comme un
+    // pupitre de cordes réel n'est jamais parfaitement synchronisé), avec une attaque et
+    // une extinction lentes plutôt qu'un coup sec.
+    function pad(freqs, start, attack, hold, release, vol) {
       freqs.forEach(f=>{
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filt = ctx.createBiquadFilter();
-        osc.type = "sawtooth";
-        osc.frequency.value = f;
-        filt.type = "lowpass";
-        filt.frequency.value = 2400;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(vol, start+0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
-        osc.connect(filt).connect(gain).connect(ctx.destination);
-        osc.start(start); osc.stop(start+dur+0.05);
+        [-4, 0, 4].forEach(cents=>{
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = f * Math.pow(2, cents/1200);
+          gain.gain.setValueAtTime(0, start);
+          gain.gain.linearRampToValueAtTime(vol/3, start+attack);
+          gain.gain.setValueAtTime(vol/3, start+attack+hold);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start+attack+hold+release);
+          osc.connect(gain).connect(lp);
+          osc.start(start); osc.stop(start+attack+hold+release+0.1);
+        });
       });
     }
-    function boom(freq, start, dur, vol) {
+    function subSwell(freq, start, attack, release, vol) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(vol, start+0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start); osc.stop(start+dur+0.05);
+      gain.gain.linearRampToValueAtTime(vol, start+attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+attack+release);
+      osc.connect(gain).connect(lp);
+      osc.start(start); osc.stop(start+attack+release+0.1);
     }
 
-    // Montée de tension façon "riser" avant les coups
-    const riser = ctx.createOscillator();
-    const riserGain = ctx.createGain();
-    const riserFilt = ctx.createBiquadFilter();
-    riser.type = "sawtooth";
-    riser.frequency.setValueAtTime(70, t0);
-    riser.frequency.exponentialRampToValueAtTime(380, t0+0.55);
-    riserFilt.type = "lowpass"; riserFilt.frequency.value = 1400;
-    riserGain.gain.setValueAtTime(0, t0);
-    riserGain.gain.linearRampToValueAtTime(0.045, t0+0.35);
-    riserGain.gain.linearRampToValueAtTime(0, t0+0.58);
-    riser.connect(riserFilt).connect(riserGain).connect(ctx.destination);
-    riser.start(t0); riser.stop(t0+0.6);
+    // Progression qui monte en tension puis se résout — mineur vers majeur, comme une
+    // bande-annonce qui s'ouvre sur un accord large.
+    pad([164.81,196.00,246.94], t0+0.00, 0.7, 0.35, 0.65, 0.18); // Mi mineur
+    pad([130.81,164.81,196.00], t0+1.05, 0.6, 0.35, 0.65, 0.18); // Do majeur
+    pad([196.00,246.94,293.66], t0+2.05, 0.6, 0.35, 0.75, 0.19); // Sol majeur
+    // Accord final, large et tenu, avec une basse qui monte en dessous
+    pad([146.83,196.00,246.94,293.66], t0+3.05, 0.9, 0.7, 1.9, 0.22); // Ré suspendu, résolution
+    subSwell(73.42, t0+3.05, 0.6, 2.3, 0.16);
 
-    // Trois coups de puissance (accords) qui montent — rythme martial, façon bande-annonce
-    stab([164.81,246.94], t0+0.62, 0.24, 0.10); boom(82.41, t0+0.62, 0.30, 0.15);   // Em
-    stab([196.00,293.66], t0+0.90, 0.24, 0.10); boom(98.00, t0+0.90, 0.30, 0.15);   // G
-    stab([220.00,329.63], t0+1.18, 0.24, 0.11); boom(110.00, t0+1.18, 0.30, 0.16);  // A
-
-    // Coup final large, tenu, avec brillance qui traîne en fondu
-    const hit = t0+1.52;
-    stab([164.81,246.94,329.63], hit, 1.9, 0.13);
-    boom(82.41, hit, 1.4, 0.22);
-    const shimmer = ctx.createOscillator();
-    const shimmerGain = ctx.createGain();
-    shimmer.type = "sine";
-    shimmer.frequency.value = 659.25;
-    shimmerGain.gain.setValueAtTime(0, hit);
-    shimmerGain.gain.linearRampToValueAtTime(0.05, hit+0.12);
-    shimmerGain.gain.exponentialRampToValueAtTime(0.0001, hit+2.2);
-    shimmer.connect(shimmerGain).connect(ctx.destination);
-    shimmer.start(hit); shimmer.stop(hit+2.3);
-
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 4200);
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 6600);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5802,7 +5786,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 4000);
+  setTimeout(()=>overlay.classList.remove("show"), 5500);
 }
 
 async function launchApp() {
