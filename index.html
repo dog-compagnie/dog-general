@@ -5702,11 +5702,10 @@ function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
-// Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
-// Sting d'accueil façon bande-annonce d'action rythmée (~4.5s), construit avec de vrais
-// synthés (Tone.js) plutôt que des ondes brutes : basse 808 avec distorsion, cuivres
-// synthétiques (FM) façon "BRAAM", groove qui pulse, réverbération. Nécessite que Tone.js
-// ait chargé ; se tait silencieusement sinon (ne bloque jamais la connexion).
+// Sting d'accueil façon bande-annonce d'action rythmée (~5s), construit avec de vrais
+// synthés (Tone.js) : basse 808, cuivres FM façon "BRAAM", riff mélodique accrocheur par-dessus
+// le groove, riser avant le drop, delay/réverbération pour la profondeur. Se tait
+// silencieusement si Tone.js n'a pas chargé (ne bloque jamais la connexion).
 let _toneReady = false;
 async function playWelcomeMelody() {
   try {
@@ -5715,7 +5714,8 @@ async function playWelcomeMelody() {
     const now = Tone.now() + 0.05;
     Tone.Destination.volume.value = -10;
 
-    const reverb = new Tone.Reverb({decay:2.0, wet:0.20}).toDestination();
+    const reverb = new Tone.Reverb({decay:2.2, wet:0.22}).toDestination();
+    const delay = new Tone.PingPongDelay({delayTime:"16n", feedback:0.22, wet:0.16}).connect(reverb);
     const dist = new Tone.Distortion({distortion:0.22, wet:0.35}).connect(reverb);
     const comp = new Tone.Compressor({threshold:-18, ratio:4}).connect(dist);
 
@@ -5726,6 +5726,14 @@ async function playWelcomeMelody() {
       modulationEnvelope:{attack:0.04, decay:0.2, sustain:0.3, release:0.7},
     }).connect(comp);
     braam.volume.value = -9;
+
+    // Riff mélodique accrocheur, avec un peu d'écho pour la profondeur — le "hook" qu'on retient
+    const lead = new Tone.Synth({
+      oscillator:{type:"triangle"},
+      envelope:{attack:0.01, decay:0.12, sustain:0.15, release:0.35},
+    }).connect(delay);
+    lead.connect(reverb);
+    lead.volume.value = -13;
 
     // Basse / 808
     const kick = new Tone.MembraneSynth({
@@ -5739,12 +5747,19 @@ async function playWelcomeMelody() {
     hat.volume.value = -28;
     const snare = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.18, sustain:0}}).connect(reverb);
     snare.volume.value = -14;
+    // Riser avant le drop — bruit filtré dont la couleur monte, tension classique de bande-annonce
+    const riserFilt = new Tone.Filter({frequency:300, type:"highpass"}).connect(reverb);
+    const riser = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.5, decay:0.1, sustain:0.3, release:0.1}}).connect(riserFilt);
+    riser.volume.value = -22;
+    // Crash au moment du drop, plus large que la caisse claire seule
+    const crash = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.002, decay:1.1, sustain:0}}).connect(reverb);
+    crash.volume.value = -20;
 
     const bpm = 100;
     const beat = 60/bpm;
 
     // Pulsation rythmique continue (le "danseur" du morceau), avec charleston qui pétille
-    for(let i=0;i<10;i++) {
+    for(let i=0;i<11;i++) {
       kick.triggerAttack("A0", now+i*beat*0.5);
       if(i%2===1) hat.triggerAttack(now+i*beat*0.5+0.01);
     }
@@ -5756,15 +5771,30 @@ async function playWelcomeMelody() {
     braam.triggerAttackRelease(["G2","D3","G3"], "8n", now+beat*2);
     braam.triggerAttackRelease(["A2","E3","A3"], "4n", now+beat*4);
 
-    // Le drop final : accord large tenu, basse profonde, caisse claire à l'impact
+    // Riff mélodique par-dessus, accrocheur et syncopé — ce qu'on garde en tête
+    const riffBeats = [0, 0.75, 1.5, 2, 2.75, 3.5, 4, 4.75];
+    const riffNotes = ["E5","G5","B5","A5","G5","E5","G5","B5"];
+    riffNotes.forEach((n,i)=>lead.triggerAttackRelease(n, "16n", now+riffBeats[i]*beat));
+
+    // Riser juste avant le drop
+    riser.triggerAttack(now+beat*4.6);
+
+    // Le drop final : accord large tenu, basse profonde, crash + caisse claire à l'impact,
+    // note aiguë du riff qui résonne par-dessus
     const drop = now+beat*5.5;
     kick.triggerAttack("A0", drop);
     braam.triggerAttackRelease(["E2","B2","E3","G3"], "2n", drop);
     snare.triggerAttack(drop+0.04);
+    crash.triggerAttack(drop);
+    lead.triggerAttackRelease("E6", "4n", drop+0.05);
+
+    // Fondu final propre plutôt qu'une coupure nette
+    Tone.Destination.volume.rampTo(-40, 1.2, drop+1.0);
 
     setTimeout(()=>{
-      [reverb,dist,comp,braam,kick,hat,snare].forEach(n=>{ try{ n.dispose(); }catch(e){} });
-    }, (beat*8+2)*1000);
+      [reverb,delay,dist,comp,braam,lead,kick,hat,snare,riserFilt,riser,crash].forEach(n=>{ try{ n.dispose(); }catch(e){} });
+      Tone.Destination.volume.value = -10;
+    }, (beat*8+2.5)*1000);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5794,7 +5824,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 4700);
+  setTimeout(()=>overlay.classList.remove("show"), 5800);
 }
 
 async function launchApp() {
