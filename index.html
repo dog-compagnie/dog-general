@@ -5703,46 +5703,77 @@ function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
 // final — bien plus marquant qu'un simple carillon à 3 notes.
+// Sting d'accueil cinématique (~4s) : montée en tension, trois coups de puissance martiaux,
+// et un accord final large avec sub-bass — dans l'esprit d'une bande-annonce, pas d'une clochette.
 function playWelcomeMelody() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     const ctx = new AC();
     const t0 = ctx.currentTime;
-    const notes = [
-      {f:523.25, t:0.00, d:0.30, v:0.10},
-      {f:659.25, t:0.16, d:0.30, v:0.10},
-      {f:783.99, t:0.32, d:0.30, v:0.11},
-      {f:1046.50,t:0.48, d:0.48, v:0.12},
-      {f:783.99, t:0.92, d:0.28, v:0.09},
-      {f:659.25, t:1.14, d:0.30, v:0.09},
-    ];
-    notes.forEach(n=>{
+
+    function stab(freqs, start, dur, vol) {
+      freqs.forEach(f=>{
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        osc.type = "sawtooth";
+        osc.frequency.value = f;
+        filt.type = "lowpass";
+        filt.frequency.value = 2400;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(vol, start+0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
+        osc.connect(filt).connect(gain).connect(ctx.destination);
+        osc.start(start); osc.stop(start+dur+0.05);
+      });
+    }
+    function boom(freq, start, dur, vol) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
-      osc.frequency.value = n.f;
-      const start = t0+n.t;
+      osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(n.v, start+0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start+n.d);
+      gain.gain.linearRampToValueAtTime(vol, start+0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(start); osc.stop(start+n.d+0.05);
-    });
-    // Accord final chaleureux, qui s'étire et s'éteint doucement
-    const chordStart = t0+1.42;
-    [523.25, 659.25, 783.99].forEach(f=>{
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = f;
-      gain.gain.setValueAtTime(0, chordStart);
-      gain.gain.linearRampToValueAtTime(0.075, chordStart+0.1);
-      gain.gain.exponentialRampToValueAtTime(0.0001, chordStart+1.6);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(chordStart); osc.stop(chordStart+1.7);
-    });
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 3300);
+      osc.start(start); osc.stop(start+dur+0.05);
+    }
+
+    // Montée de tension façon "riser" avant les coups
+    const riser = ctx.createOscillator();
+    const riserGain = ctx.createGain();
+    const riserFilt = ctx.createBiquadFilter();
+    riser.type = "sawtooth";
+    riser.frequency.setValueAtTime(70, t0);
+    riser.frequency.exponentialRampToValueAtTime(380, t0+0.55);
+    riserFilt.type = "lowpass"; riserFilt.frequency.value = 1400;
+    riserGain.gain.setValueAtTime(0, t0);
+    riserGain.gain.linearRampToValueAtTime(0.045, t0+0.35);
+    riserGain.gain.linearRampToValueAtTime(0, t0+0.58);
+    riser.connect(riserFilt).connect(riserGain).connect(ctx.destination);
+    riser.start(t0); riser.stop(t0+0.6);
+
+    // Trois coups de puissance (accords) qui montent — rythme martial, façon bande-annonce
+    stab([164.81,246.94], t0+0.62, 0.24, 0.10); boom(82.41, t0+0.62, 0.30, 0.15);   // Em
+    stab([196.00,293.66], t0+0.90, 0.24, 0.10); boom(98.00, t0+0.90, 0.30, 0.15);   // G
+    stab([220.00,329.63], t0+1.18, 0.24, 0.11); boom(110.00, t0+1.18, 0.30, 0.16);  // A
+
+    // Coup final large, tenu, avec brillance qui traîne en fondu
+    const hit = t0+1.52;
+    stab([164.81,246.94,329.63], hit, 1.9, 0.13);
+    boom(82.41, hit, 1.4, 0.22);
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = "sine";
+    shimmer.frequency.value = 659.25;
+    shimmerGain.gain.setValueAtTime(0, hit);
+    shimmerGain.gain.linearRampToValueAtTime(0.05, hit+0.12);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.0001, hit+2.2);
+    shimmer.connect(shimmerGain).connect(ctx.destination);
+    shimmer.start(hit); shimmer.stop(hit+2.3);
+
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 4200);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5751,6 +5782,12 @@ function playWelcomeMelody() {
 document.addEventListener("click", function(e){
   const el = e.target.closest("button, .btn, .svc-switch-btn, .role-btn, .nav-item, .formule, .cand-statut-btn");
   if(el && !el.disabled) soundClick();
+}, true);
+// Les menus déroulants (conducteur, équipier, statut de patrouille…) et champs de saisie ne
+// déclenchent pas de "click" utile (l'action se fait via "change" une fois la valeur choisie) :
+// écouteur séparé pour couvrir tout le tableau de patrouilles et les formulaires du site.
+document.addEventListener("change", function(e){
+  if(e.target.matches("select, input, textarea")) soundClick();
 }, true);
 
 function showWelcomeMessage() {
@@ -5765,7 +5802,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 3300);
+  setTimeout(()=>overlay.classList.remove("show"), 4000);
 }
 
 async function launchApp() {
