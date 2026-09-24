@@ -678,6 +678,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 #welcome-text em{font-style:italic;color:var(--accent-light);}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 </head>
 <body>
 <div class="bg">
@@ -5702,93 +5703,67 @@ function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Petite mélodie d'accueil (~3 secondes) : montée entraînante, redescente, accord chaleureux
-// final — bien plus marquant qu'un simple carillon à 3 notes.
-// Sting d'accueil court et percutant (~2.5s) : basse 808, clap, riff sombre et syncopé,
-// drop final — registre trap/club, volume contenu, pas de mélodie "jingle".
-function playWelcomeMelody() {
+// Sting d'accueil façon bande-annonce d'action rythmée (~4.5s), construit avec de vrais
+// synthés (Tone.js) plutôt que des ondes brutes : basse 808 avec distorsion, cuivres
+// synthétiques (FM) façon "BRAAM", groove qui pulse, réverbération. Nécessite que Tone.js
+// ait chargé ; se tait silencieusement sinon (ne bloque jamais la connexion).
+let _toneReady = false;
+async function playWelcomeMelody() {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-    const ctx = new AC();
-    const t0 = ctx.currentTime;
-    const master = ctx.createGain();
-    master.gain.value = 0.8;
-    master.connect(ctx.destination);
+    if(typeof Tone === "undefined") return;
+    if(!_toneReady) { await Tone.start(); _toneReady = true; }
+    const now = Tone.now() + 0.05;
 
-    function boom808(time, freq, dur, vol) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq*3, time);
-      osc.frequency.exponentialRampToValueAtTime(freq, time+0.09);
-      gain.gain.setValueAtTime(vol, time);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time+dur);
-      osc.connect(gain).connect(master);
-      osc.start(time); osc.stop(time+dur+0.05);
-    }
-    function clap(time, vol) {
-      const bufSize = Math.floor(ctx.sampleRate*0.09);
-      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * (1-i/bufSize);
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-      const filt = ctx.createBiquadFilter();
-      filt.type = "bandpass"; filt.frequency.value = 1800; filt.Q.value = 1.2;
-      const gain = ctx.createGain();
-      gain.gain.value = vol;
-      noise.connect(filt).connect(gain).connect(master);
-      noise.start(time);
-    }
-    function hat(time, vol) {
-      const bufSize = Math.floor(ctx.sampleRate*0.035);
-      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * (1-i/bufSize);
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-      const filt = ctx.createBiquadFilter();
-      filt.type = "highpass"; filt.frequency.value = 7500;
-      const gain = ctx.createGain();
-      gain.gain.value = vol;
-      noise.connect(filt).connect(gain).connect(master);
-      noise.start(time);
-    }
-    function stab(freq, time, dur, vol) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filt = ctx.createBiquadFilter();
-      osc.type = "sawtooth";
-      osc.frequency.value = freq;
-      filt.type = "lowpass"; filt.frequency.value = 1500; filt.Q.value = 2;
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(vol, time+0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time+dur);
-      osc.connect(filt).connect(gain).connect(master);
-      osc.start(time); osc.stop(time+dur+0.03);
-    }
+    const reverb = new Tone.Reverb({decay:2.0, wet:0.22}).toDestination();
+    const dist = new Tone.Distortion({distortion:0.35, wet:0.5}).connect(reverb);
+    const comp = new Tone.Compressor({threshold:-18, ratio:4}).connect(dist);
 
-    // Riff sombre et syncopé (Mi mineur) — le hook, tranchant plutôt que guilleret
-    const E=164.81, G=196.00, D=293.66;
-    boom808(t0+0.00, 41.2, 0.35, 0.26);
-    stab(E, t0+0.00, 0.16, 0.11);
-    hat(t0+0.17, 0.045);
-    stab(G, t0+0.26, 0.14, 0.11);
-    clap(t0+0.35, 0.08); hat(t0+0.35, 0.04);
-    stab(E, t0+0.44, 0.14, 0.10);
-    hat(t0+0.53, 0.04);
-    boom808(t0+0.61, 36.7, 0.32, 0.24);
-    stab(D, t0+0.61, 0.20, 0.12);
-    hat(t0+0.70, 0.035); hat(t0+0.77, 0.035);
-    clap(t0+0.83, 0.09);
+    // Cuivres synthétiques façon "BRAAM" de bande-annonce
+    const braam = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity:1.5, modulationIndex:10,
+      envelope:{attack:0.04, decay:0.25, sustain:0.5, release:1.0},
+      modulationEnvelope:{attack:0.04, decay:0.2, sustain:0.3, release:0.7},
+    }).connect(comp);
+    braam.volume.value = -5;
 
-    // Le drop final — accord tenu, plus court qu'avant, avec un dernier 808 profond
-    const drop = t0+0.95;
-    [164.81,196.00,246.94].forEach(f=>stab(f, drop, 0.85, 0.12));
-    boom808(drop, 41.2, 0.95, 0.28);
-    clap(drop+0.02, 0.10);
+    // Basse / 808
+    const kick = new Tone.MembraneSynth({
+      pitchDecay:0.06, octaves:5,
+      envelope:{attack:0.001, decay:0.35, sustain:0.01, release:1.0},
+    }).connect(dist);
+    kick.volume.value = -2;
 
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 2400);
+    // Charleston et caisse claire — pour le côté dansant/rythmé
+    const hat = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.025, sustain:0}}).toDestination();
+    hat.volume.value = -24;
+    const snare = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.001, decay:0.18, sustain:0}}).connect(reverb);
+    snare.volume.value = -10;
+
+    const bpm = 100;
+    const beat = 60/bpm;
+
+    // Pulsation rythmique continue (le "danseur" du morceau), avec charleston qui pétille
+    for(let i=0;i<10;i++) {
+      kick.triggerAttack("A0", now+i*beat*0.5);
+      if(i%2===1) hat.triggerAttack(now+i*beat*0.5+0.01);
+    }
+    snare.triggerAttack(now+beat*1.5);
+    snare.triggerAttack(now+beat*3.5);
+
+    // Cuivres qui montent en tension par-dessus le groove — mineur, façon trailer
+    braam.triggerAttackRelease(["E2","B2","E3"], "8n", now+beat*0);
+    braam.triggerAttackRelease(["G2","D3","G3"], "8n", now+beat*2);
+    braam.triggerAttackRelease(["A2","E3","A3"], "4n", now+beat*4);
+
+    // Le drop final : accord large tenu, basse profonde, caisse claire à l'impact
+    const drop = now+beat*5.5;
+    kick.triggerAttack("A0", drop);
+    braam.triggerAttackRelease(["E2","B2","E3","G3"], "2n", drop);
+    snare.triggerAttack(drop+0.04);
+
+    setTimeout(()=>{
+      [reverb,dist,comp,braam,kick,hat,snare].forEach(n=>{ try{ n.dispose(); }catch(e){} });
+    }, (beat*8+2)*1000);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
 
@@ -5818,7 +5793,7 @@ function showWelcomeMessage() {
   if(eyebrowEl) eyebrowEl.textContent = svcLabel(myService());
   overlay.classList.add("show");
   soundWelcome();
-  setTimeout(()=>overlay.classList.remove("show"), 2200);
+  setTimeout(()=>overlay.classList.remove("show"), 4700);
 }
 
 async function launchApp() {
