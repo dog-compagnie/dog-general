@@ -531,13 +531,13 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .hier-row-name{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:#fff;white-space:normal;overflow-wrap:break-word;line-height:1.3;}
 .hier-row-sub{font-size:10px;color:var(--text3);margin-top:1px;}
 .hier-row-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
-.hier-toggle-btn{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;filter:grayscale(1);opacity:0.5;}
-.hier-toggle-btn:hover{background:rgba(255,255,255,0.09);filter:grayscale(0.4);opacity:0.8;}
+.hier-toggle-btn{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;filter:grayscale(0.25);opacity:0.85;}
+.hier-toggle-btn:hover{background:rgba(255,255,255,0.12);filter:grayscale(0);opacity:1;}
 .hier-toggle-btn.active{filter:grayscale(0);opacity:1;}
 .hier-toggle-btn.tg-general.active{background:rgba(240,168,64,0.18);border-color:rgba(240,168,64,0.45);}
 .hier-toggle-btn.tg-adjoint.active{background:rgba(72,201,176,0.18);border-color:rgba(72,201,176,0.45);}
 .hier-toggle-btn.tg-formateur.active{background:rgba(79,216,224,0.18);border-color:rgba(79,216,224,0.45);}
-.hier-role-select{background:linear-gradient(165deg,rgba(21,28,40,0.85),rgba(9,13,20,0.9));border:1.5px solid rgba(93,173,226,0.2);border-radius:8px;color:#fff;font-size:10.5px;padding:5px 4px;text-align:center;font-weight:600;transition:border-color 0.18s,box-shadow 0.18s;max-width:92px;}
+.hier-role-select{background:linear-gradient(165deg,rgba(30,38,52,0.9),rgba(14,18,27,0.92));border:1.5px solid rgba(93,173,226,0.35);border-radius:8px;color:#fff;font-size:10.5px;padding:5px 4px;text-align:center;font-weight:600;transition:border-color 0.18s,box-shadow 0.18s;max-width:92px;}
 .hier-role-select:focus{outline:none;border-color:rgba(var(--accent-rgb),0.7);box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.18);}
 
 /* GESTION DES EFFECTIFS */
@@ -2362,7 +2362,7 @@ function initNotesServicePage() {
   const scopeSel = document.getElementById("ns-scope");
   if(scopeSel) {
     const allOpt = scopeSel.querySelector('option[value="all"]');
-    if(allOpt) allOpt.disabled = !isComiteDirection();
+    if(allOpt) allOpt.disabled = !(role==="pdg"||role==="admin");
     scopeSel.value = "service";
   }
   const typeSel = document.getElementById("ns-visibilite");
@@ -2435,7 +2435,7 @@ async function publierNoteService() {
   const titre = document.getElementById("ns-titre").value.trim();
   const contenu = document.getElementById("ns-contenu").value.trim();
   if(!titre || !contenu) { toast("Merci de remplir le titre et le contenu.","#E74C3C"); return; }
-  if(scope==="all" && !isComiteDirection()) { toast("Seuls le PDG et le Responsable Général peuvent publier pour tous les services.","#E74C3C"); return; }
+  if(scope==="all" && !(role==="pdg"||role==="admin")) { toast("Seul le PDG peut publier pour tous les services.","#E74C3C"); return; }
   try {
     const payload = {
       visibilite, titre, contenu,
@@ -6982,25 +6982,25 @@ async function sendStaffMessage() {
 // ─── QUESTIONNAIRE D'ENTRETIEN (Responsable/PDG — jamais exposé au candidat) ──
 const ENTRETIEN_QUESTIONS_BY_SERVICE = {
   securite: [
-  {cat:"Motivation & Intérêt", q:"Pourquoi veux-tu rejoindre le Service Sécurité de la Dog Compagnie ?", sub:"Évaluer la sincérité et la connaissance du service."},
-  {cat:"Motivation & Intérêt", q:"Qu'est-ce que la sécurité représente pour toi au sein de la Dog Compagnie ?", sub:"Chercher une vision professionnelle : ordre, protection des civils, sérieux."},
-  {cat:"Motivation & Intérêt", q:"As-tu déjà postulé dans d'autres services de sécurité ? Si oui, pourquoi nous as-tu choisis ?", sub:"Vérifier la fidélité et la motivation spécifique."},
-  {cat:"Motivation & Intérêt", q:"Qu'est-ce que tu attends de ce poste sur le long terme ?", sub:"Évaluer l'ambition et l'investissement prévu."},
-  {cat:"Expérience & Compétences", q:"As-tu une expérience dans un service de sécurité ou forces de l'ordre ? Si oui, laquelle ?", sub:"Expérience terrain, connaissance des procédures et des environnements sécuritaires."},
-  {cat:"Expérience & Compétences", q:"Comment gères-tu une situation de conflit avec un civil ?", sub:"Chercher : désescalade, calme, protocole."},
-  {cat:"Expérience & Compétences", q:"Es-tu à l'aise avec les procédures (rapports, radio, zones de compétence) ?", sub:"Vérifier la rigueur procédurale."},
+  {cat:"Motivation & Intérêt", q:"Pourquoi as-tu choisi la sécurité privée plutôt qu'un autre service de la Dog Compagnie ?", sub:"Évaluer la sincérité et la connaissance du rôle."},
+  {cat:"Motivation & Intérêt", q:"Qu'est-ce qui te fait dire que tu es capable de porter cette responsabilité au quotidien ?", sub:"Maturité, conscience de l'autorité que confère le poste."},
+  {cat:"Motivation & Intérêt", q:"As-tu une expérience (RP) qui t'a donné envie de protéger les autres ou de faire respecter les règles ?", sub:"Chercher une motivation concrète plutôt qu'un discours tout fait."},
+  {cat:"Motivation & Intérêt", q:"Où te vois-tu au sein de la filière Sécurité dans quelques mois ?", sub:"Évaluer l'ambition et l'investissement prévu."},
+  {cat:"Expérience & Compétences", q:"As-tu déjà été confronté à une arme lors d'une intervention (la tienne ou celle d'un tiers) ? Comment as-tu réagi ?", sub:"Sang-froid, respect de la procédure d'usage de la force."},
+  {cat:"Expérience & Compétences", q:"Que fais-tu concrètement avant de procéder à une fouille ou un contrôle d'identité ?", sub:"Connaissance du cadre légal, respect de la procédure."},
+  {cat:"Expérience & Compétences", q:"Comment rédiges-tu un rapport d'intervention clair et exploitable par ta hiérarchie ?", sub:"Rigueur, précision, capacité de synthèse."},
   {cat:"Expérience & Compétences", q:"Quelles sont tes points forts et tes points à améliorer ?", sub:"Honnêteté et lucidité sur soi-même."},
-  {cat:"Expérience & Compétences", q:"Sais-tu utiliser une radio et respecter les codes de communication ?", sub:"Évaluer les compétences techniques de base."},
-  {cat:"Comportement & Attitude", q:"Comment tu te comportes avec tes supérieurs hiérarchiques ?", sub:"Respect, écoute, obéissance sans servilité."},
-  {cat:"Comportement & Attitude", q:"As-tu déjà eu un conflit avec un collègue ? Comment tu l'as géré ?", sub:"Maturité, communication, résolution."},
-  {cat:"Comportement & Attitude", q:"Que fais-tu si tu es témoin d'un agent qui ne respecte pas les règles ?", sub:"Intégrité, courage, chaîne de commandement."},
-  {cat:"Comportement & Attitude", q:"Comment réagis-tu face à une situation stressante ou dangereuse ?", sub:"Sang-froid, réflexes, prise de décision."},
+  {cat:"Expérience & Compétences", q:"As-tu déjà travaillé en binôme sur une intervention délicate ? Qu'est-ce que ça t'a appris sur la coordination ?", sub:"Travail d'équipe, communication sous tension."},
+  {cat:"Comportement & Attitude", q:"Un collègue plus gradé te demande de fermer les yeux sur une irrégularité. Comment réagis-tu ?", sub:"Intégrité, capacité à dire non sans rompre la chaîne de commandement."},
+  {cat:"Comportement & Attitude", q:"Comment gères-tu un civil qui filme ou conteste ouvertement ton intervention ?", sub:"Calme, professionnalisme, ne pas se laisser provoquer."},
+  {cat:"Comportement & Attitude", q:"Es-tu capable de rester impassible face à des insultes ou des provocations répétées ?", sub:"Maîtrise de soi, éviter l'escalade inutile."},
+  {cat:"Comportement & Attitude", q:"Comment gères-tu la fatigue ou la tension sur une prise de service longue et mouvementée ?", sub:"Endurance mentale, gestion du stress sur la durée."},
   {cat:"Comportement & Attitude", q:"Comment gères-tu la critique ou une remarque de ta hiérarchie ?", sub:"Ouverture d'esprit, remise en question."},
-  {cat:"Scénarios / Mises en situation", q:"Un civil devient agressif envers toi lors d'un contrôle. Que fais-tu ?", sub:"Procédure : verbal → renfort → intervention si nécessaire."},
-  {cat:"Scénarios / Mises en situation", q:"Tu constates qu'un collègue utilise sa position pour intimider des civils. Que fais-tu ?", sub:"Évaluer le sens des responsabilités et l'intégrité."},
-  {cat:"Scénarios / Mises en situation", q:"Lors d'une patrouille tu découvres une infraction en cours sans avoir de renfort disponible. Comment tu réagis ?", sub:"Évaluer le jugement et la prise de décision sous pression."},
-  {cat:"Scénarios / Mises en situation", q:"Un supérieur te donne un ordre que tu estimes injuste. Quelle est ta réaction ?", sub:"Obéissance + voie hiérarchique pour contester."},
-  {cat:"Scénarios / Mises en situation", q:"Un véhicule suspect refuse de s'arrêter lors d'un contrôle. Quelle est ta conduite à tenir ?", sub:"Procédure, sécurité, proportionnalité."},
+  {cat:"Scénarios / Mises en situation", q:"Tu interviens seul face à un individu potentiellement armé qui refuse d'obtempérer. Quelle est ta priorité ?", sub:"Sécurité avant tout, appel de renfort, désescalade verbale."},
+  {cat:"Scénarios / Mises en situation", q:"Deux civils en viennent aux mains devant toi, l'un est clairement en tort. Comment interviens-tu sans déraper ?", sub:"Proportionnalité, séparation, gestion du risque pour soi et pour eux."},
+  {cat:"Scénarios / Mises en situation", q:"Tu soupçonnes un collègue d'avoir maquillé son rapport après une interpellation musclée. Que fais-tu ?", sub:"Intégrité, remontée d'information par la voie hiérarchique."},
+  {cat:"Scénarios / Mises en situation", q:"On te demande d'assurer la protection rapprochée d'une personnalité menacée lors d'un déplacement en ville. Comment prépares-tu l'intervention ?", sub:"Anticipation, reconnaissance du terrain, gestion du risque."},
+  {cat:"Scénarios / Mises en situation", q:"Un renfort urgent est demandé à l'autre bout de la ville alors que tu gères déjà une situation tendue sur place. Que fais-tu ?", sub:"Priorisation, évaluation des risques, communication radio."},
 ],
   depannage: [
   {cat:"Motivation & Intérêt", q:"Pourquoi veux-tu rejoindre le Service Dépannage de la Dog Compagnie ?", sub:"Évaluer la sincérité et la connaissance du service."},
