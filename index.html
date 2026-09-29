@@ -2196,6 +2196,9 @@ document.addEventListener("keydown", e=>{
 console.log("%c⛔ Arrêt", "color:#F08080;font-size:32px;font-weight:800;");
 console.log("%cCe site et son code sont la propriété de Dog Compagnie. Toute copie, extraction ou réutilisation du contenu ou du code est interdite.", "color:#84A0BC;font-size:13px;");
 
+// Horodatage du chargement de cette session : une alerte admin publiée AVANT cet instant ne
+// concerne pas cette personne (elle arrive avec un site déjà à jour) et ne sera pas affichée.
+const _sessionStartTime = new Date();
 const SB_URL = "https://pyskpavynkjjfmktkrhh.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5c2twYXZ5bmtqamZta3RrcmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyODM2OTgsImV4cCI6MjEwMTg1OTY5OH0.lIhD0HGmuIBufiSrUh1VRfc5LtmE3zAIEwLKA2j8NT8";
 const H = {"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Prefer":"return=representation"};
@@ -2632,6 +2635,9 @@ let _currentAlertId = null;
 let _currentAlertObj = null;
 function checkAlerte(alert) {
   if(!alert) return;
+  // Une alerte publiée avant l'ouverture de cette session ne concerne pas cette personne :
+  // elle arrive avec un site déjà à jour, inutile de lui montrer une annonce déjà obsolète.
+  if(alert.created_at && new Date(alert.created_at) < _sessionStartTime) return;
   const vk = viewerKey();
   // Suivi côté serveur, lié à l'identité (compte, ou "admin" partagé) — plus fiable que le
   // localStorage, qui ne suit jamais d'un appareil ou d'un navigateur à l'autre.
