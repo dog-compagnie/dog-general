@@ -826,7 +826,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="position:relative;">
           <span id="pin-lock-icon" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0.55;pointer-events:none;">🔒</span>
-          <input id="pin-input" type="password" inputmode="numeric" maxlength="6"
+          <input id="pin-input" type="password" inputmode="numeric" maxlength="4"
             placeholder="Code PIN"
             style="background:rgba(9,13,20,0.75);border:1.5px solid rgba(93,173,226,0.22);border-radius:12px;color:#fff;font-size:22px;font-family:inherit;padding:14px 16px 14px 42px;outline:none;text-align:center;letter-spacing:8px;width:100%;transition:all 0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.25) inset;"
             onfocus="this.style.borderColor='rgba(93,173,226,0.6)';this.style.boxShadow='0 0 0 3px rgba(93,173,226,0.15),0 2px 6px rgba(0,0,0,0.25) inset';"
@@ -2617,6 +2617,11 @@ function checkAlerte(alert) {
   if(msgEl) msgEl.textContent = alert.message;
   if(adminBtn) adminBtn.style.display = (role==="admin") ? "block" : "none";
   if(popup) popup.classList.add("show");
+  // Son joué une seule fois par alerte (pas à chaque rafraîchissement des 15 secondes)
+  if(window._lastAlertSoundedId !== alert.id) {
+    window._lastAlertSoundedId = alert.id;
+    soundAdminAlert();
+  }
 }
 async function desactiverAlerteDepuisPopup() {
   await desactiverAlerte();
@@ -5755,6 +5760,7 @@ function soundServiceStart() { playChime([659.25, 987.77], {gap:0.12, vol:0.09, 
 function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, dur:0.7}); }
 function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
+function soundAdminAlert()   { playChime([880, 659.25, 880], {gap:0.14, vol:0.10, dur:0.55}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
@@ -6387,8 +6393,8 @@ async function confirmLogin() {
     }
   } else if(role==="candidat") {
     // Compte candidat auto-créé au premier PIN saisi, ou reconnexion si déjà existant
-    if(!pin || pin.length<4) {
-      err.textContent="Choisissez un code PIN d'au moins 4 chiffres.";
+    if(!pin || !/^\d{4}$/.test(pin)) {
+      err.textContent="Choisissez un code PIN à 4 chiffres.";
       err.style.display="block";
       return;
     }
@@ -9006,6 +9012,22 @@ async function supprimerCartePro(id) {
 
 let currentMaCarteData = null;
 // ─── MES ÉVALUATIONS (vue agent — lecture seule) ────────────────────────
+async function buildRoleByNameMap() {
+  // Utilisé pour afficher "évalué par X (Responsable)" — reconstruit à partir du grade
+  // ACTUEL de la personne sur cette filiale (une évaluation ne mémorise que le nom).
+  try {
+    const [comptes, grades] = await Promise.all([
+      sb("agents_comptes?select=id,prenom,nom"),
+      sb("agents_grades?select=compte_id,role,formateur,general,adjoint"),
+    ]);
+    const map = {};
+    (comptes||[]).forEach(c=>{
+      const g = (grades||[]).find(x=>String(x.compte_id)===String(c.id));
+      if(g) map[`${c.prenom||""} ${c.nom||""}`.trim()] = accountRoleLabel(g);
+    });
+    return map;
+  } catch(e) { return {}; }
+}
 function starsHTML(pourcentage, size) {
   size = size || 22;
   const stars5 = Math.max(0, Math.min(5, (Number(pourcentage)||0)/20));
@@ -9027,7 +9049,10 @@ async function initMesEvaluations() {
   const nomComplet = `${currentAgent?.prenom||""} ${currentAgent?.nom||""}`.trim();
   if(!nomComplet) { el.innerHTML = '<div class="empty"><p>Non disponible.</p></div>'; return; }
   try {
-    const rows = await sb(`evaluations?agent_nom=eq.${encodeURIComponent(nomComplet)}&select=*&order=date_eval.desc`);
+    const [rows, roleMap] = await Promise.all([
+      sb(`evaluations?agent_nom=eq.${encodeURIComponent(nomComplet)}&select=*&order=date_eval.desc`),
+      buildRoleByNameMap(),
+    ]);
     const evals = rows||[];
     if(!evals.length) {
       el.innerHTML = `<div class="empty"><div class="empty-icon">⭐</div><p>Aucune évaluation pour le moment.</p></div>`;
@@ -9047,11 +9072,12 @@ async function initMesEvaluations() {
       ${evals.map(e=>{
         const d = e.date_eval ? new Date(e.date_eval+"T12:00:00").toLocaleDateString("fr-FR") : "";
         const vmeta = VERDICT_META[e.verdict]||{color:"#fff",icon:""};
+        const evaluateurRole = roleMap[e.evaluateur] ? ` (${roleMap[e.evaluateur]})` : "";
         return `<div class="card" style="max-width:520px;">
           <div class="card-body">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-              <div>${starsHTML(e.pourcentage)}<div style="font-size:11px;color:var(--text3);margin-top:4px;">${d} · évalué par ${esc(e.evaluateur||"—")}</div></div>
-              <div style="font-weight:800;color:${vmeta.color};white-space:nowrap;">${vmeta.icon} ${esc(e.verdict||"")} <span style="font-weight:600;color:var(--text2);">(${e.pourcentage}%)</span></div>
+              <div>${starsHTML(e.pourcentage)}<div style="font-size:11px;color:var(--text3);margin-top:4px;">${d} · évalué par ${esc(e.evaluateur||"—")}${esc(evaluateurRole)}</div></div>
+              <div style="font-weight:800;color:${vmeta.color};white-space:nowrap;">${vmeta.icon} ${esc(e.verdict||"")} <span style="font-weight:600;color:var(--text2);">(${(e.pourcentage/20).toFixed(1)}/5)</span></div>
             </div>
             ${e.notes ? `<div style="font-size:12.5px;color:var(--text);line-height:1.6;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px;white-space:pre-line;">${esc(e.notes)}</div>` : `<div style="font-size:11.5px;color:var(--text3);font-style:italic;">Aucun commentaire laissé par l'évaluateur.</div>`}
           </div>
@@ -9276,7 +9302,7 @@ function renderComptes() {
         <div class="ac-nom">${esc(p.prenom)} ${esc(p.nom)}</div>
         ${isAdmin ? `
           <div class="ac-pin" style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
-            PIN : <input type="text" value="${esc(p.pin||"")}" id="pin-edit-${p.id}" style="width:80px;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:3px 6px;">
+            PIN : <input type="text" inputmode="numeric" maxlength="4" value="${esc(p.pin||"")}" id="pin-edit-${p.id}" style="width:80px;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:3px 6px;">
             <button class="btn btn-ghost btn-sm" onclick="modifierPin('${p.id}')" style="padding:2px 8px;">💾</button>
           </div>`
         : `<div class="ac-pin">PIN : ${"•".repeat((p.pin||"").length)}</div>`}
@@ -9384,7 +9410,7 @@ async function ajouterGrade() {
     const pin = document.getElementById("ac-pin").value.trim();
     const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
     if(!prenom||!nom||!pin){ toast("Remplissez prénom, nom et PIN.","#E74C3C"); return; }
-    if(pin.length<4){ toast("Le PIN doit faire au moins 4 chiffres.","#E74C3C"); return; }
+    if(!/^\d{4}$/.test(pin)){ toast("Le PIN doit faire exactement 4 chiffres.","#E74C3C"); return; }
     if(allPersonnes.some(p=>p.pin===pin)){ toast("Ce PIN est déjà utilisé par quelqu'un d'autre.","#E74C3C"); return; }
     try {
       const candCheck = await sb(`candidats_comptes?pin=eq.${encodeURIComponent(pin)}&promu=eq.false&select=id`);
@@ -9433,7 +9459,7 @@ async function modifierPin(id) {
   const inp = document.getElementById("pin-edit-"+id);
   if(!inp) return;
   const newPin = inp.value.trim();
-  if(!newPin || newPin.length<4) { toast("Le PIN doit faire au moins 4 chiffres.","#E74C3C"); return; }
+  if(!/^\d{4}$/.test(newPin)) { toast("Le PIN doit faire exactement 4 chiffres.","#E74C3C"); return; }
   if(allPersonnes.some(p=>String(p.id)!==String(id) && p.pin===newPin)) { toast("Ce PIN est déjà utilisé par un autre compte.","#E74C3C"); return; }
   try {
     await sb(`agents_comptes?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({pin:newPin})});
