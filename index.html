@@ -2629,11 +2629,16 @@ async function sendDiscordWebhook(title, description, color, svc) {
 
 // ─── ALERTE DIFFUSÉE (Admin) ────────────────────────────────────────
 let _currentAlertId = null;
+let _currentAlertObj = null;
 function checkAlerte(alert) {
   if(!alert) return;
-  const dismissed = localStorage.getItem("dog_depannage_alert_dismissed_id");
-  if(String(alert.id)===dismissed) return;
+  const vk = viewerKey();
+  // Suivi côté serveur, lié à l'identité (compte, ou "admin" partagé) — plus fiable que le
+  // localStorage, qui ne suit jamais d'un appareil ou d'un navigateur à l'autre.
+  const dismissedId = vk ? (alert.vus_par||{})[vk] : null;
+  if(String(alert.id)===String(dismissedId)) return;
   _currentAlertId = alert.id;
+  _currentAlertObj = alert;
   const msgEl = document.getElementById("alert-popup-message");
   const popup = document.getElementById("alert-popup");
   const adminBtn = document.getElementById("alert-popup-admin-deactivate");
@@ -2650,12 +2655,20 @@ async function desactiverAlerteDepuisPopup() {
   await desactiverAlerte();
   dismissAlertPopup();
 }
+async function markAlertDismissed() {
+  const vk = viewerKey();
+  if(!vk || !_currentAlertId) return;
+  const vus = Object.assign({}, _currentAlertObj?.vus_par||{});
+  vus[vk] = _currentAlertId;
+  try { await sb(`alertes?id=eq.${_currentAlertId}`, {method:"PATCH", body:JSON.stringify({vus_par:vus})}); }
+  catch(e) { console.warn("markAlertDismissed:", e.message); }
+}
 function dismissAlertPopup() {
-  if(_currentAlertId) localStorage.setItem("dog_depannage_alert_dismissed_id", String(_currentAlertId));
+  markAlertDismissed();
   document.getElementById("alert-popup")?.classList.remove("show");
 }
 function refreshFromAlert() {
-  if(_currentAlertId) localStorage.setItem("dog_depannage_alert_dismissed_id", String(_currentAlertId));
+  markAlertDismissed();
   location.reload();
 }
 async function envoyerAlerte() {
