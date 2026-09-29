@@ -669,6 +669,12 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-watermark{position:absolute;left:133px;bottom:58px;width:124px;z-index:1;opacity:0.55;pointer-events:none;}
 .pro-card .pc-watermark img{width:100%;height:auto;display:block;}
 .pro-card-wrap{display:flex;justify-content:center;padding:6px;}
+@media (max-width: 420px) {
+  /* La carte a une mise en page à positions fixes (badges, texte) — sur très petit écran,
+     on la réduit en bloc plutôt que de laisser ses éléments se chevaucher. */
+  .pro-card{transform:scale(0.82);}
+  .pro-card-wrap{margin:-22px 0;}
+}
 #welcome-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(5,6,8,0);pointer-events:none;opacity:0;transition:opacity 0.6s ease, background 0.6s ease;}
 #welcome-overlay.show{pointer-events:auto;cursor:wait;}
 #welcome-overlay.show{opacity:1;background:rgba(5,6,8,0.72);backdrop-filter:blur(6px);}
@@ -1496,6 +1502,23 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="page-title">Mes <span>évaluations</span></div>
     <div class="page-sub">Le résultat de vos évaluations, notées sur 5, avec le commentaire de l'évaluateur.</div>
     <div id="mes-eval-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
+  <div class="page" id="page-mes-notes">
+    <div class="page-title">Mes <span>notes</span></div>
+    <div class="page-sub">Vos notes personnelles — visibles par vous uniquement, sur ce compte.</div>
+    <button class="btn btn-primary" style="margin-bottom:18px;" onclick="ouvrirNotePerso()">+ Nouvelle note</button>
+    <div id="mes-notes-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
+  <div id="note-perso-modal" class="alert-popup">
+    <div class="alert-popup-box" style="max-width:520px;text-align:left;">
+      <div class="alert-popup-title" style="text-align:center;">📝 Note personnelle</div>
+      <div class="field"><label>Titre</label><input id="np-titre" placeholder="Ex : Idées de recrutement"></div>
+      <div class="field"><label>Contenu</label><textarea id="np-contenu" rows="8" placeholder="Écrivez ici…"></textarea></div>
+      <button class="btn btn-success btn-full" style="margin-top:12px;" onclick="sauvegarderNotePerso()">💾 Enregistrer</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="fermerNotePerso()">Fermer</button>
+    </div>
   </div>
 
   <div class="page" id="page-bilans">
@@ -5115,6 +5138,7 @@ function getNavConfig() {
     {page:"notes-service",    icon:"📋", label:"Notes de service",       roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-notes"},
     {page:"ma-carte-pro",     icon:"🪪", label:"Ma carte pro",           roles:["agent","responsable","pdg"], section:"Opérations"},
     {page:"mes-evaluations",  icon:"⭐", label:"Mes évaluations",        roles:["agent","responsable","pdg"], section:"Opérations", badgeId:"nav-badge-mes-eval"},
+    {page:"mes-notes",        icon:"📝", label:"Mes notes",              roles:["agent","responsable","pdg"], section:"Opérations"},
   ];
   if(svc==="rescue") {
     items.push({page:"bilans",            icon:"🩺", label:"Fiche bilan",       roles:["agent","responsable","pdg","admin"], section:"Opérations"});
@@ -5218,6 +5242,7 @@ function goPage(pageId) {
   if(pageId==="cartes-pro-gestion") initCartesProGestion();
   if(pageId==="ma-carte-pro")       initMaCartePro();
   if(pageId==="mes-evaluations")    initMesEvaluations();
+  if(pageId==="mes-notes")          initMesNotesPerso();
   if(pageId==="facturation")       initFacturationPage();
   if(pageId==="incident")          { prefillDocDates(); loadDocHistory("incident"); }
   if(pageId==="notes-service")     initNotesServicePage();
@@ -9072,6 +9097,74 @@ function starsHTML(pourcentage, size) {
   html += `</div>`;
   return html;
 }
+// ─── MES NOTES PERSONNELLES (privées à chaque compte, quelle que soit la filiale) ───────
+let notesPersoCache = [];
+let notePersoEnCoursId = null;
+async function initMesNotesPerso() {
+  const el = document.getElementById("mes-notes-content");
+  el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  const compteId = currentCompte?.compte_id;
+  if(!compteId) { el.innerHTML = '<div class="empty"><p>Non disponible.</p></div>'; return; }
+  try {
+    const rows = await sb(`notes_perso?compte_id=eq.${compteId}&select=*&order=updated_at.desc`);
+    notesPersoCache = rows||[];
+    if(!notesPersoCache.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><p>Aucune note pour l'instant. Cliquez sur « + Nouvelle note » pour commencer.</p></div>`;
+      return;
+    }
+    el.innerHTML = notesPersoCache.map(n=>{
+      const d = new Date(n.updated_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+      const apercu = (n.contenu||"").slice(0,140);
+      return `<div class="card" style="max-width:640px;cursor:pointer;" onclick="ouvrirNotePerso('${n.id}')">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div style="font-weight:700;color:#fff;font-family:var(--font-serif);font-size:17px;">${esc(n.titre||"Sans titre")}</div>
+            <button class="btn btn-ghost btn-sm" style="color:#E74C3C;" onclick="event.stopPropagation();supprimerNotePerso('${n.id}')">🗑</button>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:6px;white-space:pre-line;">${esc(apercu)}${(n.contenu||"").length>140?"…":""}</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:10px;">Modifiée le ${d}</div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+function ouvrirNotePerso(id) {
+  notePersoEnCoursId = id || null;
+  const n = id ? notesPersoCache.find(x=>String(x.id)===String(id)) : null;
+  document.getElementById("np-titre").value = n?.titre || "";
+  document.getElementById("np-contenu").value = n?.contenu || "";
+  document.getElementById("note-perso-modal").classList.add("show");
+}
+function fermerNotePerso() {
+  document.getElementById("note-perso-modal").classList.remove("show");
+  notePersoEnCoursId = null;
+}
+async function sauvegarderNotePerso() {
+  const compteId = currentCompte?.compte_id;
+  if(!compteId) return;
+  const titre = document.getElementById("np-titre").value.trim() || "Sans titre";
+  const contenu = document.getElementById("np-contenu").value;
+  try {
+    if(notePersoEnCoursId) {
+      await sb(`notes_perso?id=eq.${notePersoEnCoursId}`, {method:"PATCH", body:JSON.stringify({titre, contenu, updated_at:new Date().toISOString()})});
+    } else {
+      await sb("notes_perso", {method:"POST", body:JSON.stringify({compte_id:compteId, titre, contenu})});
+    }
+    toast("✓ Note enregistrée");
+    soundClick();
+    fermerNotePerso();
+    initMesNotesPerso();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function supprimerNotePerso(id) {
+  if(!confirm("Supprimer définitivement cette note ?")) return;
+  try {
+    await sb(`notes_perso?id=eq.${id}`, {method:"DELETE"});
+    toast("Note supprimée");
+    initMesNotesPerso();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+
 async function initMesEvaluations() {
   const el = document.getElementById("mes-eval-content");
   el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
