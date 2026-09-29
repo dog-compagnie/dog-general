@@ -5576,22 +5576,24 @@ function isMaintenanceExempt() {
 }
 
 function applyMaintenanceOverlays() {
-  let newlyAffected = false;
+  let activePageNewlyAffected = false;
   document.querySelectorAll(".page").forEach(p=>{
     const ov = p.querySelector(".page-maint-overlay");
     if(!ov) return;
     const pid = p.id.replace("page-","");
     const affected = !isMaintenanceExempt() && !maintenancePages.includes("ALL") && !maintenancePages.includes("SVC:"+myService()) && maintenancePages.includes(pid);
     if(affected) {
-      if(!ov.classList.contains("show")) newlyAffected = true;
+      // Ne compte que si c'est LA page actuellement affichée à l'écran qui vient de basculer —
+      // sinon une autre page en maintenance ailleurs dans le site déclenchait le son à tort,
+      // y compris à la connexion.
+      if(!ov.classList.contains("show") && p.classList.contains("active")) activePageNewlyAffected = true;
       ov.querySelector(".page-maint-msg").textContent = maintenanceMessage || "Cette section est temporairement indisponible pour une mise à jour.";
       ov.classList.add("show");
     } else {
       ov.classList.remove("show");
     }
   });
-  // Son joué seulement quand une page bascule fraîchement en maintenance, pas à chaque sondage
-  if(newlyAffected) soundMaintenance();
+  if(activePageNewlyAffected) soundMaintenance();
 }
 
 // Renvoie true si la maintenance concerne TOUT le site OU tout le service actuellement affiché
@@ -5771,25 +5773,8 @@ function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, 
 function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
 function soundAdminAlert()   { playChime([880, 659.25, 880], {gap:0.14, vol:0.10, dur:0.55}); }
-// "Trombone de la défaite" façon dessin animé — glissando descendant, un peu théâtral
-async function soundMaintenance() {
-  try {
-    if(typeof Tone === "undefined") { playChime([493.88, 415.30, 349.23], {gap:0.16, vol:0.08, dur:0.8}); return; }
-    if(!_toneReady) { await Tone.start(); _toneReady = true; }
-    const now = Tone.now()+0.05;
-    const reverb = new Tone.Reverb({decay:1.6, wet:0.22}).toDestination();
-    const synth = new Tone.MonoSynth({
-      oscillator:{type:"sawtooth"},
-      envelope:{attack:0.05, decay:0.2, sustain:0.6, release:0.5},
-      filterEnvelope:{attack:0.05, decay:0.3, sustain:0.5, release:0.6, baseFrequency:300, octaves:2.5},
-      portamento:0.18,
-    }).connect(reverb);
-    synth.volume.value = -13;
-    const notes = ["A3","G3","F#3","F3"];
-    notes.forEach((n,i)=>synth.triggerAttackRelease(n, 0.55, now+i*0.42));
-    setTimeout(()=>{ try{ synth.dispose(); reverb.dispose(); }catch(e){} }, 2800);
-  } catch(e) { /* audio indisponible : on continue sans bloquer */ }
-}
+// Simple et sobre : deux notes descendantes, propre, sans effet théâtral
+function soundMaintenance() { playChime([440, 349.23], {gap:0.22, vol:0.07, dur:0.6}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
