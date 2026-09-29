@@ -5533,7 +5533,10 @@ function showMaintenanceScreen(message, scope) {
   if(hintEl) hintEl.textContent = scope==="service"
     ? "Vous pouvez changer de service ou de compte via la barre du haut en attendant la fin de la maintenance."
     : "Cette page se réactivera automatiquement dès la fin de la maintenance.";
+  const wasShown = screenEl?.classList.contains("show");
   screenEl?.classList.add("show");
+  // Son joué une seule fois au moment où l'écran apparaît, pas à chaque sondage des 15s
+  if(!wasShown) soundMaintenance();
 }
 function hideMaintenanceScreen() {
   document.getElementById("maintenance-screen")?.classList.remove("show");
@@ -5570,18 +5573,22 @@ function isMaintenanceExempt() {
 }
 
 function applyMaintenanceOverlays() {
+  let newlyAffected = false;
   document.querySelectorAll(".page").forEach(p=>{
     const ov = p.querySelector(".page-maint-overlay");
     if(!ov) return;
     const pid = p.id.replace("page-","");
     const affected = !isMaintenanceExempt() && !maintenancePages.includes("ALL") && !maintenancePages.includes("SVC:"+myService()) && maintenancePages.includes(pid);
     if(affected) {
+      if(!ov.classList.contains("show")) newlyAffected = true;
       ov.querySelector(".page-maint-msg").textContent = maintenanceMessage || "Cette section est temporairement indisponible pour une mise à jour.";
       ov.classList.add("show");
     } else {
       ov.classList.remove("show");
     }
   });
+  // Son joué seulement quand une page bascule fraîchement en maintenance, pas à chaque sondage
+  if(newlyAffected) soundMaintenance();
 }
 
 // Renvoie true si la maintenance concerne TOUT le site OU tout le service actuellement affiché
@@ -5761,6 +5768,7 @@ function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, 
 function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
 function soundAdminAlert()   { playChime([880, 659.25, 880], {gap:0.14, vol:0.10, dur:0.55}); }
+function soundMaintenance()  { playChime([493.88, 415.30, 349.23], {gap:0.16, vol:0.08, dur:0.8}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
@@ -5855,18 +5863,20 @@ async function launchApp() {
   updateTopbarBranding();
   updateTopbarRoleDisplay();
 
-  if(role==="agent"||role==="responsable"||role==="pdg") {
-    showWelcomeMessage();
-  }
-
   const bell = document.getElementById("notif-bell");
   if(bell) bell.style.display = (role!=="candidat") ? "flex" : "none";
 
   loadDiscordWebhook();
 
+  let blocked = false;
   if(!isMaintenanceExempt()) {
-    const blocked = await checkMaintenanceGate();
+    blocked = await checkMaintenanceGate();
     if(blocked==="all") { document.getElementById("app").style.display="none"; return; }
+  }
+  // Pas de message de bienvenue (ni de musique) si la maintenance générale du site est
+  // active : on ne fête pas une connexion sur un site indisponible pour tout le monde.
+  if((role==="agent"||role==="responsable"||role==="pdg") && blocked!=="all") {
+    showWelcomeMessage();
   }
   await checkSanctionGate();
 
@@ -7862,12 +7872,14 @@ function setEffTab(tab) {
 async function loadEffectifsList() {
   const el = document.getElementById("effectifs-list");
   try {
-    const [personnes, grades, logs, ajustements] = await Promise.all([
+    const [personnes, grades, logs, ajustements, evals] = await Promise.all([
       sb("agents_comptes?select=*&order=nom"),
       sb("agents_grades?select=*"),
       sb("services_logs?select=agent_nom,debut,duree_minutes,service&order=debut.desc&limit=5000"),
       sb("ajustements_heures?select=*&limit=2000"),
+      sb("evaluations?select=agent_nom,pourcentage"),
     ]);
+    effectifsEvalsCache = evals||[];
     allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
     effectifsLogsCache = logs||[];
     effectifsAjustementsCache = ajustements||[];
@@ -7878,6 +7890,13 @@ async function loadEffectifsList() {
 }
 
 let effectifsAjustementsCache = [];
+let effectifsEvalsCache = [];
+function moyenneEvalPourAgent(nomComplet) {
+  const notes = effectifsEvalsCache.filter(e=>e.agent_nom===nomComplet);
+  if(!notes.length) return null;
+  const moyPct = notes.reduce((s,e)=>s+(e.pourcentage||0),0)/notes.length;
+  return {note5: moyPct/20, count: notes.length};
+}
 function fmtHeuresMin(totalMinutes) {
   const sign = totalMinutes<0 ? "-" : "";
   const abs = Math.abs(Math.round(totalMinutes));
@@ -7920,6 +7939,7 @@ function renderEffectifsList(comptesAll) {
     const statutColor = STATUT_EFFECTIF_COLORS[statut]||"#7F9AB0";
     const heuresTotal = fmtHeuresMin(heuresPourAgent(nomComplet, undefined, undefined, c.service));
     const heuresMois = fmtHeuresMin(heuresPourAgent(nomComplet, now.getMonth(), now.getFullYear(), c.service));
+    const moyEval = moyenneEvalPourAgent(nomComplet);
     return `<div class="eff-card">
       <div class="eff-card-top">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -7948,6 +7968,7 @@ function renderEffectifsList(comptesAll) {
         <div class="eff-heures">
           <div class="eff-heures-item"><span class="eff-heures-lbl">Heures totales</span><span class="eff-heures-val">${heuresTotal}</span></div>
           <div class="eff-heures-item"><span class="eff-heures-lbl">Heures ce mois-ci</span><span class="eff-heures-val">${heuresMois}</span></div>
+          <div class="eff-heures-item"><span class="eff-heures-lbl">Moyenne évaluations</span><span class="eff-heures-val">${moyEval ? `⭐ ${moyEval.note5.toFixed(1)}/5 <span style="font-size:10px;color:var(--text3);font-weight:500;">(${moyEval.count})</span>` : `<span style="color:var(--text3);font-weight:500;">—</span>`}</span></div>
           ${role==="admin" ? `<button class="btn btn-ghost btn-sm" onclick="ajusterHeures('${esc(nomComplet)}','${c.service}')" title="Ajouter ou retirer des heures pour le mois en cours (ex : reprise de l'ancien site)">⚙️ Ajuster (mois en cours)</button>` : ""}
         </div>
       </div>
