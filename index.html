@@ -5774,33 +5774,9 @@ function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
 function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
 function soundAdminAlert()   { playChime([880, 659.25, 880], {gap:0.14, vol:0.10, dur:0.55}); }
 // Simple et sobre : deux notes descendantes, propre, sans effet théâtral
-// Deux clics mécaniques (façon interrupteur/outil), volontairement très différent du grelot
-// mélodique des notifications — pas de note, pas de tonalité, juste du bruit filtré et bref.
-function soundMaintenance() {
-  try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-    const ctx = new AC();
-    const now = ctx.currentTime;
-    function mechClick(time, freq) {
-      const bufSize = Math.floor(ctx.sampleRate*0.045);
-      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufSize;i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/bufSize, 2);
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-      const filt = ctx.createBiquadFilter();
-      filt.type = "bandpass"; filt.frequency.value = freq; filt.Q.value = 4;
-      const gain = ctx.createGain();
-      gain.gain.value = 0.16;
-      noise.connect(filt).connect(gain).connect(ctx.destination);
-      noise.start(time);
-    }
-    mechClick(now, 1400);
-    mechClick(now+0.17, 900);
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 700);
-  } catch(e) { /* audio indisponible : on continue sans bloquer */ }
-}
+// Bip carré franc, bien audible — texture volontairement "buzzy", différente du carillon
+// doux des notifications (onde sinusoïdale).
+function soundMaintenance() { playChime([220, 220], {gap:0.26, vol:0.18, dur:0.32, wave:"square"}); }
 function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
 
 // Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
