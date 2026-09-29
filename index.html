@@ -2633,11 +2633,13 @@ async function sendDiscordWebhook(title, description, color, svc) {
 // ─── ALERTE DIFFUSÉE (Admin) ────────────────────────────────────────
 let _currentAlertId = null;
 let _currentAlertObj = null;
+const _dismissedAlertIdsThisTab = new Set(); // garantie immédiate, indépendante du réseau
 function checkAlerte(alert) {
   if(!alert) return;
   // Une alerte publiée avant l'ouverture de cette session ne concerne pas cette personne :
   // elle arrive avec un site déjà à jour, inutile de lui montrer une annonce déjà obsolète.
   if(alert.created_at && new Date(alert.created_at) < _sessionStartTime) return;
+  if(_dismissedAlertIdsThisTab.has(String(alert.id))) return;
   const vk = viewerKey();
   // Suivi côté serveur, lié à l'identité (compte, ou "admin" partagé) — plus fiable que le
   // localStorage, qui ne suit jamais d'un appareil ou d'un navigateur à l'autre.
@@ -2670,11 +2672,14 @@ async function markAlertDismissed() {
   catch(e) { console.warn("markAlertDismissed:", e.message); }
 }
 function dismissAlertPopup() {
+  if(_currentAlertId) _dismissedAlertIdsThisTab.add(String(_currentAlertId));
   markAlertDismissed();
   document.getElementById("alert-popup")?.classList.remove("show");
 }
-function refreshFromAlert() {
-  markAlertDismissed();
+async function refreshFromAlert() {
+  if(_currentAlertId) _dismissedAlertIdsThisTab.add(String(_currentAlertId));
+  await markAlertDismissed(); // on attend la confirmation avant de recharger, sinon la
+                               // requête réseau est interrompue par le rechargement de page
   location.reload();
 }
 async function envoyerAlerte() {
