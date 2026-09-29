@@ -1492,6 +1492,11 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div id="mcp-content"><div class="empty"><p>Chargement…</p></div></div>
   </div>
 
+  <div class="page" id="page-mes-evaluations">
+    <div class="page-title">Mes <span>évaluations</span></div>
+    <div class="page-sub">Le résultat de vos évaluations, notées sur 5, avec le commentaire de l'évaluateur.</div>
+    <div id="mes-eval-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
 
   <div class="page" id="page-bilans">
     <div class="page-title">Fiche <span>bilan</span></div>
@@ -5077,6 +5082,10 @@ function setMyServiceGrade(svc) {
   if(!g || !currentCompte) return;
   currentCompte = {...currentCompte, ...g};
   currentAgent = currentCompte;
+  // On resynchronise le compteur de notifications sur la nouvelle filiale sans jouer le son :
+  // sinon, passer sur un service qui a simplement plus de notifications déjà existantes que
+  // l'ancien déclenchait à tort le son "nouvelle notification".
+  window._lastNotifTotal = null;
   updateTopbarBranding();
   updateTopbarRoleDisplay();
   document.querySelectorAll(".svc-switch-btn").forEach(b=>b.classList.toggle("active", b.dataset.svc===svc));
@@ -5100,6 +5109,7 @@ function getNavConfig() {
     {page:"incident",         icon:"🚨", label:"Rapport d'incident",     roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-inc"},
     {page:"notes-service",    icon:"📋", label:"Notes de service",       roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-notes"},
     {page:"ma-carte-pro",     icon:"🪪", label:"Ma carte pro",           roles:["agent","responsable","pdg"], section:"Opérations"},
+    {page:"mes-evaluations",  icon:"⭐", label:"Mes évaluations",        roles:["agent","responsable","pdg"], section:"Opérations", badgeId:"nav-badge-mes-eval"},
   ];
   if(svc==="rescue") {
     items.push({page:"bilans",            icon:"🩺", label:"Fiche bilan",       roles:["agent","responsable","pdg","admin"], section:"Opérations"});
@@ -5107,7 +5117,7 @@ function getNavConfig() {
   }
   items.push(
     {page:"absences-gestion", icon:"📋", label:"Gestion des absences",  roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-abs"},
-    {page:"logs-service",     icon:"📊", label:"Logs de service",       roles:["responsable","pdg","admin"], section:"Gestion"},
+    {page:"logs-service",     icon:"📊", label:"Logs de service",       roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-logs"},
     {page:"candidatures",     icon:"📨", label:"Candidatures reçues",   roles:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-cand"},
     {page:"evaluations",      icon:"🎯", label:`Évaluations ${agentLbl}s`, roles:(currentCompte&&currentCompte.formateur)?["responsable","pdg","admin","agent"]:["responsable","pdg","admin"], section:"Gestion", badgeId:"nav-badge-eval"},
     {page:"doc-rh",           icon:"🗂️", label:"Documents RH",          roles:["responsable","pdg","admin"], section:"Gestion"},
@@ -5199,6 +5209,7 @@ function goPage(pageId) {
   if(pageId==="effectifs")         initEffectifsPage();
   if(pageId==="cartes-pro-gestion") initCartesProGestion();
   if(pageId==="ma-carte-pro")       initMaCartePro();
+  if(pageId==="mes-evaluations")    initMesEvaluations();
   if(pageId==="facturation")       initFacturationPage();
   if(pageId==="incident")          { prefillDocDates(); loadDocHistory("incident"); }
   if(pageId==="notes-service")     initNotesServicePage();
@@ -5227,6 +5238,7 @@ function viewerKey() {
 
 let incidentDocs = [];
 let evalsForNotif = [];
+let debutRequestsForNotif = [];
 
 function getNotifications() {
   const canSeeLeadershipStuff = (role==="responsable"||role==="pdg"||role==="admin");
@@ -5289,6 +5301,13 @@ function getNotifications() {
       list.push({type:"eval", id:ev.id, icon:"🎯", text:`Nouvelle évaluation de ${ev.agent_nom} — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
     }
   });
+  (debutRequestsForNotif||[]).forEach(l=>{
+    const seen = (l.vus_par||{})[vk];
+    const seenDemande = seen && typeof seen==="object" ? seen.debut_demande : undefined;
+    if(seenDemande!==l.debut_demande) {
+      list.push({type:"debut", id:l.id, icon:"🕐", text:`${l.agent_nom} demande une correction de sa prise de service`, time:l.debut_demande});
+    }
+  });
   } // fin du bloc réservé à Responsable/PDG/Admin
   const svc = myService();
   (allNotesService||[]).forEach(n=>{
@@ -5299,6 +5318,16 @@ function getNotifications() {
       list.push({type:"note", id:n.id, icon:n.visibilite==="responsables"?"🔒":"📋", text:`Nouvelle note de service : "${n.titre}"`, time:n.created_at});
     }
   });
+  const monNom = `${currentCompte?.prenom||""} ${currentCompte?.nom||""}`.trim();
+  if(monNom) {
+    (evalsForNotif||[]).forEach(ev=>{
+      if(ev.agent_nom!==monNom) return;
+      const seen = (ev.vus_par||{})[vk];
+      if(seen===undefined) {
+        list.push({type:"eval_mine", id:ev.id, icon:"⭐", text:`Vous avez reçu une nouvelle évaluation — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
+      }
+    });
+  }
   list.sort((x,y)=> new Date(y.time||0) - new Date(x.time||0));
   return list;
 }
@@ -5309,8 +5338,10 @@ function computeNotifCounts() {
   const abs  = notifs.filter(n=>n.type==="abs").length;
   const inc  = notifs.filter(n=>n.type==="inc").length;
   const evl  = notifs.filter(n=>n.type==="eval").length;
+  const evlMine = notifs.filter(n=>n.type==="eval_mine").length;
   const note = notifs.filter(n=>n.type==="note").length;
-  return {cand, abs, inc, evl, note, total:notifs.length};
+  const debut = notifs.filter(n=>n.type==="debut").length;
+  return {cand, abs, inc, evl, evlMine, note, debut, total:notifs.length};
 }
 
 function fmtNotifTime(ts) {
@@ -5393,6 +5424,20 @@ async function markOneSeen(type, id) {
     vus[vk] = true;
     try { await sb(`notes_service?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); n.vus_par = vus; }
     catch(e) { console.warn("markOneSeen note error:", e.message); }
+  } else if(type==="eval_mine") {
+    const ev = evalsForNotif.find(x=>String(x.id)===String(id));
+    if(!ev) return;
+    const vus = Object.assign({}, ev.vus_par||{});
+    vus[vk] = true;
+    try { await sb(`evaluations?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); ev.vus_par = vus; }
+    catch(e) { console.warn("markOneSeen eval_mine error:", e.message); }
+  } else if(type==="debut") {
+    const l = debutRequestsForNotif.find(x=>String(x.id)===String(id));
+    if(!l) return;
+    const vus = Object.assign({}, l.vus_par||{});
+    vus[vk] = { debut_demande: l.debut_demande };
+    try { await sb(`services_logs?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); l.vus_par = vus; }
+    catch(e) { console.warn("markOneSeen debut error:", e.message); }
   }
 }
 
@@ -5400,7 +5445,7 @@ async function handleNotifClick(type, id) {
   closeNotifPanel();
   await markOneSeen(type, id);
   updateNotifBadges();
-  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", note:"notes-service"};
+  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", eval_mine:"mes-evaluations", note:"notes-service", debut:"logs-service"};
   goPage(pages[type]||"candidatures");
 }
 
@@ -5412,7 +5457,7 @@ async function markAllNotifsSeen() {
 }
 
 function updateNotifBadges() {
-  const {cand, abs, inc, evl, note, total} = computeNotifCounts();
+  const {cand, abs, inc, evl, evlMine, note, debut, total} = computeNotifCounts();
   if(typeof window._lastNotifTotal === "number" && total > window._lastNotifTotal) {
     soundNotif();
   }
@@ -5431,6 +5476,10 @@ function updateNotifBadges() {
   if(navEval) { navEval.textContent = evl; navEval.style.display = evl>0 ? "inline-flex" : "none"; }
   const navNotes = document.getElementById("nav-badge-notes");
   if(navNotes) { navNotes.textContent = note; navNotes.style.display = note>0 ? "inline-flex" : "none"; }
+  const navEvalMine = document.getElementById("nav-badge-mes-eval");
+  if(navEvalMine) { navEvalMine.textContent = evlMine; navEvalMine.style.display = evlMine>0 ? "inline-flex" : "none"; }
+  const navDebut = document.getElementById("nav-badge-logs");
+  if(navDebut) { navDebut.textContent = debut; navDebut.style.display = debut>0 ? "inline-flex" : "none"; }
   const panel = document.getElementById("notif-panel");
   if(panel && panel.classList.contains("show")) renderNotifPanel();
 }
@@ -6411,7 +6460,7 @@ async function loadAll() {
       try { const r = await sb(path); return r||[]; }
       catch(e) { console.warn("Load failed (keeping last known data):", path, e.message); return fallback; }
     };
-    const [p,a,c,ag,al,inc,ev,ns] = await Promise.all([
+    const [p,a,c,ag,al,inc,ev,ns,db] = await Promise.all([
       tryLoad("patrouilles_live?select=*&order=patrol_id", patrols),
       tryLoad("absences?select=*&order=created_at.desc", absences),
       tryLoad("candidatures?select=*&order=created_at.desc", candidatures),
@@ -6420,6 +6469,7 @@ async function loadAll() {
       tryLoad("documents?select=id,reference,agent_nom,data,auteur,vus_par,statut,statut_changed_at,suivi,created_at&type=eq.incident&order=created_at.desc&limit=100", incidentDocs),
       tryLoad("evaluations?select=id,agent_nom,verdict,pourcentage,vus_par,created_at&order=created_at.desc&limit=100", evalsForNotif),
       tryLoad("notes_service?select=*&order=created_at.desc&limit=100", allNotesService),
+      tryLoad("services_logs?select=id,agent_nom,debut_demande,vus_par&debut_statut=eq.En%20attente&limit=100", debutRequestsForNotif),
     ]);
     patrols      = p.map(x=>({...x, patrol_id:(x.patrol_id||"").replace(new RegExp("^"+myService()+"-"),"")}));
     absences     = a;
@@ -6428,6 +6478,7 @@ async function loadAll() {
     incidentDocs = inc;
     evalsForNotif = ev;
     allNotesService = ns;
+    debutRequestsForNotif = db;
     syncBadge("✓ En ligne","#4A7F5E");
     updateNotifBadges();
     checkAlerte(al && al[0] ? al[0] : null);
@@ -8411,7 +8462,25 @@ async function loadLogs() {
     allLogs = (logs||[]).filter(l=>!TEST_ACCOUNT_NAMES.includes((l.agent_nom||"").trim()));
     renderLogs();
     loadLogsMonthlyStats();
+    markVisibleDebutRequestsSeen();
   } catch(e) { toast("Erreur chargement logs","#E74C3C"); }
+}
+async function markVisibleDebutRequestsSeen() {
+  const vk = viewerKey();
+  if(!vk) return;
+  const pending = allLogs.filter(l=>l.debut_statut==="En attente");
+  await Promise.all(pending.map(async l=>{
+    const vus = Object.assign({}, l.vus_par||{});
+    if(vus[vk] && vus[vk].debut_demande===l.debut_demande) return;
+    vus[vk] = { debut_demande: l.debut_demande };
+    try {
+      await sb(`services_logs?id=eq.${l.id}`, {method:"PATCH", body:JSON.stringify({vus_par:vus})});
+      l.vus_par = vus;
+      const cached = debutRequestsForNotif.find(x=>String(x.id)===String(l.id));
+      if(cached) cached.vus_par = vus;
+    } catch(e) { console.warn("markVisibleDebutRequestsSeen:", e.message); }
+  }));
+  updateNotifBadges();
 }
 
 async function loadLogsMonthlyStats() {
@@ -8936,6 +9005,77 @@ async function supprimerCartePro(id) {
 }
 
 let currentMaCarteData = null;
+// ─── MES ÉVALUATIONS (vue agent — lecture seule) ────────────────────────
+function starsHTML(pourcentage) {
+  const stars5 = Math.max(0, Math.min(5, (pourcentage||0)/20));
+  let html = '<div style="display:inline-flex;gap:2px;">';
+  for(let i=1;i<=5;i++) {
+    const fill = Math.max(0, Math.min(1, stars5-(i-1))) * 100;
+    html += `<span style="position:relative;display:inline-block;font-size:20px;line-height:1;">
+      <span style="color:rgba(255,255,255,0.15);">★</span>
+      <span style="position:absolute;left:0;top:0;width:${fill}%;overflow:hidden;white-space:nowrap;color:#F0C048;">★</span>
+    </span>`;
+  }
+  html += `</div>`;
+  return html;
+}
+async function initMesEvaluations() {
+  const el = document.getElementById("mes-eval-content");
+  el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  const nomComplet = `${currentAgent?.prenom||""} ${currentAgent?.nom||""}`.trim();
+  if(!nomComplet) { el.innerHTML = '<div class="empty"><p>Non disponible.</p></div>'; return; }
+  try {
+    const rows = await sb(`evaluations?agent_nom=eq.${encodeURIComponent(nomComplet)}&select=*&order=date_eval.desc`);
+    const evals = rows||[];
+    if(!evals.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">⭐</div><p>Aucune évaluation pour le moment.</p></div>`;
+      markMesEvalsSeen(evals);
+      return;
+    }
+    const moyenne = evals.reduce((s,e)=>s+(e.pourcentage||0),0)/evals.length;
+    el.innerHTML = `
+      <div class="card" style="max-width:520px;margin-bottom:20px;">
+        <div class="card-body" style="text-align:center;padding:22px;">
+          <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Moyenne générale</div>
+          ${starsHTML(moyenne)}
+          <div style="font-family:var(--font-serif);font-size:26px;font-weight:700;color:#fff;margin-top:8px;">${(moyenne/20).toFixed(1)} / 5</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Basée sur ${evals.length} évaluation${evals.length>1?"s":""}</div>
+        </div>
+      </div>
+      ${evals.map(e=>{
+        const d = e.date_eval ? new Date(e.date_eval+"T12:00:00").toLocaleDateString("fr-FR") : "";
+        const vmeta = VERDICT_META[e.verdict]||{color:"#fff",icon:""};
+        return `<div class="card" style="max-width:520px;">
+          <div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              <div>${starsHTML(e.pourcentage)}<div style="font-size:11px;color:var(--text3);margin-top:4px;">${d} · évalué par ${esc(e.evaluateur||"—")}</div></div>
+              <div style="font-weight:800;color:${vmeta.color};white-space:nowrap;">${vmeta.icon} ${esc(e.verdict||"")} <span style="font-weight:600;color:var(--text2);">(${e.pourcentage}%)</span></div>
+            </div>
+            ${e.notes ? `<div style="font-size:12.5px;color:var(--text);line-height:1.6;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px;white-space:pre-line;">${esc(e.notes)}</div>` : `<div style="font-size:11.5px;color:var(--text3);font-style:italic;">Aucun commentaire laissé par l'évaluateur.</div>`}
+          </div>
+        </div>`;
+      }).join("")}
+    `;
+    markMesEvalsSeen(evals);
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
+}
+async function markMesEvalsSeen(evals) {
+  const vk = viewerKey();
+  if(!vk) return;
+  await Promise.all((evals||[]).map(async e=>{
+    const vus = Object.assign({}, e.vus_par||{});
+    if(vus[vk]) return;
+    vus[vk] = true;
+    try {
+      await sb(`evaluations?id=eq.${e.id}`, {method:"PATCH", body:JSON.stringify({vus_par:vus})});
+      e.vus_par = vus;
+      const cached = evalsForNotif.find(x=>String(x.id)===String(e.id));
+      if(cached) cached.vus_par = vus;
+    } catch(err) { console.warn("markMesEvalsSeen:", err.message); }
+  }));
+  updateNotifBadges();
+}
+
 async function initMaCartePro() {
   const el = document.getElementById("mcp-content");
   el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
