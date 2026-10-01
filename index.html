@@ -5674,6 +5674,7 @@ async function tryTestTokenLogin(token) {
     const t = rows && rows[0];
     if(!t || new Date(t.expires_at) < new Date()) {
       alert("Ce lien de test est invalide, déjà utilisé, ou expiré. Redemandez-en un depuis l'espace Admin.");
+      setupPageMaintOverlays(); loadLandingContent();
       return false;
     }
     await sb(`test_login_tokens?id=eq.${t.id}`, {method:"PATCH", body:JSON.stringify({used:true})});
@@ -5681,12 +5682,23 @@ async function tryTestTokenLogin(token) {
     const compte = comptes && comptes[0];
     const grades = await sb(`agents_grades?select=*&compte_id=eq.${t.compte_id}&service=eq.${t.service}`);
     const grade = grades && grades[0];
-    if(!compte || !grade) { alert("Compte de test introuvable (a peut-être été supprimé)."); return false; }
+    if(!compte || !grade) {
+      alert("Compte de test introuvable (a peut-être été supprimé).");
+      setupPageMaintOverlays(); loadLandingContent();
+      return false;
+    }
     role = grade.role;
+    // #screen-landing est affiché par défaut (z-index au-dessus de tout) tant qu'on ne le
+    // masque pas explicitement — oublié initialement, d'où l'accueil vide par-dessus l'appli.
+    document.getElementById("screen-landing").style.display="none";
     document.getElementById("screen-login").style.display="none";
     finalizeLogin(compte, grade, [grade]);
     return true;
-  } catch(e) { alert("Erreur d'ouverture du lien de test : "+e.message); return false; }
+  } catch(e) {
+    alert("Erreur d'ouverture du lien de test : "+e.message);
+    setupPageMaintOverlays(); loadLandingContent();
+    return false;
+  }
 }
 function isMaintenanceExempt() {
   if(role==="admin") return true;
