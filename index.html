@@ -1739,6 +1739,14 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     </div>
 
     <div class="card" style="max-width:620px;">
+      <div class="card-hdr"><div class="card-hdr-title">🔐 Comptes de test</div></div>
+      <div class="card-body">
+        <div class="page-sub" style="margin-bottom:14px;">Aucun PIN ne permet de se connecter aux comptes Test TEST1/2/3 — c'est désormais impossible, point final. Le seul accès possible est ci-dessous : en tant qu'Admin, choisissez une filiale et ouvrez une session de test dans un nouvel onglet, via un lien à usage unique valable 2 minutes.</div>
+        <div id="test-accounts-toggle-box"><div class="empty"><p>Chargement…</p></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:620px;">
       <div class="card-hdr">
         <div class="card-hdr-title">🚧 Mode maintenance</div>
         <span id="maint-status-badge" style="font-size:11px;color:var(--text2);"></span>
@@ -2941,8 +2949,11 @@ function renderEvalHistory(rows) {
 }
 function setEvalSort(mode) { window._evalSort = mode; renderEvalHistory(); }
 async function deleteEvaluation(id) {
-  if(!confirm("Supprimer définitivement cette évaluation ?")) return;
   const ev = allEvals.find(x=>String(x.id)===String(id));
+  // Suppression irréversible (aucun historique conservé) : confirmation renforcée par saisie,
+  // pas un simple clic sur OK.
+  const saisie = prompt(`Cette action est IRRÉVERSIBLE. Pour confirmer la suppression de l'évaluation de ${ev?.agent_nom||"cette personne"}, tapez SUPPRIMER en majuscules :`);
+  if(saisie !== "SUPPRIMER") { if(saisie!==null) toast("Suppression annulée — texte incorrect.","#E74C3C"); return; }
   try {
     await sb(`evaluations?id=eq.${id}`, {method:"DELETE"});
     if(ev) logActivity("evaluation_supprimee", `Évaluation de ${ev.agent_nom} supprimée`);
@@ -5251,7 +5262,7 @@ function goPage(pageId) {
   if(pageId==="admin-comptes")     { loadComptes(); const svcSel=document.getElementById("ac-service"); if(svcSel) svcSel.value = myService(); }
   if(pageId==="hierarchie")        loadHierarchie();
   if(pageId==="landing-editor")    initLandingEditor();
-  if(pageId==="journal")           { loadJournal(); refreshMaintStatusBadge(); loadDiscordWebhook(); }
+  if(pageId==="journal")           { loadJournal(); refreshMaintStatusBadge(); loadDiscordWebhook(); refreshTestAccountsToggleUI(); }
   if(pageId==="evaluations")       loadEvaluations();
   if(pageId==="doc-rh")            {
     setDocTab("convocation"); prefillDocDates(); loadDocHistory("rh");
@@ -5615,6 +5626,68 @@ function setupPageMaintOverlays() {
 }
 // Comptes de test exclus de la maintenance ET de l'organigramme
 const TEST_ACCOUNT_NAMES = ["Test TEST1", "Test TEST2", "Test TEST3"];
+// Connexion aux comptes de test désormais IMPOSSIBLE par PIN, quel qu'il soit (voir
+// confirmLogin). Le seul chemin d'accès est un lien à usage unique généré par l'Admin,
+// valable 2 minutes, qui ouvre directement une session déjà connectée dans un nouvel onglet.
+function genTestToken() {
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,"");
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 14);
+}
+async function ouvrirLienTest(nomTest, service) {
+  try {
+    const comptes = await sb(`agents_comptes?select=*&prenom=eq.${encodeURIComponent(nomTest.split(" ")[0])}&nom=eq.${encodeURIComponent(nomTest.split(" ")[1])}`);
+    const compte = comptes && comptes[0];
+    if(!compte) { toast("Compte de test introuvable.","#E74C3C"); return; }
+    const grades = await sb(`agents_grades?select=*&compte_id=eq.${compte.id}&service=eq.${service}`);
+    const grade = grades && grades[0];
+    if(!grade) { toast("Ce compte de test n'a pas de grade sur cette filiale.","#E74C3C"); return; }
+    const token = genTestToken();
+    const expires = new Date(Date.now()+2*60*1000).toISOString();
+    await sb("test_login_tokens", {method:"POST", body:JSON.stringify({compte_id:compte.id, service, role:grade.role, token, expires_at:expires})});
+    const url = `${window.location.origin}${window.location.pathname}?test_login=${token}`;
+    window.open(url, "_blank");
+    toast("✓ Session de test ouverte dans un nouvel onglet (lien valable 2 minutes, usage unique)");
+  } catch(e) { toast("Erreur : "+e.message, "#E74C3C"); }
+}
+async function refreshTestAccountsToggleUI() {
+  const box = document.getElementById("test-accounts-toggle-box");
+  if(!box) return;
+  box.innerHTML = TEST_ACCOUNT_NAMES.map(nom=>{
+    const safeId = nom.replace(/\s+/g,"-");
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="min-width:110px;font-weight:600;color:#fff;">${esc(nom)}</span>
+      <select id="test-svc-${safeId}" style="background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:5px 8px;">
+        <option value="securite">Sécurité</option>
+        <option value="depannage">Dépannage</option>
+        <option value="rescue">Rescue</option>
+        <option value="balisage">Balisage</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="ouvrirLienTest('${nom}', document.getElementById('test-svc-${safeId}').value)">🧪 Ouvrir une session</button>
+    </div>`;
+  }).join("") + `<div style="font-size:10.5px;color:var(--text3);margin-top:4px;">Chaque lien n'est valable que 2 minutes et à usage unique. Aucun PIN ne permet plus de se connecter à ces comptes.</div>`;
+}
+// Vérifie un lien de test au chargement de la page (?test_login=TOKEN) et connecte
+// directement, sans passer par l'écran de PIN.
+async function tryTestTokenLogin(token) {
+  try {
+    const rows = await sb(`test_login_tokens?select=*&token=eq.${encodeURIComponent(token)}&used=eq.false`);
+    const t = rows && rows[0];
+    if(!t || new Date(t.expires_at) < new Date()) {
+      alert("Ce lien de test est invalide, déjà utilisé, ou expiré. Redemandez-en un depuis l'espace Admin.");
+      return false;
+    }
+    await sb(`test_login_tokens?id=eq.${t.id}`, {method:"PATCH", body:JSON.stringify({used:true})});
+    const comptes = await sb(`agents_comptes?select=*&id=eq.${t.compte_id}`);
+    const compte = comptes && comptes[0];
+    const grades = await sb(`agents_grades?select=*&compte_id=eq.${t.compte_id}&service=eq.${t.service}`);
+    const grade = grades && grades[0];
+    if(!compte || !grade) { alert("Compte de test introuvable (a peut-être été supprimé)."); return false; }
+    role = grade.role;
+    document.getElementById("screen-login").style.display="none";
+    finalizeLogin(compte, grade, [grade]);
+    return true;
+  } catch(e) { alert("Erreur d'ouverture du lien de test : "+e.message); return false; }
+}
 function isMaintenanceExempt() {
   if(role==="admin") return true;
   if(currentAgent) {
@@ -5784,8 +5857,21 @@ function finishLaunch() {
   } else {
     loadAll();
     checkSanctionGate();
-    _refreshInterval = setInterval(()=>{ loadAll(); checkSanctionGate(); }, 15000);
+    checkAccountStillExists();
+    _refreshInterval = setInterval(()=>{ loadAll(); checkSanctionGate(); checkAccountStillExists(); }, 15000);
   }
+}
+// Si le compte connecté a été supprimé (ex : compte de test), on déconnecte de force dans
+// les secondes qui suivent, plutôt que de laisser la session continuer indéfiniment.
+async function checkAccountStillExists() {
+  if(!currentCompte || !currentCompte.compte_id || role==="admin" || role==="candidat") return;
+  try {
+    const rows = await sb(`agents_comptes?id=eq.${currentCompte.compte_id}&select=id`);
+    if(!rows || !rows.length) {
+      toast("Votre compte a été supprimé — déconnexion…", "#E74C3C");
+      setTimeout(()=>logoutToLanding(), 1200);
+    }
+  } catch(e) { /* en cas d'erreur réseau, on ne déconnecte pas abusivement */ }
 }
 
 // ─── SON & MESSAGE DE BIENVENUE (à la connexion) ────────────────────────
@@ -6438,6 +6524,13 @@ async function confirmLogin() {
         return;
       }
       const compte = comptes[0];
+      const fullName = `${compte.prenom||""} ${compte.nom||""}`.trim();
+      if(TEST_ACCOUNT_NAMES.includes(fullName)) {
+        err.textContent="Les comptes de test ne sont pas accessibles par PIN. Seul un Admin peut y accéder, depuis l'espace Admin.";
+        err.style.display="block";
+        document.getElementById("pin-input").value="";
+        return;
+      }
       const gr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+compte.id+"&role=eq."+role+"&select=*", {
         headers:H, mode:"cors"
       });
@@ -9617,8 +9710,9 @@ async function modifierPin(id) {
 }
 
 async function supprimerCompte(id) {
-  if(!confirm("Supprimer ce compte et tous ses grades ? Les logs de service associés seront aussi supprimés.")) return;
   const p = allPersonnes.find(x=>String(x.id)===String(id));
+  const saisie = prompt(`Cette action est IRRÉVERSIBLE (compte, grades et logs de service supprimés). Pour confirmer la suppression de ${p?p.prenom+" "+p.nom:"ce compte"}, tapez SUPPRIMER en majuscules :`);
+  if(saisie !== "SUPPRIMER") { if(saisie!==null) toast("Suppression annulée — texte incorrect.","#E74C3C"); return; }
   try {
     await sb("agents_comptes?id=eq."+id,{method:"DELETE"});
     // Libère le PIN côté portail candidat : sans ça, un ancien dossier "déjà promu" avec
@@ -9698,8 +9792,11 @@ async function initPublicCarteView(token) {
 }
 
 const _sharedCarteToken = new URLSearchParams(window.location.search).get("carte");
+const _testLoginToken = new URLSearchParams(window.location.search).get("test_login");
 if(_sharedCarteToken) {
   initPublicCarteView(_sharedCarteToken);
+} else if(_testLoginToken) {
+  tryTestTokenLogin(_testLoginToken);
 } else {
   setupPageMaintOverlays();
   loadLandingContent();
