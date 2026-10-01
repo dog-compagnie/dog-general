@@ -1133,7 +1133,8 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
               </div>
             </div>
             <button class="btn btn-primary btn-full" onclick="ajouterGrade()">Ajouter ce grade</button>
-            <button class="btn btn-danger btn-full" style="margin-top:14px;" onclick="supprimerCompte(currentPersonneId)" id="ac-delete-btn">🗑 Supprimer ce compte</button>
+            <button class="btn btn-full" style="margin-top:14px;background:rgba(240,168,64,0.15);color:#F0A840;border:1px solid rgba(240,168,64,0.35);" onclick="toggleBlocageCompte(currentPersonneId)" id="ac-block-btn">🔒 Bloquer ce compte</button>
+            <button class="btn btn-danger btn-full" style="margin-top:8px;" onclick="supprimerCompte(currentPersonneId)" id="ac-delete-btn">🗑 Supprimer ce compte</button>
           </div>
         </div>
         <div class="card" id="ac-empty-hint">
@@ -5633,17 +5634,19 @@ function genTestToken() {
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,"");
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 14);
 }
-async function ouvrirLienTest(nomTest, service) {
+async function ouvrirLienTest(nomTest) {
   try {
     const comptes = await sb(`agents_comptes?select=*&prenom=eq.${encodeURIComponent(nomTest.split(" ")[0])}&nom=eq.${encodeURIComponent(nomTest.split(" ")[1])}`);
     const compte = comptes && comptes[0];
     if(!compte) { toast("Compte de test introuvable.","#E74C3C"); return; }
-    const grades = await sb(`agents_grades?select=*&compte_id=eq.${compte.id}&service=eq.${service}`);
+    // Un seul clic : on se connecte sur sa première filiale, le changement de service se fait
+    // ensuite normalement via le sélecteur de la barre du haut (le compte a accès aux 4).
+    const grades = await sb(`agents_grades?select=*&compte_id=eq.${compte.id}&order=service`);
     const grade = grades && grades[0];
-    if(!grade) { toast("Ce compte de test n'a pas de grade sur cette filiale.","#E74C3C"); return; }
+    if(!grade) { toast("Ce compte de test n'a aucun grade.","#E74C3C"); return; }
     const token = genTestToken();
     const expires = new Date(Date.now()+2*60*1000).toISOString();
-    await sb("test_login_tokens", {method:"POST", body:JSON.stringify({compte_id:compte.id, service, role:grade.role, token, expires_at:expires})});
+    await sb("test_login_tokens", {method:"POST", body:JSON.stringify({compte_id:compte.id, service:grade.service, role:grade.role, token, expires_at:expires})});
     const url = `${window.location.origin}${window.location.pathname}?test_login=${token}`;
     window.open(url, "_blank");
     toast("✓ Session de test ouverte dans un nouvel onglet (lien valable 2 minutes, usage unique)");
@@ -5652,19 +5655,13 @@ async function ouvrirLienTest(nomTest, service) {
 async function refreshTestAccountsToggleUI() {
   const box = document.getElementById("test-accounts-toggle-box");
   if(!box) return;
+  const labels = {"Test TEST1":"Agent", "Test TEST2":"Responsable", "Test TEST3":"PDG"};
   box.innerHTML = TEST_ACCOUNT_NAMES.map(nom=>{
-    const safeId = nom.replace(/\s+/g,"-");
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-      <span style="min-width:110px;font-weight:600;color:#fff;">${esc(nom)}</span>
-      <select id="test-svc-${safeId}" style="background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:5px 8px;">
-        <option value="securite">Sécurité</option>
-        <option value="depannage">Dépannage</option>
-        <option value="rescue">Rescue</option>
-        <option value="balisage">Balisage</option>
-      </select>
-      <button class="btn btn-primary btn-sm" onclick="ouvrirLienTest('${nom}', document.getElementById('test-svc-${safeId}').value)">🧪 Ouvrir une session</button>
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="min-width:150px;font-weight:600;color:#fff;">${esc(nom)} <span style="color:var(--text3);font-weight:500;">(${labels[nom]||""})</span></span>
+      <button class="btn btn-primary btn-sm" onclick="ouvrirLienTest('${nom}')">🧪 Ouvrir une session</button>
     </div>`;
-  }).join("") + `<div style="font-size:10.5px;color:var(--text3);margin-top:4px;">Chaque lien n'est valable que 2 minutes et à usage unique. Aucun PIN ne permet plus de se connecter à ces comptes.</div>`;
+  }).join("") + `<div style="font-size:10.5px;color:var(--text3);margin-top:4px;">Chaque lien n'est valable que 2 minutes et à usage unique. Aucun PIN ne permet plus de se connecter à ces comptes. Une fois connecté, changez de filiale via la barre du haut comme d'habitude.</div>`;
 }
 // Vérifie un lien de test au chargement de la page (?test_login=TOKEN) et connecte
 // directement, sans passer par l'écran de PIN.
@@ -5680,8 +5677,10 @@ async function tryTestTokenLogin(token) {
     await sb(`test_login_tokens?id=eq.${t.id}`, {method:"PATCH", body:JSON.stringify({used:true})});
     const comptes = await sb(`agents_comptes?select=*&id=eq.${t.compte_id}`);
     const compte = comptes && comptes[0];
-    const grades = await sb(`agents_grades?select=*&compte_id=eq.${t.compte_id}&service=eq.${t.service}`);
-    const grade = grades && grades[0];
+    // Tous les grades du même rôle (pas juste la filiale initiale) : indispensable pour que
+    // le sélecteur de filiale de la barre du haut propose bien les 4 services ensuite.
+    const grades = await sb(`agents_grades?select=*&compte_id=eq.${t.compte_id}&role=eq.${t.role}`);
+    const grade = grades && grades.find(g=>g.service===t.service);
     if(!compte || !grade) {
       alert("Compte de test introuvable (a peut-être été supprimé).");
       setupPageMaintOverlays(); loadLandingContent();
@@ -5692,7 +5691,7 @@ async function tryTestTokenLogin(token) {
     // masque pas explicitement — oublié initialement, d'où l'accueil vide par-dessus l'appli.
     document.getElementById("screen-landing").style.display="none";
     document.getElementById("screen-login").style.display="none";
-    finalizeLogin(compte, grade, [grade]);
+    finalizeLogin(compte, grade, grades);
     return true;
   } catch(e) {
     alert("Erreur d'ouverture du lien de test : "+e.message);
@@ -5878,9 +5877,14 @@ function finishLaunch() {
 async function checkAccountStillExists() {
   if(!currentCompte || !currentCompte.compte_id || role==="admin" || role==="candidat") return;
   try {
-    const rows = await sb(`agents_comptes?id=eq.${currentCompte.compte_id}&select=id`);
+    const rows = await sb(`agents_comptes?id=eq.${currentCompte.compte_id}&select=id,bloque`);
     if(!rows || !rows.length) {
       toast("Votre compte a été supprimé — déconnexion…", "#E74C3C");
+      setTimeout(()=>logoutToLanding(), 1200);
+      return;
+    }
+    if(rows[0].bloque) {
+      toast("Votre compte a été bloqué par un administrateur — déconnexion…", "#E74C3C");
       setTimeout(()=>logoutToLanding(), 1200);
     }
   } catch(e) { /* en cas d'erreur réseau, on ne déconnecte pas abusivement */ }
@@ -6539,6 +6543,12 @@ async function confirmLogin() {
       const fullName = `${compte.prenom||""} ${compte.nom||""}`.trim();
       if(TEST_ACCOUNT_NAMES.includes(fullName)) {
         err.textContent="Les comptes de test ne sont pas accessibles par PIN. Seul un Admin peut y accéder, depuis l'espace Admin.";
+        err.style.display="block";
+        document.getElementById("pin-input").value="";
+        return;
+      }
+      if(compte.bloque) {
+        err.textContent="Ce compte a été bloqué par un administrateur.";
         err.style.display="block";
         document.getElementById("pin-input").value="";
         return;
@@ -9623,8 +9633,37 @@ function openPersonne(id) {
   document.getElementById("ac-telephone").value = fmtTel(p.telephone||"");
   document.getElementById("ac-save-contact-btn").style.display = "block";
   document.getElementById("ac-delete-btn").style.display = "block";
+  const blockBtn = document.getElementById("ac-block-btn");
+  if(blockBtn) {
+    blockBtn.style.display = "block";
+    if(p.bloque) {
+      blockBtn.textContent = "🔓 Débloquer ce compte";
+      blockBtn.style.background = "rgba(82,217,139,0.15)";
+      blockBtn.style.color = "#52D98B";
+      blockBtn.style.borderColor = "rgba(82,217,139,0.35)";
+    } else {
+      blockBtn.textContent = "🔒 Bloquer ce compte";
+      blockBtn.style.background = "rgba(240,168,64,0.15)";
+      blockBtn.style.color = "#F0A840";
+      blockBtn.style.borderColor = "rgba(240,168,64,0.35)";
+    }
+  }
   renderGradesList(p);
   renderComptes();
+}
+async function toggleBlocageCompte(id) {
+  const p = allPersonnes.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  const nouveauEtat = !p.bloque;
+  if(nouveauEtat && !confirm(`Bloquer ${p.prenom} ${p.nom} ? La personne sera déconnectée de force (sous 15 secondes si elle est actuellement connectée) et ne pourra plus se reconnecter tant que vous ne l'aurez pas débloquée.`)) return;
+  try {
+    await sb(`agents_comptes?id=eq.${id}`, {method:"PATCH", body:JSON.stringify({bloque:nouveauEtat})});
+    p.bloque = nouveauEtat;
+    logActivity(nouveauEtat?"compte_bloque":"compte_debloque", `${p.prenom} ${p.nom} ${nouveauEtat?"bloqué":"débloqué"} par ${identityLabel()}`);
+    toast(nouveauEtat ? "🔒 Compte bloqué" : "🔓 Compte débloqué");
+    openPersonne(id);
+    await loadComptes();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 async function enregistrerContact() {
   if(!currentPersonneId) return;
