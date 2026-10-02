@@ -6692,15 +6692,22 @@ function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").repla
 function fmtUpd(ts){ if(!ts) return "—"; const d=new Date(ts); return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); }
 
 function renderPatrols() {
-  // Si on est en train d'écrire dans un champ Véhicule ou Notes, on reporte le rafraîchissement
-  // du tableau au prochain cycle plutôt que d'effacer ce qui n'a pas encore été validé.
+  // Si on écrit dans un champ Véhicule ou Notes, on ne saute plus le rafraîchissement : ça
+  // bloquait aussi les changements de statut faits par d'autres personnes tant qu'on tapait.
+  // On garde seulement ce qui est en cours de frappe, et tout le reste (dont les statuts) se
+  // met à jour normalement.
   const activeEl = document.activeElement;
   const tableWrap = document.getElementById("patrol-table-wrap");
+  let preserve = null;
   if(activeEl && tableWrap && tableWrap.contains(activeEl) &&
      (activeEl.classList.contains("vehicle-inp") || activeEl.classList.contains("notes-inp"))) {
-    clearTimeout(window._patrolsRenderRetry);
-    window._patrolsRenderRetry = setTimeout(renderPatrols, 4000);
-    return;
+    preserve = {
+      patrolId: activeEl.dataset.patrolId,
+      field: activeEl.classList.contains("vehicle-inp") ? "vehicule" : "notes",
+      value: activeEl.value,
+      selStart: activeEl.selectionStart,
+      selEnd: activeEl.selectionEnd,
+    };
   }
 
   // Stats
@@ -6771,14 +6778,26 @@ function renderPatrols() {
       <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e1',this.value)">${mkAgentOpts(p.e1)}</select></td>
       <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e2',this.value)">${mkAgentOpts(p.e2)}</select></td>
       <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e3',this.value)">${mkAgentOpts(p.e3)}</select></td>
-      <td class="vehicle-cell"><input class="vehicle-inp" value="${esc(p.vehicule||"")}" placeholder="Véhicule…" onchange="updatePatrol('${def.id}','vehicule',this.value)"></td>
+      <td class="vehicle-cell"><input class="vehicle-inp" data-patrol-id="${def.id}" value="${esc(p.vehicule||"")}" placeholder="Véhicule…" onchange="updatePatrol('${def.id}','vehicule',this.value)"></td>
       <td class="status-cell"><select class="status-select ${cls}" onchange="updateStatus('${def.id}',this)">${mkStatusOpts(p.statut||"Hors service")}</select></td>
-      <td class="notes-cell"><textarea class="notes-inp" rows="2" placeholder="Notes…" onchange="updatePatrol('${def.id}','notes',this.value)">${esc(p.notes||"")}</textarea></td>
+      <td class="notes-cell"><textarea class="notes-inp" data-patrol-id="${def.id}" rows="2" placeholder="Notes…" onchange="updatePatrol('${def.id}','notes',this.value)">${esc(p.notes||"")}</textarea></td>
       <td class="upd-cell">${fmtUpd(p.updated_at)}<br><span style="font-size:8px;color:#1E3348">${esc(p.updated_by||"")}</span></td>
     </tr>`;
   });
   html += "</tbody></table>";
   document.getElementById("patrol-table-wrap").innerHTML = html;
+
+  // On restitue le texte en cours de frappe (et le focus + la position du curseur) dans le
+  // bon champ, maintenant que le reste du tableau (statuts compris) est à jour.
+  if(preserve) {
+    const cls = preserve.field==="vehicule" ? "vehicle-inp" : "notes-inp";
+    const el = document.querySelector(`#patrol-table-wrap .${cls}[data-patrol-id="${preserve.patrolId}"]`);
+    if(el) {
+      el.value = preserve.value;
+      el.focus();
+      try { el.setSelectionRange(preserve.selStart, preserve.selEnd); } catch(e) {}
+    }
+  }
 
   // Agents chips
   renderAgentChips();
@@ -7715,6 +7734,15 @@ async function suppCand(id) {
 
 // ─── MON SERVICE ───────────────────────────────────────────────────
 async function initServicePage() {
+  if(role==="admin") {
+    // L'Admin n'a pas d'identité d'agent ni d'heures de service personnelles : on l'indique
+    // clairement plutôt que de laisser un ancien chiffre affiché par erreur.
+    const box = document.getElementById("mon-service-mois-box");
+    if(box) box.innerHTML = `<div style="text-align:center;color:var(--text3);font-size:12px;">Non applicable au compte Admin.</div>`;
+    renderMesServices([]);
+    setServiceUI(false);
+    return;
+  }
   if(!currentAgent) return;
   try {
     const logs = await sb("services_logs?agent_nom=eq."+encodeURIComponent(currentAgent.prenom+" "+currentAgent.nom)+"&select=*&order=debut.desc&limit=11");
