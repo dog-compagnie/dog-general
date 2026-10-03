@@ -1,7 +1,7 @@
 // Service worker de la Dog Compagnie — volontairement minimal.
 // Objectif : rendre le site installable et afficher la dernière version connue si le réseau
 // tombe. Il ne met JAMAIS en cache les données (Supabase) ni les ressources externes.
-const CACHE = "dog-compagnie-v2";
+const CACHE = "dog-compagnie-v3";
 
 self.addEventListener("install", () => self.skipWaiting());
 
