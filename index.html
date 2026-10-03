@@ -1570,7 +1570,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 
   <div class="page" id="page-calendrier">
     <div class="page-title">Calendrier des <span>évènements</span></div>
-    <div class="page-sub">Retrouvez tous les évènements de la filiale et inscrivez-vous en un clic.</div>
+    <div class="page-sub">Retrouvez tous les évènements de la filiale et indiquez en un clic si vous serez présent ou absent.</div>
     <div id="calendrier-content"><div class="empty"><p>Chargement…</p></div></div>
   </div>
 
@@ -1827,7 +1827,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="card" style="max-width:640px;">
       <div class="card-hdr"><div class="card-hdr-title">🔗 Webhooks Discord</div></div>
       <div class="card-body">
-        <div class="page-sub" style="margin-bottom:14px;">Envoie automatiquement un message dans un salon Discord lors d'une nouvelle candidature, d'une absence déclarée, d'une demande de correction de prise de service, ou d'un rapport d'incident. Chaque service a son propre webhook — une notification de Dog Rescue n'ira jamais dans le salon de Dog Sécurité. ⚠️ Ces liens sont visibles par quiconque inspecte le code du site — ne les partagez jamais, et régénérez-les dans Discord en cas de doute sur un usage abusif.</div>
+        <div class="page-sub" style="margin-bottom:14px;">Envoie automatiquement un message dans un salon Discord lors d'une nouvelle candidature, d'une absence déclarée, d'une demande de correction de prise de service, ou d'un rapport d'incident. Chaque service a son propre webhook — une notification de Dog Rescue n'ira jamais dans le salon de Dog Sécurité. Les <b>annonces d'évènements</b> (créées depuis le calendrier) ont leur propre webhook par filiale, distinct de celui des logs. ⚠️ Ces liens sont visibles par quiconque inspecte le code du site — ne les partagez jamais, et régénérez-les dans Discord en cas de doute sur un usage abusif.</div>
         <div id="discord-webhook-rows"></div>
       </div>
     </div>
@@ -2728,11 +2728,12 @@ async function triggerSecurityLockdown(nom, nbActions) {
 
 // ─── WEBHOOKS DISCORD PAR SERVICE (Admin) ────────────────────────────
 let discordWebhookUrls = {securite:"", depannage:"", rescue:"", balisage:"", alertes:""};
-const webhookLabel = s => s==="alertes" ? "Alertes de sécurité" : svcLabel(s);
+const webhookLabel = s => s==="alertes" ? "Alertes de sécurité" : s.startsWith("annonces_") ? "Annonces — "+svcLabel(s.slice(9)) : svcLabel(s);
+const WEBHOOK_KEYS = () => [...SERVICES, ...SERVICES.map(x=>"annonces_"+x), "alertes"];
 async function loadDiscordWebhook() {
   try {
-    const rows = await sb("site_config?select=*&cle=in.(discord_webhook_securite,discord_webhook_depannage,discord_webhook_rescue,discord_webhook_balisage,discord_webhook_alertes)");
-    [...SERVICES,"alertes"].forEach(s=>{
+    const rows = await sb(`site_config?select=*&cle=in.(${WEBHOOK_KEYS().map(k=>"discord_webhook_"+k).join(",")})`);
+    WEBHOOK_KEYS().forEach(s=>{
       const row = (rows||[]).find(r=>r.cle==="discord_webhook_"+s);
       discordWebhookUrls[s] = (row && row.valeur) || "";
     });
@@ -2742,15 +2743,23 @@ async function loadDiscordWebhook() {
 function renderDiscordWebhookRows() {
   const el = document.getElementById("discord-webhook-rows");
   if(!el) return;
-  el.innerHTML = [...SERVICES,"alertes"].map(s=>`
+  const row = (key, label) => `
     <div class="field" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
-      <label>${s==="alertes" ? "🚨 Alertes de sécurité (salon privé Admin)" : SERVICE_ICONS[s]+" "+svcLabel(s)}</label>
-      <input id="discord-webhook-input-${s}" placeholder="https://discord.com/api/webhooks/…" value="${esc(discordWebhookUrls[s]||"")}">
+      <label>${label}</label>
+      <input id="discord-webhook-input-${key}" placeholder="https://discord.com/api/webhooks/…" value="${esc(discordWebhookUrls[key]||"")}">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-        <button class="btn btn-primary btn-sm" onclick="enregistrerWebhookDiscord('${s}')">💾 Enregistrer</button>
-        <button class="btn btn-ghost btn-sm" onclick="testerWebhookDiscord('${s}')">📨 Envoyer un test</button>
+        <button class="btn btn-primary btn-sm" onclick="enregistrerWebhookDiscord('${key}')">💾 Enregistrer</button>
+        <button class="btn btn-ghost btn-sm" onclick="testerWebhookDiscord('${key}')">📨 Envoyer un test</button>
       </div>
-    </div>`).join("");
+    </div>`;
+  const heading = t => `<div style="font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:26px 0 -4px;">${t}</div>`;
+  el.innerHTML =
+    heading("📋 Logs de la filiale — candidatures, absences, incidents, notes de service") +
+    SERVICES.map(s=>row(s, SERVICE_ICONS[s]+" "+svcLabel(s))).join("") +
+    heading("📅 Annonces d'évènements — le salon où le rôle de la filiale est pingé") +
+    SERVICES.map(s=>row("annonces_"+s, SERVICE_ICONS[s]+" Annonces — "+svcLabel(s))).join("") +
+    heading("🚨 Alertes de sécurité") +
+    row("alertes", "🚨 Alertes de sécurité (salon privé Admin)");
 }
 async function enregistrerWebhookDiscord(svc) {
   const url = document.getElementById("discord-webhook-input-"+svc).value.trim();
@@ -2773,21 +2782,20 @@ async function enregistrerWebhookDiscord(svc) {
 }
 async function testerWebhookDiscord(svc) {
   if(!discordWebhookUrls[svc]) { toast("Aucun webhook enregistré pour "+webhookLabel(svc)+".","#E74C3C"); return; }
-  const accentMain = (ACCENT_BY_SERVICE[svc]||{main:"#C0392B"}).main;
+  const accentMain = (ACCENT_BY_SERVICE[svc.replace(/^annonces_/,"")]||{main:"#C0392B"}).main;
   await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+webhookLabel(svc)+".", parseInt(accentMain.slice(1),16), svc);
   toast("✓ Message de test envoyé (vérifiez le salon Discord)");
 }
 // Rôle Discord mentionné (ping → vraie notification sur téléphone) pour les alertes de sécurité
 const SECURITY_ALERT_ROLE_ID = "1531376493668601958";
-// Rôles Discord pingés à la création d'un évènement : celui de la filiale + la direction (DIR).
-// Balisage : aucun rôle renseigné pour l'instant — ajoutez son ID ici pour activer le ping.
+// Rôle Discord pingé à la création d'un évènement : celui des agents de la filiale concernée
+// (Sécurité, Dépanneur, Ambulancier ; le rôle « DIR » est celui de Balisage).
 const EVENT_PING_ROLES = {
   securite:  "1368706038424932463",
   depannage: "1368706153789263923",
   rescue:    "1368706205131997245",
-  balisage:  "",
+  balisage:  "1392118196823396443",
 };
-const EVENT_PING_DIR = "1392118196823396443";
 async function sendDiscordWebhook(title, description, color, svc, pingRoles) {
   const url = discordWebhookUrls[svc||myService()];
   if(!url) return;
@@ -8659,12 +8667,13 @@ async function creerEvenement() {
     try {
       const dateLong = new Date(date+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
       const site = location.origin + location.pathname;
+      // Salon d'annonces propre à la filiale (≠ webhook des logs) ; pas de message si non configuré.
       sendDiscordWebhook(
         `📅 Nouvel évènement — ${nom}`,
-        `**Date :** ${dateLong}${heuresDefaut ? `\n**Heures créditées :** ${heuresDefaut} h` : ""}\n**Créé par :** ${identityLabel()}\n\nInscrivez-vous depuis l'onglet **Calendrier** du site : ${site}`,
+        `**Date :** ${dateLong}${heuresDefaut ? `\n**Heures créditées :** ${heuresDefaut} h` : ""}\n**Créé par :** ${identityLabel()}\n\n⚠️ **Merci de répondre : indiquez si vous serez présent ou absent.**\nAllez dans l'onglet **Calendrier** du site, ouvrez l'évènement puis cliquez sur « ✅ Je serai présent » ou « ❌ Je serai absent » :\n${site}`,
         parseInt((ACCENT_BY_SERVICE[svc]||ACCENT_BY_SERVICE.securite).main.slice(1),16),
-        svc,
-        [EVENT_PING_ROLES[svc], EVENT_PING_DIR]
+        "annonces_"+svc,
+        [EVENT_PING_ROLES[svc]]
       );
     } catch(e) { console.warn("evenement webhook:", e.message); }
     toast("✓ Événement créé");
@@ -9843,20 +9852,22 @@ function calOpenEvent(id) {
   const inscrits = pres.filter(p=>p.inscription==="Inscrit").map(p=>p.agent_nom);
   const indispos = pres.filter(p=>p.inscription==="Indisponible").length;
   const mine = pres.find(p=>p.agent_nom===me);
+  const sansReponse = pres.filter(p=>!p.inscription).map(p=>p.agent_nom);
+  const isLeader = (role==="responsable"||role==="pdg"||role==="admin");
   const dateLong = new Date(e.date_evenement+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   let rsvp = "";
-  if(calNoInscription) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Les inscriptions ne sont pas encore activées (une mise à jour de la base est nécessaire).</div>`;
-  else if(!me) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Connectez-vous avec un compte agent pour vous inscrire.</div>`;
-  else if(!future) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Évènement passé — les inscriptions sont closes.</div>`;
+  if(calNoInscription) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Les réponses présent / absent ne sont pas encore activées (une mise à jour de la base est nécessaire).</div>`;
+  else if(!me) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Connectez-vous avec un compte agent pour répondre.</div>`;
+  else if(!future) rsvp = `<div style="font-size:11.5px;color:var(--text3);">Évènement passé — les réponses sont closes.</div>`;
   else {
     const cur = mine && mine.inscription;
-    rsvp = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-sm ${cur==="Inscrit"?"btn-success":"btn-ghost"}" onclick="calRsvp('${id}','Inscrit')">✅ Je participe</button>
-      <button class="btn btn-sm ${cur==="Indisponible"?"btn-danger":"btn-ghost"}" onclick="calRsvp('${id}','Indisponible')">❌ Indisponible</button>
-      ${cur?`<button class="btn btn-ghost btn-sm" onclick="calRsvp('${id}',null)">↩ Annuler</button>`:""}
+    rsvp = `<div style="font-size:12px;font-weight:700;color:#F0A840;margin-bottom:8px;">${cur ? "Votre réponse :" : "⚠️ Merci de répondre : serez-vous présent ou absent ?"}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm ${cur==="Inscrit"?"btn-success":"btn-ghost"}" onclick="calRsvp('${id}','Inscrit')">✅ Je serai présent</button>
+      <button class="btn btn-sm ${cur==="Indisponible"?"btn-danger":"btn-ghost"}" onclick="calRsvp('${id}','Indisponible')">❌ Je serai absent</button>
+      ${cur?`<button class="btn btn-ghost btn-sm" onclick="calRsvp('${id}',null)">↩ Annuler ma réponse</button>`:""}
     </div>`;
   }
-  const isLeader = (role==="responsable"||role==="pdg"||role==="admin");
   document.getElementById("cal-modal-body").innerHTML = `
     <div class="alert-popup-title" style="text-align:left;">${esc(e.nom)}</div>
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:4px;">📅 ${esc(dateLong)}</div>
@@ -9864,8 +9875,9 @@ function calOpenEvent(id) {
     ${e.created_by?`<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Créé par ${esc(e.created_by)}</div>`:`<div style="margin-bottom:12px;"></div>`}
     ${rsvp}
     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);">
-      <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">✅ ${inscrits.length} inscrit${inscrits.length>1?"s":""} · ❌ ${indispos} indisponible${indispos>1?"s":""}</div>
-      ${inscrits.length ? `<div style="font-size:12px;color:var(--text);line-height:1.7;">${inscrits.map(n=>esc(n)).join(" · ")}</div>` : `<div style="font-size:12px;color:var(--text3);">Personne ne s'est encore inscrit.</div>`}
+      <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">✅ ${inscrits.length} présent${inscrits.length>1?"s":""} · ❌ ${indispos} absent${indispos>1?"s":""} · ⏳ ${sansReponse.length} sans réponse</div>
+      ${inscrits.length ? `<div style="font-size:12px;color:var(--text);line-height:1.7;">${inscrits.map(n=>esc(n)).join(" · ")}</div>` : `<div style="font-size:12px;color:var(--text3);">Personne n'a encore confirmé sa présence.</div>`}
+      ${(isLeader && sansReponse.length) ? `<div style="font-size:11px;color:var(--text3);margin-top:8px;">⏳ Sans réponse : ${sansReponse.map(n=>esc(n)).join(" · ")}</div>` : ""}
     </div>
     ${isLeader?`<button class="btn btn-ghost btn-sm" style="margin-top:14px;" onclick="closeCalModal();goPage('effectifs');setEffTab('evenements');">⚙️ Gérer les présences</button>`:""}`;
   document.getElementById("cal-modal").classList.add("show");
@@ -9878,7 +9890,7 @@ async function calRsvp(evtId, valeur) {
     const existing = calPresences.find(p=>String(p.evenement_id)===String(evtId) && p.agent_nom===me);
     if(existing) await sb(`evenement_presences?id=eq.${existing.id}`, {method:"PATCH", body:JSON.stringify({inscription:valeur})});
     else await sb("evenement_presences", {method:"POST", body:JSON.stringify({evenement_id:evtId, agent_nom:me, statut:"Non répondu", inscription:valeur})});
-    toast(valeur==="Inscrit" ? "✅ Inscription enregistrée" : valeur==="Indisponible" ? "Indisponibilité enregistrée" : "Inscription annulée");
+    toast(valeur==="Inscrit" ? "✅ Présence enregistrée" : valeur==="Indisponible" ? "Absence enregistrée" : "Réponse annulée");
     await renderCalendrier();
     calOpenEvent(evtId);
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
