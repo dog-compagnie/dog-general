@@ -5344,7 +5344,7 @@ function getNavConfig() {
     {page:"patrouilles",      icon:"🔧", label:opsLabel(svc),            roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"hierarchie",       icon:"🪖", label:"Hiérarchie",             roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"tableau-de-bord",  icon:"🏆", label:"Tableau de bord",        roles:["agent","responsable","pdg","admin"], section:"Opérations"},
-    {page:"calendrier",       icon:"📅", label:"Calendrier",             roles:["agent","responsable","pdg","admin"], section:"Opérations"},
+    {page:"calendrier",       icon:"📅", label:"Calendrier",             roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-cal"},
     {page:"mon-service",      icon:"🟢", label:"Mon service",            roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"absence-form",     icon:"📅", label:"Déclarer une absence",   roles:["agent","responsable","pdg","admin"], section:"Opérations"},
     {page:"incident",         icon:"🚨", label:"Rapport d'incident",     roles:["agent","responsable","pdg","admin"], section:"Opérations", badgeId:"nav-badge-inc"},
@@ -5491,6 +5491,7 @@ let incidentDocs = [];
 let evalsForNotif = [];
 let debutRequestsForNotif = [];
 let securityAlertsForNotif = [];
+let eventsForNotif = [];
 
 function getNotifications() {
   const canSeeLeadershipStuff = (role==="responsable"||role==="pdg"||role==="admin");
@@ -5588,6 +5589,10 @@ function getNotifications() {
       }
     });
   }
+  (eventsForNotif||[]).forEach(ev=>{
+    const d = new Date(ev.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+    list.push({type:"evt", id:ev.id, icon:"📅", text:`Évènement « ${ev.nom} » le ${d} — répondez : présent ou absent ?`, time:ev.created_at});
+  });
   list.sort((x,y)=> new Date(y.time||0) - new Date(x.time||0));
   return list;
 }
@@ -5601,7 +5606,8 @@ function computeNotifCounts() {
   const evlMine = notifs.filter(n=>n.type==="eval_mine").length;
   const note = notifs.filter(n=>n.type==="note").length;
   const debut = notifs.filter(n=>n.type==="debut").length;
-  return {cand, abs, inc, evl, evlMine, note, debut, total:notifs.length};
+  const evt = notifs.filter(n=>n.type==="evt").length;
+  return {cand, abs, inc, evl, evlMine, note, debut, evt, total:notifs.length};
 }
 
 function fmtNotifTime(ts) {
@@ -5712,7 +5718,11 @@ async function handleNotifClick(type, id) {
   closeNotifPanel();
   await markOneSeen(type, id);
   updateNotifBadges();
-  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", eval_mine:"mes-evaluations", note:"notes-service", debut:"logs-service", secu:(role==="admin"?"journal":"admin-comptes")};
+  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", eval_mine:"mes-evaluations", note:"notes-service", debut:"logs-service", evt:"calendrier", secu:(role==="admin"?"journal":"admin-comptes")};
+  if(type==="evt") {
+    const ev = (eventsForNotif||[]).find(x=>String(x.id)===String(id));
+    if(ev) { const d = new Date(ev.date+"T12:00:00"); calMonth = {y:d.getFullYear(), m:d.getMonth()}; window._calOpenAfter = id; }
+  }
   goPage(pages[type]||"candidatures");
 }
 
@@ -5751,7 +5761,7 @@ async function requestBadgePermission() {
   updateNotifBadges();
 }
 function updateNotifBadges() {
-  const {cand, abs, inc, evl, evlMine, note, debut, total} = computeNotifCounts();
+  const {cand, abs, inc, evl, evlMine, note, debut, evt, total} = computeNotifCounts();
   setAppBadgeCount(total);
   if(typeof window._lastNotifTotal === "number" && total > window._lastNotifTotal) {
     soundNotif();
@@ -5773,6 +5783,8 @@ function updateNotifBadges() {
   if(navNotes) { navNotes.textContent = note; navNotes.style.display = note>0 ? "inline-flex" : "none"; }
   const navEvalMine = document.getElementById("nav-badge-mes-eval");
   if(navEvalMine) { navEvalMine.textContent = evlMine; navEvalMine.style.display = evlMine>0 ? "inline-flex" : "none"; }
+  const navCal = document.getElementById("nav-badge-cal");
+  if(navCal) { navCal.textContent = evt; navCal.style.display = evt>0 ? "inline-flex" : "none"; }
   const navDebut = document.getElementById("nav-badge-logs");
   if(navDebut) { navDebut.textContent = debut; navDebut.style.display = debut>0 ? "inline-flex" : "none"; }
   const panel = document.getElementById("notif-panel");
@@ -6969,7 +6981,7 @@ async function loadAll() {
       try { const r = await sb(path); return r||[]; }
       catch(e) { console.warn("Load failed (keeping last known data):", path, e.message); return fallback; }
     };
-    const [p,a,c,ag,al,inc,ev,ns,db,sa] = await Promise.all([
+    const [p,a,c,ag,al,inc,ev,ns,db,sa,evN] = await Promise.all([
       tryLoad("patrouilles_live?select=*&order=patrol_id", patrols),
       tryLoad("absences?select=*&order=created_at.desc", absences),
       tryLoad("candidatures?select=*&order=created_at.desc", candidatures),
@@ -6980,6 +6992,7 @@ async function loadAll() {
       tryLoad("notes_service?select=*&order=created_at.desc&limit=100", allNotesService),
       tryLoad("services_logs?select=id,agent_nom,debut_demande,vus_par&debut_statut=eq.En%20attente&limit=100", debutRequestsForNotif),
       (role==="admin"||role==="pdg") ? tryLoad("alertes_securite?select=*&order=created_at.desc&limit=50", securityAlertsForNotif) : Promise.resolve([]),
+      (role==="agent"||role==="responsable"||role==="pdg") ? loadEventNotifs() : Promise.resolve(null),
     ]);
     patrols      = p.map(x=>({...x, patrol_id:(x.patrol_id||"").replace(new RegExp("^"+myService()+"-"),"")}));
     absences     = a;
@@ -6990,6 +7003,7 @@ async function loadAll() {
     allNotesService = ns;
     debutRequestsForNotif = db;
     securityAlertsForNotif = sa;
+    if(evN!==null) eventsForNotif = evN; // null = échec de lecture : on garde la dernière liste connue
     syncBadge("✓ En ligne","#4A7F5E");
     updateNotifBadges();
     checkAlerte(al && al[0] ? al[0] : null);
@@ -9777,6 +9791,22 @@ async function setAgentDuMois(nom) {
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
+// ─── NOTIFICATIONS D'ÉVÈNEMENTS ─────────────────────────────────────
+// Un évènement à venir reste dans la cloche tant que la personne n'a pas répondu présent/absent.
+async function loadEventNotifs() {
+  const me = calMyName();
+  if(!me) return null;
+  try {
+    const evs = ((await sb(`evenements?select=id,nom,date_evenement,service,created_at&date_evenement=gte.${calTodayStr()}&order=date_evenement`))||[])
+      .filter(e=>!e.service || e.service===myService());
+    if(!evs.length) return [];
+    const pres = await sb(`evenement_presences?select=evenement_id,inscription&agent_nom=eq.${encodeURIComponent(me)}&evenement_id=in.(${evs.map(e=>e.id).join(",")})`);
+    const answered = {};
+    (pres||[]).forEach(p=>{ if(p.inscription) answered[String(p.evenement_id)] = true; });
+    return evs.filter(e=>!answered[String(e.id)]).map(e=>({id:e.id, nom:e.nom, date:e.date_evenement, created_at:e.created_at}));
+  } catch(e) { return null; }
+}
+
 // ─── CALENDRIER DES ÉVÈNEMENTS ──────────────────────────────────────
 let calMonth = null, calEvents = [], calPresences = [], calNoInscription = false, calCreateDate = null;
 function calMyName() { return currentAgent ? `${currentAgent.prenom||""} ${currentAgent.nom||""}`.trim() : ""; }
@@ -9843,6 +9873,7 @@ async function renderCalendrier() {
   }
   html += `</div>`;
   el.innerHTML = html;
+  if(window._calOpenAfter) { const id = window._calOpenAfter; window._calOpenAfter = null; calOpenEvent(id); }
 }
 function calOpenEvent(id) {
   const e = calEvents.find(x=>String(x.id)===String(id));
@@ -9891,6 +9922,7 @@ async function calRsvp(evtId, valeur) {
     if(existing) await sb(`evenement_presences?id=eq.${existing.id}`, {method:"PATCH", body:JSON.stringify({inscription:valeur})});
     else await sb("evenement_presences", {method:"POST", body:JSON.stringify({evenement_id:evtId, agent_nom:me, statut:"Non répondu", inscription:valeur})});
     toast(valeur==="Inscrit" ? "✅ Présence enregistrée" : valeur==="Indisponible" ? "Absence enregistrée" : "Réponse annulée");
+    loadEventNotifs().then(r=>{ if(r!==null) { eventsForNotif = r; updateNotifBadges(); } });
     await renderCalendrier();
     calOpenEvent(evtId);
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
