@@ -1740,6 +1740,18 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     </div>
 
     <div class="card" style="max-width:620px;">
+      <div class="card-hdr"><div class="card-hdr-title">💾 Sauvegarde &amp; restauration</div></div>
+      <div class="card-body">
+        <div class="page-sub" style="margin-bottom:14px;">Téléchargez une copie complète du site (comptes, grades, évaluations, candidatures, absences, documents, cartes pro, notes de service, logs de service, réglages et image d'accueil…). En cas de problème, « Restaurer » remet en place les éléments supprimés ou modifiés depuis cette sauvegarde. Les notes personnelles des agents (privées) et le journal d'activité n'en font pas partie. <b>Gardez ce fichier privé</b> : il contient notamment les PIN des comptes.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="backup-export-btn" onclick="exporterSauvegarde()">📥 Exporter une sauvegarde</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('backup-file').click()">📤 Restaurer depuis un fichier</button>
+          <input type="file" id="backup-file" accept=".json,application/json" style="display:none;" onchange="restaurerSauvegarde(this)">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:620px;">
       <div class="card-hdr"><div class="card-hdr-title">🔐 Comptes de test</div></div>
       <div class="card-body">
         <div class="page-sub" style="margin-bottom:14px;">Aucun PIN ne permet de se connecter aux comptes Test TEST1/2/3 — c'est désormais impossible, point final. Le seul accès possible est ci-dessous : en tant qu'Admin, choisissez une filiale et ouvrez une session de test dans un nouvel onglet, via un lien à usage unique valable 2 minutes.</div>
@@ -2576,14 +2588,58 @@ async function logActivity(type, message, acteur) {
       body: JSON.stringify({type, message, acteur: acteur || currentActeurLabel(), service: myService()})
     });
   } catch(e) { console.warn("logActivity error:", e.message); }
+  if(SECURITY_SENSITIVE_TYPES.includes(type)) checkSecurityBurst();
+}
+
+// ─── PROTECTION : VERROUILLAGE AUTOMATIQUE EN CAS D'ENCHAÎNEMENT SUSPECT ──────────────
+// Si un compte (hors Admin) enchaîne trop d'actions sensibles (changements de rôle,
+// suppressions, refus en série…) en très peu de temps, il est bloqué automatiquement, déconnecté,
+// et l'Admin est prévenu (cloche PDG/Admin + salon Discord privé). Réglages ajustables ici.
+const SECURITY_BURST_LIMIT = 10;          // nombre d'actions sensibles…
+const SECURITY_BURST_WINDOW_SEC = 120;    // …dans cette fenêtre de temps (secondes)
+const SECURITY_SENSITIVE_TYPES = [
+  "hierarchie_role","hierarchie_general","hierarchie_formateur","hierarchie_adjoint",
+  "grade_ajoute","grade_retire","compte_supprime","compte_pin_modifie",
+  "evaluation_supprimee","candidature_suppr","candidature_statut","absence_statut","absence_suppr",
+  "bilan_supprime","document_supprime","fiche_paie_suppr","service_log_suppr","landing_maj",
+  "heures_ajustees","facture_supprimee","devis_supprime","patient_supprime","evenement_supprime"
+];
+let _securityLockTriggered = false;
+async function checkSecurityBurst() {
+  if(_securityLockTriggered) return;
+  if(role==="admin" || role==="candidat" || !currentCompte || !currentCompte.compte_id) return;
+  try {
+    const nom = `${currentCompte.prenom||""} ${currentCompte.nom||""}`.trim();
+    if(!nom) return;
+    const since = new Date(Date.now()-SECURITY_BURST_WINDOW_SEC*1000).toISOString();
+    const rows = await sb(`activity_logs?select=id&acteur=ilike.${encodeURIComponent("*"+nom+"*")}&type=in.(${SECURITY_SENSITIVE_TYPES.join(",")})&created_at=gte.${encodeURIComponent(since)}`);
+    if(rows && rows.length >= SECURITY_BURST_LIMIT) await triggerSecurityLockdown(nom, rows.length);
+  } catch(e) { console.warn("checkSecurityBurst:", e.message); }
+}
+async function triggerSecurityLockdown(nom, nbActions) {
+  if(_securityLockTriggered) return;
+  _securityLockTriggered = true;
+  const compteId = currentCompte.compte_id;
+  const motif = `${nbActions} actions sensibles en moins de ${Math.round(SECURITY_BURST_WINDOW_SEC/60)} min`;
+  try { await sb(`agents_comptes?id=eq.${compteId}`, {method:"PATCH", body:JSON.stringify({bloque:true})}); } catch(e) { console.warn("lockdown block:", e.message); }
+  try { await sb("alertes_securite", {method:"POST", body:JSON.stringify({compte_id:compteId, compte_nom:nom, motif, nb_actions:nbActions})}); } catch(e) { console.warn("lockdown alert:", e.message); }
+  try { await logActivity("securite_verrouillage_auto", `Compte de ${nom} verrouillé automatiquement : ${motif}`); } catch(e) {}
+  try {
+    await sendDiscordWebhook("🚨 Verrouillage automatique d'un compte",
+      `**${nom}** a effectué ${motif}.\nLe compte a été bloqué et la personne déconnectée. Vérifiez le Journal d'activité, puis débloquez le compte depuis Gestion des comptes si c'était légitime.`,
+      0xE74C3C, "alertes");
+  } catch(e) {}
+  toast("Activité inhabituelle détectée — votre compte a été verrouillé par sécurité.", "#E74C3C");
+  setTimeout(()=>logoutToLanding(), 2000);
 }
 
 // ─── WEBHOOKS DISCORD PAR SERVICE (Admin) ────────────────────────────
-let discordWebhookUrls = {securite:"", depannage:"", rescue:"", balisage:""};
+let discordWebhookUrls = {securite:"", depannage:"", rescue:"", balisage:"", alertes:""};
+const webhookLabel = s => s==="alertes" ? "Alertes de sécurité" : svcLabel(s);
 async function loadDiscordWebhook() {
   try {
-    const rows = await sb("site_config?select=*&cle=in.(discord_webhook_securite,discord_webhook_depannage,discord_webhook_rescue,discord_webhook_balisage)");
-    SERVICES.forEach(s=>{
+    const rows = await sb("site_config?select=*&cle=in.(discord_webhook_securite,discord_webhook_depannage,discord_webhook_rescue,discord_webhook_balisage,discord_webhook_alertes)");
+    [...SERVICES,"alertes"].forEach(s=>{
       const row = (rows||[]).find(r=>r.cle==="discord_webhook_"+s);
       discordWebhookUrls[s] = (row && row.valeur) || "";
     });
@@ -2593,9 +2649,9 @@ async function loadDiscordWebhook() {
 function renderDiscordWebhookRows() {
   const el = document.getElementById("discord-webhook-rows");
   if(!el) return;
-  el.innerHTML = SERVICES.map(s=>`
+  el.innerHTML = [...SERVICES,"alertes"].map(s=>`
     <div class="field" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
-      <label>${SERVICE_ICONS[s]} ${svcLabel(s)}</label>
+      <label>${s==="alertes" ? "🚨 Alertes de sécurité (salon privé Admin)" : SERVICE_ICONS[s]+" "+svcLabel(s)}</label>
       <input id="discord-webhook-input-${s}" placeholder="https://discord.com/api/webhooks/…" value="${esc(discordWebhookUrls[s]||"")}">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
         <button class="btn btn-primary btn-sm" onclick="enregistrerWebhookDiscord('${s}')">💾 Enregistrer</button>
@@ -2618,13 +2674,14 @@ async function enregistrerWebhookDiscord(svc) {
       if(!r.ok) throw new Error(await r.text());
     }
     discordWebhookUrls[svc] = url;
-    logActivity("webhook_maj", `URL du webhook Discord ${svcLabel(svc)} ${url?"mise à jour":"désactivée"}`);
-    toast(url ? "✓ Webhook "+svcLabel(svc)+" enregistré" : "✓ Webhook "+svcLabel(svc)+" désactivé");
+    logActivity("webhook_maj", `URL du webhook Discord ${webhookLabel(svc)} ${url?"mise à jour":"désactivée"}`);
+    toast(url ? "✓ Webhook "+webhookLabel(svc)+" enregistré" : "✓ Webhook "+webhookLabel(svc)+" désactivé");
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 async function testerWebhookDiscord(svc) {
-  if(!discordWebhookUrls[svc]) { toast("Aucun webhook enregistré pour "+svcLabel(svc)+".","#E74C3C"); return; }
-  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+svcLabel(svc)+".", parseInt(ACCENT_BY_SERVICE[svc].main.slice(1),16), svc);
+  if(!discordWebhookUrls[svc]) { toast("Aucun webhook enregistré pour "+webhookLabel(svc)+".","#E74C3C"); return; }
+  const accentMain = (ACCENT_BY_SERVICE[svc]||{main:"#C0392B"}).main;
+  await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+webhookLabel(svc)+".", parseInt(accentMain.slice(1),16), svc);
   toast("✓ Message de test envoyé (vérifiez le salon Discord)");
 }
 async function sendDiscordWebhook(title, description, color, svc) {
@@ -5308,6 +5365,7 @@ function viewerKey() {
 let incidentDocs = [];
 let evalsForNotif = [];
 let debutRequestsForNotif = [];
+let securityAlertsForNotif = [];
 
 function getNotifications() {
   const canSeeLeadershipStuff = (role==="responsable"||role==="pdg"||role==="admin");
@@ -5370,6 +5428,14 @@ function getNotifications() {
       list.push({type:"eval", id:ev.id, icon:"🎯", text:`Nouvelle évaluation de ${ev.agent_nom} — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
     }
   });
+  if(role==="admin"||role==="pdg") {
+    (securityAlertsForNotif||[]).forEach(a=>{
+      const seen = (a.vus_par||{})[vk];
+      if(seen===undefined) {
+        list.push({type:"secu", id:a.id, icon:"🚨", text:`Verrouillage automatique : ${a.compte_nom} — ${a.nb_actions} actions sensibles en très peu de temps`, time:a.created_at});
+      }
+    });
+  }
   (debutRequestsForNotif||[]).forEach(l=>{
     const seen = (l.vus_par||{})[vk];
     const seenDemande = seen && typeof seen==="object" ? seen.debut_demande : undefined;
@@ -5500,6 +5566,13 @@ async function markOneSeen(type, id) {
     vus[vk] = true;
     try { await sb(`evaluations?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); ev.vus_par = vus; }
     catch(e) { console.warn("markOneSeen eval_mine error:", e.message); }
+  } else if(type==="secu") {
+    const a = securityAlertsForNotif.find(x=>String(x.id)===String(id));
+    if(!a) return;
+    const vus = Object.assign({}, a.vus_par||{});
+    vus[vk] = true;
+    try { await sb(`alertes_securite?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); a.vus_par = vus; }
+    catch(e) { console.warn("markOneSeen secu error:", e.message); }
   } else if(type==="debut") {
     const l = debutRequestsForNotif.find(x=>String(x.id)===String(id));
     if(!l) return;
@@ -5514,7 +5587,7 @@ async function handleNotifClick(type, id) {
   closeNotifPanel();
   await markOneSeen(type, id);
   updateNotifBadges();
-  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", eval_mine:"mes-evaluations", note:"notes-service", debut:"logs-service"};
+  const pages = {cand:"candidatures", abs:"absences-gestion", inc:"incident", eval:"evaluations", eval_mine:"mes-evaluations", note:"notes-service", debut:"logs-service", secu:(role==="admin"?"journal":"admin-comptes")};
   goPage(pages[type]||"candidatures");
 }
 
@@ -5627,6 +5700,82 @@ function setupPageMaintOverlays() {
 }
 // Comptes de test exclus de la maintenance ET de l'organigramme
 const TEST_ACCOUNT_NAMES = ["Test TEST1", "Test TEST2", "Test TEST3"];
+// ─── SAUVEGARDE / RESTAURATION (Admin) ───────────────────────────────
+const BACKUP_TABLES = [
+  "agents_comptes","agents_grades","anciens_agents","agents_liste","ajustements_heures",
+  "absences","alertes","bilans","candidat_entretiens","candidat_messages","candidats_comptes",
+  "candidatures","cartes_fidelite","cartes_pro","devis","documents","evaluations","evenements",
+  "evenement_presences","factures","fiches_paie","notes_service","patients","services_logs",
+  "site_config","tarifs"
+];
+async function fetchAllRowsRaw(table) {
+  // Lecture directe, sans le filtre automatique par filiale, avec pagination (1000 lignes max par requête).
+  const out = [], page = 1000;
+  let useOrder = true;
+  for(let offset=0; ; offset+=page) {
+    const base = `${SB_URL}/rest/v1/${table}?select=*&limit=${page}&offset=${offset}`;
+    let r = await fetch(base + (useOrder ? "&order=id" : ""), {headers:H, mode:"cors"});
+    if(!r.ok && useOrder && offset===0) { useOrder = false; r = await fetch(base, {headers:H, mode:"cors"}); }
+    if(!r.ok) throw new Error((await r.text()).slice(0,120));
+    const rows = await r.json();
+    out.push(...rows);
+    if(rows.length < page) break;
+  }
+  return out;
+}
+async function exporterSauvegarde() {
+  if(role!=="admin") return;
+  const btn = document.getElementById("backup-export-btn");
+  if(btn) { btn.disabled = true; btn.textContent = "⏳ Export en cours…"; }
+  const data = {version:1, cree_le:new Date().toISOString(), tables:{}, ignorees:[]};
+  let total = 0;
+  for(const t of BACKUP_TABLES) {
+    try { const rows = await fetchAllRowsRaw(t); data.tables[t] = rows; total += rows.length; }
+    catch(e) { data.ignorees.push(`${t} (${e.message})`); }
+  }
+  try {
+    const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+    const d = new Date(), pad = n=>String(n).padStart(2,"0");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `sauvegarde-dogcompagnie-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    logActivity("sauvegarde_exportee", `Sauvegarde exportée : ${total} lignes, ${Object.keys(data.tables).length} tables`);
+    toast(`✓ Sauvegarde téléchargée (${total} lignes${data.ignorees.length?`, ${data.ignorees.length} table(s) ignorée(s)`:""})`);
+  } catch(e) { toast("Erreur d'export : "+e.message, "#E74C3C"); }
+  if(btn) { btn.disabled = false; btn.textContent = "📥 Exporter une sauvegarde"; }
+}
+async function restaurerSauvegarde(input) {
+  const file = input.files && input.files[0];
+  input.value = "";
+  if(!file || role!=="admin") return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch(e) { toast("Fichier illisible.", "#E74C3C"); return; }
+  if(!data || !data.tables || typeof data.tables!=="object") { toast("Ce fichier n'est pas une sauvegarde valide.", "#E74C3C"); return; }
+  const tables = BACKUP_TABLES.filter(t=>Array.isArray(data.tables[t]) && data.tables[t].length);
+  const nbLignes = tables.reduce((s,t)=>s+data.tables[t].length, 0);
+  const quand = data.cree_le ? new Date(data.cree_le).toLocaleString("fr-FR") : "date inconnue";
+  const saisie = prompt(`Sauvegarde du ${quand} : ${nbLignes} lignes sur ${tables.length} tables.\n\nLes éléments supprimés depuis seront recréés, et ceux modifiés depuis retrouveront leur valeur de la sauvegarde. Les éléments créés après la sauvegarde ne sont pas supprimés.\n\nPour confirmer, tapez RESTAURER en majuscules :`);
+  if(saisie !== "RESTAURER") { if(saisie!==null) toast("Restauration annulée — texte incorrect.", "#E74C3C"); return; }
+  toast("⏳ Restauration en cours, ne fermez pas la page…");
+  const erreurs = [];
+  for(const t of tables) {
+    const rows = data.tables[t];
+    for(let i=0; i<rows.length; i+=100) {
+      try {
+        const r = await fetch(`${SB_URL}/rest/v1/${t}`, {
+          method:"POST", headers:{...H, "Prefer":"resolution=merge-duplicates,return=minimal"}, mode:"cors",
+          body: JSON.stringify(rows.slice(i, i+100))
+        });
+        if(!r.ok) { erreurs.push(`${t} : ${(await r.text()).slice(0,100)}`); break; }
+      } catch(e) { erreurs.push(`${t} : ${e.message}`); break; }
+    }
+  }
+  logActivity("sauvegarde_restauree", `Sauvegarde du ${quand} restaurée (${nbLignes} lignes)${erreurs.length?`, ${erreurs.length} table(s) en erreur`:""}`);
+  if(erreurs.length) alert("Restauration terminée avec des erreurs sur :\n\n"+erreurs.join("\n"));
+  else toast("✓ Restauration terminée — rechargez la page pour tout revoir à jour");
+}
+
 // Connexion aux comptes de test désormais IMPOSSIBLE par PIN, quel qu'il soit (voir
 // confirmLogin). Le seul chemin d'accès est un lien à usage unique généré par l'Admin,
 // valable 2 minutes, qui ouvre directement une session déjà connectée dans un nouvel onglet.
@@ -6648,7 +6797,7 @@ async function loadAll() {
       try { const r = await sb(path); return r||[]; }
       catch(e) { console.warn("Load failed (keeping last known data):", path, e.message); return fallback; }
     };
-    const [p,a,c,ag,al,inc,ev,ns,db] = await Promise.all([
+    const [p,a,c,ag,al,inc,ev,ns,db,sa] = await Promise.all([
       tryLoad("patrouilles_live?select=*&order=patrol_id", patrols),
       tryLoad("absences?select=*&order=created_at.desc", absences),
       tryLoad("candidatures?select=*&order=created_at.desc", candidatures),
@@ -6658,6 +6807,7 @@ async function loadAll() {
       tryLoad("evaluations?select=id,agent_nom,verdict,pourcentage,vus_par,created_at&order=created_at.desc&limit=100", evalsForNotif),
       tryLoad("notes_service?select=*&order=created_at.desc&limit=100", allNotesService),
       tryLoad("services_logs?select=id,agent_nom,debut_demande,vus_par&debut_statut=eq.En%20attente&limit=100", debutRequestsForNotif),
+      (role==="admin"||role==="pdg") ? tryLoad("alertes_securite?select=*&order=created_at.desc&limit=50", securityAlertsForNotif) : Promise.resolve([]),
     ]);
     patrols      = p.map(x=>({...x, patrol_id:(x.patrol_id||"").replace(new RegExp("^"+myService()+"-"),"")}));
     absences     = a;
@@ -6667,6 +6817,7 @@ async function loadAll() {
     evalsForNotif = ev;
     allNotesService = ns;
     debutRequestsForNotif = db;
+    securityAlertsForNotif = sa;
     syncBadge("✓ En ligne","#4A7F5E");
     updateNotifBadges();
     checkAlerte(al && al[0] ? al[0] : null);
