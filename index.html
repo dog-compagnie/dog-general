@@ -911,6 +911,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <div class="notif-panel" id="notif-panel">
         <div class="notif-panel-hdr">
           <span>Notifications</span>
+          <button class="btn btn-ghost btn-sm" id="badge-perm-btn" style="display:none;padding:3px 8px;font-size:10px;" onclick="requestBadgePermission()" title="Affiche le nombre de notifications sur l'icône de l'application">🔴 Pastille icône</button>
           <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:10px;" onclick="closeNotifPanel()">Fermer</button>
         </div>
         <div id="notif-panel-list"></div>
@@ -2778,18 +2779,27 @@ async function testerWebhookDiscord(svc) {
 }
 // Rôle Discord mentionné (ping → vraie notification sur téléphone) pour les alertes de sécurité
 const SECURITY_ALERT_ROLE_ID = "1531376493668601958";
-async function sendDiscordWebhook(title, description, color, svc) {
+// Rôles Discord pingés à la création d'un évènement : celui de la filiale + la direction (DIR).
+// Balisage : aucun rôle renseigné pour l'instant — ajoutez son ID ici pour activer le ping.
+const EVENT_PING_ROLES = {
+  securite:  "1368706038424932463",
+  depannage: "1368706153789263923",
+  rescue:    "1368706205131997245",
+  balisage:  "",
+};
+const EVENT_PING_DIR = "1392118196823396443";
+async function sendDiscordWebhook(title, description, color, svc, pingRoles) {
   const url = discordWebhookUrls[svc||myService()];
   if(!url) return;
-  const ping = (svc==="alertes");
+  const roles = Array.isArray(pingRoles) ? pingRoles.filter(Boolean) : (svc==="alertes" ? [SECURITY_ALERT_ROLE_ID] : []);
   try {
     await fetch(url, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         // Une mention dans un "embed" ne notifie personne : le ping doit être dans "content".
-        content: ping ? `<@&${SECURITY_ALERT_ROLE_ID}>` : undefined,
-        allowed_mentions: ping ? {roles:[SECURITY_ALERT_ROLE_ID]} : undefined,
+        content: roles.length ? roles.map(id=>`<@&${id}>`).join(" ") : undefined,
+        allowed_mentions: roles.length ? {roles} : undefined,
         embeds:[{ title, description, color, timestamp:new Date().toISOString() }]
       })
     });
@@ -5705,8 +5715,36 @@ async function markAllNotifsSeen() {
   renderNotifPanel();
 }
 
+// Pastille sur l'icône de l'appli installée (Badging API) + compteur dans le titre de l'onglet.
+// Elle se met à jour tant que l'appli est ouverte (même en arrière-plan) ; appli fermée, elle
+// garde le dernier chiffre jusqu'à la prochaine ouverture (les vraies notifications push
+// nécessiteraient un serveur).
+function setAppBadgeCount(n) {
+  try {
+    if(navigator.setAppBadge) {
+      if(n>0) navigator.setAppBadge(n).catch(()=>{});
+      else if(navigator.clearAppBadge) navigator.clearAppBadge().catch(()=>{});
+    }
+  } catch(e) {}
+  document.title = (n>0 ? `(${n}) ` : "") + "Dog Compagnie — Espace interne";
+  refreshBadgePermBtn();
+}
+// iPhone/iPad : la pastille exige l'autorisation de notifier, à demander sur un clic.
+function refreshBadgePermBtn() {
+  const b = document.getElementById("badge-perm-btn");
+  if(!b) return;
+  let need = false;
+  try { need = _isStandalone() && ("Notification" in window) && Notification.permission==="default" && ("setAppBadge" in navigator); } catch(e) {}
+  b.style.display = need ? "" : "none";
+}
+async function requestBadgePermission() {
+  try { await Notification.requestPermission(); } catch(e) {}
+  refreshBadgePermBtn();
+  updateNotifBadges();
+}
 function updateNotifBadges() {
   const {cand, abs, inc, evl, evlMine, note, debut, total} = computeNotifCounts();
+  setAppBadgeCount(total);
   if(typeof window._lastNotifTotal === "number" && total > window._lastNotifTotal) {
     soundNotif();
   }
@@ -6786,6 +6824,8 @@ function logoutToLanding() {
   clearInterval(_maintenancePoll); _maintenancePoll=null;
   role=null; currentCompte=null; currentAgent=null; serviceEnCours=null;
   window._myGrades=null; window._adminViewService=null;
+  window._lastNotifTotal = null;
+  setAppBadgeCount(0);
   closeSidenav();
   hideMaintenanceScreen();
   document.getElementById("app").style.display="none";
@@ -8616,6 +8656,17 @@ async function creerEvenement() {
       await fetch(SB_URL+"/rest/v1/evenement_presences", {method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors", body:JSON.stringify(presencesPayload)});
     }
     logActivity("evenement_cree", `Événement créé : ${nom}`);
+    try {
+      const dateLong = new Date(date+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+      const site = location.origin + location.pathname;
+      sendDiscordWebhook(
+        `📅 Nouvel évènement — ${nom}`,
+        `**Date :** ${dateLong}${heuresDefaut ? `\n**Heures créditées :** ${heuresDefaut} h` : ""}\n**Créé par :** ${identityLabel()}\n\nInscrivez-vous depuis l'onglet **Calendrier** du site : ${site}`,
+        parseInt((ACCENT_BY_SERVICE[svc]||ACCENT_BY_SERVICE.securite).main.slice(1),16),
+        svc,
+        [EVENT_PING_ROLES[svc], EVENT_PING_DIR]
+      );
+    } catch(e) { console.warn("evenement webhook:", e.message); }
     toast("✓ Événement créé");
     document.getElementById("evt-nom").value = "";
     document.getElementById("evt-date").value = "";
