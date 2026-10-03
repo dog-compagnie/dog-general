@@ -838,7 +838,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
   </div>
 
   <div class="lp-footer" style="justify-content:center;">
-    <div>© <span id="lp-year"></span> Dog Compagnie — Tous droits réservés</div>
+    <div>© <span id="lp-year"></span> Dog Compagnie — Tous droits réservés <span id="site-version" style="opacity:.55;margin-left:8px;"></span></div>
   </div>
 </div>
 
@@ -10720,6 +10720,11 @@ async function initPublicCarteView(token) {
     document.getElementById("pcv-content").innerHTML = `<div style="color:#F08080;">Erreur de chargement.</div>`;
   }
 }
+
+// Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
+// que la dernière version du site est bien celle publiée sur GitHub.
+const SITE_VERSION = "v4 — icônes logo-dc";
+{ const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
 let _installPrompt = null;
