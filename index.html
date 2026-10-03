@@ -669,6 +669,22 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .pro-card .pc-watermark{position:absolute;left:133px;bottom:58px;width:124px;z-index:1;opacity:0.55;pointer-events:none;}
 .pro-card .pc-watermark img{width:100%;height:auto;display:block;}
 .pro-card-wrap{display:flex;justify-content:center;padding:6px;}
+.dos-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+.dos-avatar{width:84px;height:84px;border-radius:20px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:30px;font-weight:700;color:#fff;background:linear-gradient(135deg,rgba(var(--accent-rgb),.9),rgba(var(--accent-rgb),.4));border:1px solid rgba(var(--accent-rgb),.5);}
+.dos-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.dos-name{font-family:var(--font-serif);font-size:30px;font-weight:700;color:#fff;line-height:1.1;}
+.dos-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);margin:6px 6px 0 0;}
+.dos-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 16px;max-width:760px;}
+.dos-stat{background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(10,11,13,.92));border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+.dos-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.dos-stat-val{font-family:var(--font-serif);font-size:26px;font-weight:700;color:#fff;line-height:1.1;}
+.tl{position:relative;padding-left:22px;}
+.tl::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:14px;}
+.tl-dot{position:absolute;left:-21px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);}
+.tl-date{font-size:10.5px;color:var(--text3);}
+.tl-text{font-size:12.5px;color:var(--text);margin-top:2px;line-height:1.5;}
+.tl-by{font-size:10.5px;color:var(--text3);}
 @media (max-width: 420px) {
   /* La carte a une mise en page à positions fixes (badges, texte) — sur très petit écran,
      on la réduit en bloc plutôt que de laisser ses éléments se chevaucher. */
@@ -1510,6 +1526,19 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
     <div class="page-sub">Vos notes personnelles — visibles par vous uniquement, sur ce compte.</div>
     <button class="btn btn-primary" style="margin-bottom:18px;" onclick="ouvrirNotePerso()">+ Nouvelle note</button>
     <div id="mes-notes-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
+  <div class="page" id="page-mon-dossier">
+    <div class="page-title">Mon <span>dossier</span></div>
+    <div class="page-sub">Votre parcours au sein de la Dog Compagnie : grade, heures, évaluations et historique.</div>
+    <div id="dossier-own-content"><div class="empty"><p>Chargement…</p></div></div>
+  </div>
+
+  <div class="page" id="page-dossier-agent">
+    <div class="page-title">Dossier <span>agent</span></div>
+    <div class="page-sub">Vue complète d'un membre : grade, heures, évaluations, historique et remarques de la direction.</div>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:16px;" onclick="goPage(window._dossierBackPage||'hierarchie')">← Retour</button>
+    <div id="dossier-other-content"><div class="empty"><p>Chargement…</p></div></div>
   </div>
 
   <div id="note-perso-modal" class="alert-popup">
@@ -2684,14 +2713,22 @@ async function testerWebhookDiscord(svc) {
   await sendDiscordWebhook("🔔 Test", "Ceci est un message de test envoyé depuis "+webhookLabel(svc)+".", parseInt(accentMain.slice(1),16), svc);
   toast("✓ Message de test envoyé (vérifiez le salon Discord)");
 }
+// Rôle Discord mentionné (ping → vraie notification sur téléphone) pour les alertes de sécurité
+const SECURITY_ALERT_ROLE_ID = "1531376493668601958";
 async function sendDiscordWebhook(title, description, color, svc) {
   const url = discordWebhookUrls[svc||myService()];
   if(!url) return;
+  const ping = (svc==="alertes");
   try {
     await fetch(url, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ embeds:[{ title, description, color, timestamp:new Date().toISOString() }] })
+      body: JSON.stringify({
+        // Une mention dans un "embed" ne notifie personne : le ping doit être dans "content".
+        content: ping ? `<@&${SECURITY_ALERT_ROLE_ID}>` : undefined,
+        allowed_mentions: ping ? {roles:[SECURITY_ALERT_ROLE_ID]} : undefined,
+        embeds:[{ title, description, color, timestamp:new Date().toISOString() }]
+      })
     });
   } catch(e) { console.warn("sendDiscordWebhook error:", e.message); }
 }
@@ -5232,6 +5269,7 @@ function getNavConfig() {
     {page:"ma-carte-pro",     icon:"🪪", label:"Ma carte pro",           roles:["agent","responsable","pdg"], section:"Opérations"},
     {page:"mes-evaluations",  icon:"⭐", label:"Mes évaluations",        roles:["agent","responsable","pdg"], section:"Opérations", badgeId:"nav-badge-mes-eval"},
     {page:"mes-notes",        icon:"📝", label:"Mes notes",              roles:["agent","responsable","pdg"], section:"Opérations"},
+    {page:"mon-dossier",      icon:"📁", label:"Mon dossier",            roles:["agent","responsable","pdg"], section:"Opérations"},
   ];
   if(svc==="rescue") {
     items.push({page:"bilans",            icon:"🩺", label:"Fiche bilan",       roles:["agent","responsable","pdg","admin"], section:"Opérations"});
@@ -5336,6 +5374,8 @@ function goPage(pageId) {
   if(pageId==="ma-carte-pro")       initMaCartePro();
   if(pageId==="mes-evaluations")    initMesEvaluations();
   if(pageId==="mes-notes")          initMesNotesPerso();
+  if(pageId==="mon-dossier")        initMonDossier();
+  if(pageId==="dossier-agent")      initDossierAgent();
   if(pageId==="facturation")       initFacturationPage();
   if(pageId==="incident")          { prefillDocDates(); loadDocHistory("incident"); }
   if(pageId==="notes-service")     initNotesServicePage();
@@ -5801,14 +5841,31 @@ async function ouvrirLienTest(nomTest) {
     toast("✓ Session de test ouverte dans un nouvel onglet (lien valable 2 minutes, usage unique)");
   } catch(e) { toast("Erreur : "+e.message, "#E74C3C"); }
 }
+async function debloquerCompteTest(nomTest) {
+  try {
+    await sb(`agents_comptes?prenom=eq.${encodeURIComponent(nomTest.split(" ")[0])}&nom=eq.${encodeURIComponent(nomTest.split(" ")[1])}`, {method:"PATCH", body:JSON.stringify({bloque:false})});
+    logActivity("compte_debloque", `${nomTest} débloqué par ${identityLabel()}`);
+    toast("🔓 "+nomTest+" débloqué");
+    refreshTestAccountsToggleUI();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
 async function refreshTestAccountsToggleUI() {
   const box = document.getElementById("test-accounts-toggle-box");
   if(!box) return;
   const labels = {"Test TEST1":"Agent", "Test TEST2":"Responsable", "Test TEST3":"PDG"};
+  let bloques = {};
+  try {
+    const rows = await sb("agents_comptes?select=prenom,nom,bloque&prenom=eq.Test");
+    (rows||[]).forEach(r=>{ bloques[`${r.prenom} ${r.nom}`] = !!r.bloque; });
+  } catch(e) {}
   box.innerHTML = TEST_ACCOUNT_NAMES.map(nom=>{
+    const bloque = bloques[nom];
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
       <span style="min-width:150px;font-weight:600;color:#fff;">${esc(nom)} <span style="color:var(--text3);font-weight:500;">(${labels[nom]||""})</span></span>
-      <button class="btn btn-primary btn-sm" onclick="ouvrirLienTest('${nom}')">🧪 Ouvrir une session</button>
+      ${bloque
+        ? `<span style="font-size:11px;font-weight:700;color:#F0A840;">🔒 Bloqué</span>
+           <button class="btn btn-sm" style="background:rgba(82,217,139,0.15);color:#52D98B;border:1px solid rgba(82,217,139,0.35);" onclick="debloquerCompteTest('${nom}')">🔓 Débloquer</button>`
+        : `<button class="btn btn-primary btn-sm" onclick="ouvrirLienTest('${nom}')">🧪 Ouvrir une session</button>`}
     </div>`;
   }).join("") + `<div style="font-size:10.5px;color:var(--text3);margin-top:4px;">Chaque lien n'est valable que 2 minutes et à usage unique. Aucun PIN ne permet plus de se connecter à ces comptes. Une fois connecté, changez de filiale via la barre du haut comme d'habitude.</div>`;
 }
@@ -8296,7 +8353,7 @@ function renderEffectifsList(comptesAll) {
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="eff-avatar" style="background:linear-gradient(135deg,${statutColor},${statutColor}99);">${esc(initials)}</div>
           <div>
-            <div class="eff-nom">${esc(nomComplet)}</div>
+            <div class="eff-nom" style="cursor:pointer;" title="Ouvrir le dossier" onclick="openDossier('${c.compte_id}')">${esc(nomComplet)}</div>
             <div class="eff-role">${accountRoleLabel(c)} · ${SERVICE_LABELS[c.service]||"—"}</div>
             ${c.telephone ? `<div style="font-size:10.5px;color:var(--text3);margin-top:2px;">
               <a href="tel:${esc(c.telephone)}" style="color:inherit;text-decoration:none;">📞 ${esc(fmtTel(c.telephone))}</a>
@@ -8422,7 +8479,8 @@ async function updateStatutEffectif(id, statut) {
     const payload = {statut_effectif: statut, statut_avant_absence: null};
     if(statut!=="Démission" && statut!=="Licencié") payload.date_depart = null;
     await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(payload)});
-    logActivity("effectif_statut", `Statut d'effectif mis à jour : ${statut}`);
+    const _cStat = effectifsComptesCache.find(x=>String(x.id)===String(id));
+    logActivity("effectif_statut", `${_cStat?`${_cStat.prenom} ${_cStat.nom} — `:""}Statut d'effectif mis à jour : ${statut}`);
     if(statut==="Démission" || statut==="Licencié") {
       const c = effectifsComptesCache.find(x=>String(x.id)===String(id));
       if(c) await archiverAncienAgent(c, statut);
@@ -9415,6 +9473,174 @@ function starsHTML(pourcentage, size) {
   html += `</div>`;
   return html;
 }
+// ─── DOSSIER AGENT ──────────────────────────────────────────────────
+const DOSSIER_TL_TYPES = ["hierarchie_role","hierarchie_general","hierarchie_formateur","hierarchie_adjoint","grade_ajoute","grade_retire","compte_cree","candidat_promu","candidature_statut","candidature_nouvelle","evaluation_creee","evaluation_supprimee","effectif_statut","absence_nouvelle","absence_statut","fiche_paie_creee","service_force_fin","securite_verrouillage_auto","compte_bloque","compte_debloque"];
+const DOSSIER_TL_ICONS = {hierarchie_role:"🔼",hierarchie_general:"⭐",hierarchie_formateur:"🎯",hierarchie_adjoint:"🏅",grade_ajoute:"➕",grade_retire:"➖",compte_cree:"🆕",candidat_promu:"🎉",candidature_statut:"📨",candidature_nouvelle:"📝",evaluation_creee:"⭐",evaluation_supprimee:"🗑",effectif_statut:"🔄",absence_nouvelle:"📅",absence_statut:"📅",fiche_paie_creee:"💶",service_force_fin:"⏹",securite_verrouillage_auto:"🚨",compte_bloque:"🔒",compte_debloque:"🔓"};
+function openDossier(compteId) {
+  if(!(role==="responsable"||role==="pdg"||role==="admin") || !compteId) return;
+  window._dossierTargetId = compteId;
+  const active = document.querySelector(".page.active");
+  const from = active ? active.id.replace("page-","") : "hierarchie";
+  window._dossierBackPage = (from==="dossier-agent") ? (window._dossierBackPage||"hierarchie") : from;
+  goPage("dossier-agent");
+}
+function initDossierAgent() {
+  const el = document.getElementById("dossier-other-content");
+  const id = window._dossierTargetId;
+  if(!id) { el.innerHTML = '<div class="empty"><p>Aucun dossier sélectionné. Cliquez sur un nom dans la Hiérarchie ou la Gestion des effectifs.</p></div>'; return; }
+  renderDossier(el, id, false);
+}
+function initMonDossier() {
+  const el = document.getElementById("dossier-own-content");
+  const id = currentCompte && currentCompte.compte_id;
+  if(!id) { el.innerHTML = '<div class="empty"><p>Non disponible pour ce compte.</p></div>'; return; }
+  renderDossier(el, id, true);
+}
+async function renderDossier(el, compteId, isOwn) {
+  el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  window._dossierRerender = ()=>renderDossier(el, compteId, isOwn);
+  try {
+    const comptes = await sb(`agents_comptes?id=eq.${compteId}&select=*`);
+    const compte = comptes && comptes[0];
+    if(!compte) { el.innerHTML = '<div class="empty"><p>Compte introuvable (peut-être supprimé).</p></div>'; return; }
+    const nom = `${compte.prenom||""} ${compte.nom||""}`.trim();
+    const q = encodeURIComponent(nom);
+    const svc = myService();
+    const isLeader = (role==="responsable"||role==="pdg"||role==="admin");
+    const safe = p => p.catch(()=>[]);
+    const [grades, cartes, logs, ajust, evals, tl, notes] = await Promise.all([
+      safe(sb(`agents_grades?compte_id=eq.${compteId}&select=*`)),
+      safe(sb(`cartes_pro?compte_id=eq.${compteId}&select=*`)),
+      safe(sb(`services_logs?agent_nom=eq.${q}&fin=not.is.null&select=debut,duree_minutes&limit=5000`)),
+      safe(sb(`ajustements_heures?agent_nom=eq.${q}&select=*`)),
+      safe(sb(`evaluations?agent_nom=eq.${q}&select=*&order=date_eval.desc`)),
+      safe(sb(`activity_logs?select=type,message,acteur,created_at&message=ilike.${encodeURIComponent("*"+nom+"*")}&type=in.(${DOSSIER_TL_TYPES.join(",")})&order=created_at.desc&limit=80`)),
+      (isLeader && !isOwn) ? safe(sb(`dossier_notes?compte_id=eq.${compteId}&select=*&order=created_at.desc`)) : Promise.resolve([]),
+    ]);
+    const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+    const grade = (grades||[]).find(g=>g.service===svc) || (grades||[])[0] || {};
+    const carte = (cartes||[]).find(c=>c.service===svc) || (cartes||[])[0];
+    const sum = arr => arr.reduce((s,x)=>s+(x||0),0);
+    const logsOk = logs||[];
+    const ajSvc = (ajust||[]).filter(a=>a.service===svc);
+    const minsTotal = sum(logsOk.map(l=>l.duree_minutes)) + sum(ajSvc.map(a=>a.minutes));
+    const minsMois = sum(logsOk.filter(l=>{const d=new Date(l.debut);return d.getMonth()===m&&d.getFullYear()===y;}).map(l=>l.duree_minutes))
+                   + sum(ajSvc.filter(a=>a.mois===m+1&&a.annee===y).map(a=>a.minutes));
+    const evalsOk = evals||[];
+    const moyPct = evalsOk.length ? sum(evalsOk.map(e=>e.pourcentage))/evalsOk.length : null;
+    const initials = `${(compte.prenom||"?")[0]||""}${(compte.nom||"?")[0]||""}`.toUpperCase();
+    const statut = grade.statut_effectif || "En service";
+    const statutColor = (typeof STATUT_EFFECTIF_COLORS!=="undefined" && STATUT_EFFECTIF_COLORS[statut]) || "#7F9AB0";
+    const chips = (grades||[]).map(g=>`<span class="dos-chip">${SERVICE_ICONS[g.service]||""} ${esc(accountRoleLabel(g))} — ${esc(svcLabel(g.service))}</span>`).join("");
+    const fmtD = d => new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
+
+    // Frise chronologique
+    let items = (tl||[]).map(t=>({date:t.created_at, icon:DOSSIER_TL_ICONS[t.type]||"•", text:t.message, by:(isLeader&&!isOwn)?t.acteur:null}));
+    if(compte.created_at && !(tl||[]).some(t=>t.type==="compte_cree"||t.type==="candidat_promu")) {
+      items.push({date:compte.created_at, icon:"🆕", text:"Compte créé", by:null});
+    }
+    items.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const tlHtml = items.length
+      ? `<div class="tl">${items.map(i=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-date">${esc(fmtD(i.date))}</div><div class="tl-text">${i.icon} ${esc(i.text)}${i.by?` <span class="tl-by">· par ${esc(i.by)}</span>`:""}</div></div>`).join("")}</div>`
+      : `<div style="font-size:12px;color:var(--text3);">Aucun évènement enregistré pour le moment.</div>`;
+
+    // Évaluations récentes
+    const evHtml = evalsOk.length
+      ? evalsOk.slice(0,5).map(e=>{
+          const vm = VERDICT_META[e.verdict]||{color:"#fff",icon:""};
+          const d = e.date_eval ? new Date(e.date_eval+"T12:00:00").toLocaleDateString("fr-FR") : "";
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div>${starsHTML(e.pourcentage,15)} <span style="font-size:11px;color:var(--text3);margin-left:6px;">${d} · ${esc(e.evaluateur||"—")}</span></div>
+              <div style="font-weight:800;font-size:12px;color:${vm.color};">${vm.icon} ${esc(e.verdict||"")} (${(e.pourcentage/20).toFixed(1)}/5)</div>
+            </div>
+            ${e.notes?`<div style="font-size:12px;color:var(--text2);margin-top:6px;white-space:pre-line;">${esc(e.notes)}</div>`:""}
+          </div>`;}).join("")
+      : `<div style="font-size:12px;color:var(--text3);">Aucune évaluation pour le moment.</div>`;
+
+    // Remarques de la direction (jamais visibles par la personne concernée)
+    let notesHtml = "";
+    if(isLeader && !isOwn) {
+      const canDeleteAny = (role==="pdg"||role==="admin");
+      notesHtml = `<div class="card" style="max-width:760px;margin-bottom:16px;">
+        <div class="card-hdr"><div class="card-hdr-title">📝 Remarques de la direction</div></div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Visibles uniquement par les responsables et PDG — jamais par la personne concernée. Idéal pour garder une trace de ce que vous constatez en direct.</div>
+          <textarea id="dossier-note-input" rows="3" placeholder="Écrire une remarque…" style="width:100%;background:rgba(10,9,6,.55);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:12.5px;padding:10px;"></textarea>
+          <button class="btn btn-primary btn-sm" style="margin:8px 0 14px;" onclick="ajouterDossierNote('${compteId}')">+ Ajouter la remarque</button>
+          ${(notes||[]).length ? (notes||[]).map(n=>`<div style="padding:10px 0;border-top:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;gap:10px;">
+                <div style="font-size:10.5px;color:var(--text3);">${esc(fmtD(n.created_at))} · ${esc(n.auteur||"—")}</div>
+                ${(canDeleteAny || n.auteur===identityLabel()) ? `<button class="btn btn-ghost btn-sm" style="color:#E74C3C;padding:2px 8px;" onclick="supprimerDossierNote('${n.id}')">🗑</button>` : ""}
+              </div>
+              <div style="font-size:12.5px;color:var(--text);margin-top:4px;white-space:pre-line;">${esc(n.contenu||"")}</div>
+            </div>`).join("") : `<div style="font-size:12px;color:var(--text3);">Aucune remarque pour le moment.</div>`}
+        </div>
+      </div>`;
+    }
+
+    el.innerHTML = `
+      <div class="card" style="max-width:760px;margin-bottom:16px;">
+        <div class="card-body">
+          <div class="dos-head">
+            <div class="dos-avatar">${carte && carte.photo_b64 ? `<img src="data:image/jpeg;base64,${carte.photo_b64}" alt="">` : esc(initials)}</div>
+            <div style="flex:1;min-width:200px;">
+              <div class="dos-name">${esc(nom)}</div>
+              <div>${chips || '<span class="dos-chip">Aucun grade</span>'}</div>
+              <div style="margin-top:6px;">
+                <span class="dos-chip" style="color:${statutColor};border-color:${statutColor}55;">● ${esc(statut)}</span>
+                ${(isLeader && !isOwn && compte.telephone) ? `<a class="dos-chip" href="tel:${esc(compte.telephone)}" style="text-decoration:none;">📞 ${esc(fmtTel(compte.telephone))}</a>` : ""}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:10.5px;color:var(--text3);margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em;">Chiffres — ${esc(svcLabel(svc))}</div>
+      <div class="dos-stats">
+        <div class="dos-stat"><div class="dos-stat-lbl">Heures ce mois-ci</div><div class="dos-stat-val">${fmtHeuresMin(minsMois)}</div></div>
+        <div class="dos-stat"><div class="dos-stat-lbl">Heures totales</div><div class="dos-stat-val">${fmtHeuresMin(minsTotal)}</div></div>
+        <div class="dos-stat"><div class="dos-stat-lbl">Services effectués</div><div class="dos-stat-val">${logsOk.length}</div></div>
+        <div class="dos-stat"><div class="dos-stat-lbl">Moyenne évaluations</div><div class="dos-stat-val">${moyPct===null ? "—" : `⭐ ${(moyPct/20).toFixed(1)}<span style="font-size:14px;color:var(--text2);"> /5</span>`}</div></div>
+      </div>
+
+      <div class="card" style="max-width:760px;margin-bottom:16px;">
+        <div class="card-hdr"><div class="card-hdr-title">⭐ Évaluations récentes</div>${isOwn?`<button class="btn btn-ghost btn-sm" onclick="goPage('mes-evaluations')">Tout voir →</button>`:""}</div>
+        <div class="card-body">${evHtml}</div>
+      </div>
+
+      ${carte ? `<div class="card" style="max-width:760px;margin-bottom:16px;">
+        <div class="card-hdr"><div class="card-hdr-title">🪪 Carte professionnelle</div></div>
+        <div class="card-body"><div class="pro-card-wrap">${buildProCardHTML(carte)}</div></div>
+      </div>` : ""}
+
+      ${notesHtml}
+
+      <div class="card" style="max-width:760px;margin-bottom:16px;">
+        <div class="card-hdr"><div class="card-hdr-title">🕰️ Parcours</div></div>
+        <div class="card-body">${tlHtml}</div>
+      </div>`;
+  } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement du dossier.</p></div>'; console.warn("renderDossier:", e); }
+}
+async function ajouterDossierNote(compteId) {
+  const input = document.getElementById("dossier-note-input");
+  const contenu = (input?.value||"").trim();
+  if(!contenu) { toast("Écrivez d'abord une remarque.","#E74C3C"); return; }
+  try {
+    await sb("dossier_notes", {method:"POST", body:JSON.stringify({compte_id:compteId, auteur:identityLabel(), contenu})});
+    toast("✓ Remarque ajoutée");
+    if(window._dossierRerender) window._dossierRerender();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function supprimerDossierNote(id) {
+  if(!confirm("Supprimer cette remarque ?")) return;
+  try {
+    await sb(`dossier_notes?id=eq.${id}`, {method:"DELETE"});
+    toast("Remarque supprimée");
+    if(window._dossierRerender) window._dossierRerender();
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+
 // ─── MES NOTES PERSONNELLES (privées à chaque compte, quelle que soit la filiale) ───────
 let notesPersoCache = [];
 let notePersoEnCoursId = null;
@@ -9658,7 +9884,7 @@ function renderHierarchie(grades) {
       return `<div class="hier-row${isPdgTier?" tier-pdg":""}" style="--tier-accent:${meta.accent}">
         <div class="hier-row-avatar${isPdgTier?" tier-pdg-av":""}" style="background:${meta.gradient}">${esc(initials)}</div>
         <div class="hier-row-info">
-          <div class="hier-row-name">${esc(g.prenom)} ${esc(g.nom)}${cdrTag}</div>
+          <div class="hier-row-name"${(canManage && g.compte_id)?` style="cursor:pointer;" title="Ouvrir le dossier" onclick="openDossier('${g.compte_id}')"`:""}>${esc(g.prenom)} ${esc(g.nom)}${cdrTag}</div>
           <div class="hier-row-sub">${SERVICE_ICONS[g.service]} ${svcLabel(g.service)}</div>
         </div>
         <div class="hier-row-actions">
