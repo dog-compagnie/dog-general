@@ -8524,6 +8524,7 @@ function renderEffectifsList(comptesAll) {
             </select>
           </div>
           <div class="field"><label>Date de recrutement</label><input type="date" value="${c.date_recrutement||""}" onchange="updateDateRecrutement('${c.id}', this.value)"></div>
+          <div class="field"><label>Grade actuel depuis le</label><input type="date" value="${c.grade_depuis||""}" onchange="updateGradeDepuis('${c.id}', this.value)"></div>
           ${statut==="Sanction" ? `<div class="field"><label>Sanctionné(e) depuis le</label><input type="date" value="${c.sanction_depuis||""}" onchange="updateSanctionDepuis('${c.id}', this.value)"></div>` : ""}
           ${isDeparted ? `<div class="field"><label>Date de départ</label><input type="date" value="${c.date_depart||""}" onchange="updateDateDepart('${c.id}', this.value)"></div>` : ""}
         </div>
@@ -8671,6 +8672,14 @@ async function updateDateRecrutement(id, val) {
     await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({date_recrutement: val||null})});
     toast("✓ Date de recrutement mise à jour");
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function updateGradeDepuis(id, val) {
+  try {
+    await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({grade_depuis: val||null})});
+    const row = effectifsComptesCache.find(x=>String(x.id)===String(id));
+    if(row) row.grade_depuis = val||null;
+    toast("✓ Date du grade actuel mise à jour");
+  } catch(e) { toast("Erreur : la mise à jour de la base (SQL) n'a peut-être pas encore été faite.","#E74C3C"); }
 }
 async function updateSanctionDepuis(id, val) {
   try {
@@ -10034,7 +10043,7 @@ async function calCreate() {
 // ─── DOSSIER AGENT (suite) ──────────────────────────────────────────
 // Plan de carrière : on ne garde du journal que ce qui compte dans un parcours (arrivée, rôles,
 // grades, évaluations, sanctions). Blocages, absences, fiches de paie… restent dans le journal.
-const DOSSIER_TL_TYPES = ["compte_cree","candidat_promu","hierarchie_role","hierarchie_general","hierarchie_adjoint","hierarchie_formateur","grade_ajoute","grade_retire","evaluation_creee","effectif_statut"];
+const DOSSIER_TL_TYPES = ["compte_cree","candidat_promu","hierarchie_role","hierarchie_general","hierarchie_adjoint","hierarchie_formateur","grade_ajoute","grade_retire","effectif_statut"];
 function careerMilestone(t) {
   const m = t.message || "";
   const yes = /devient/.test(m);
@@ -10047,7 +10056,7 @@ function careerMilestone(t) {
     case "hierarchie_formateur": return yes ? {icon:"🎯", c:"#C8A0E8", title:"Devient Formateur"} : {icon:"▫️", c:"#7F9AB0", title:"N'est plus Formateur"};
     case "grade_ajoute": { const r = m.match(/Grade (.+?) ajouté \((.+?)\)/); return {icon:"➕", c:"#5DADE2", title: r?`Nouveau grade : ${r[1]}`:"Nouveau grade", detail: r?r[2]:""}; }
     case "grade_retire": { const r = m.match(/Grade retiré : (.+)$/); return {icon:"➖", c:"#7F9AB0", title:"Grade retiré", detail: r?r[1]:""}; }
-    case "evaluation_creee": { const r = m.match(/\((.+?), (\d+)%\)/); return {icon:"⭐", c:"#F0C048", title: r?`Évaluation : ${r[1]}`:"Évaluation", pct: r?Number(r[2]):null}; }
+    case "evaluation_creee": return null; // les évaluations viennent de la table (limitée à la filiale), pas du journal
     case "effectif_statut": return null; // traité à part par statutMilestones() (besoin du statut précédent)
   }
   return null;
@@ -10192,11 +10201,15 @@ async function renderDossier(el, compteId, isOwn) {
         if(t.type==="candidat_promu" && mi.detail===svcLabel(svc) && !promuDetail) promuDetail = mi.title;
         return;
       }
+      // Une étape n'a de sens que dans SA filiale : changements de rôle/statut → filiale où ils ont été faits
+      // (la Hiérarchie et les Effectifs sont limités à la filiale affichée) ; grades → filiale citée dans le message.
+      const okSvc = (t.type==="grade_ajoute" || t.type==="grade_retire") ? (mi.detail||"").includes(svcLabel(svc)) : (t.service===svc);
+      if(!okSvc) return;
       const hidden = !!t.masque_dossier;
       if(hidden && !showHidden) return;
       ms.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
     });
-    const statutRows = (tl||[]).filter(t=>t.type==="effectif_statut").slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    const statutRows = (tl||[]).filter(t=>t.type==="effectif_statut" && t.service===svc).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
     statutMilestones(statutRows).forEach(({t,mi,synthetic,date})=>{
       const hidden = !!t.masque_dossier;
       if(hidden && !showHidden) return;
@@ -10213,6 +10226,25 @@ async function renderDossier(el, compteId, isOwn) {
         else ms.push({icon:"⚠️", c:"#E74C3C", title:"Mis(e) en sanction", detail:"Sanction en cours", date:sinceSanction});
       } else if(!open) {
         ms.push({icon:"⚠️", c:"#E74C3C", title:"En sanction", detail:(isLeader&&!isOwn) ? "Date non renseignée — à saisir dans la Gestion des effectifs" : "Date non renseignée", date:null});
+      }
+    }
+    // Évaluations : lues dans la table (déjà limitée à la filiale affichée), avec leur vraie date
+    evalsOk.forEach(e=>{
+      const d = e.date_eval ? e.date_eval + "T12:00:00" : e.created_at;
+      ms.push({icon:"⭐", c:"#F0C048", title:`Évaluation : ${e.verdict||"—"}`, detail:e.evaluateur?`Évalué(e) par ${e.evaluateur}`:"", pct:e.pourcentage, date:d});
+    });
+    // Passage au grade actuel dans CETTE filiale (« Grade actuel depuis le » de la Gestion des effectifs)
+    if(gradeFiliale && gradeFiliale.role && gradeFiliale.role!=="agent") {
+      const lbl = HIER_LABELS[gradeFiliale.role] || gradeFiliale.role;
+      const logTitle = `Nouveau rôle : ${lbl}`;
+      const fromLogs = ms.filter(x=>x.title===logTitle);
+      if(gradeFiliale.grade_depuis) {
+        ms = ms.filter(x=>x.title!==logTitle); // la date saisie/enregistrée fait foi
+        ms.push({icon:"🎖️", c:"#C8A0E8", title:`Nommé(e) ${lbl}`, detail:svcLabel(svc), date:gradeFiliale.grade_depuis + "T12:00:00"});
+      } else if(fromLogs.length) {
+        fromLogs.forEach(x=>{ x.detail = svcLabel(svc); });
+      } else if(isLeader && !isOwn) {
+        ms.push({icon:"🎖️", c:"#C8A0E8", title:`Nommé(e) ${lbl}`, detail:`${svcLabel(svc)} — date non renseignée, à saisir dans la Gestion des effectifs`, date:null});
       }
     }
     if(dateRecrut) ms.push({icon:"🎉", c:"#52D98B", title:`Entrée à ${svcLabel(svc)}`, detail:promuDetail, date:dateRecrut});
@@ -10618,7 +10650,9 @@ async function changerRoleHierarchie(gradeId, newRole, nomComplet) {
     const payload = {role:newRole};
     if(newRole!=="responsable") payload.general = false;
     if(newRole!=="pdg") payload.adjoint = false;
-    await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify(payload)});
+    // date du passage au nouveau grade (si la colonne n'existe pas encore, le rôle est quand même changé)
+    try { await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({...payload, grade_depuis:calTodayStr()})}); }
+    catch(e) { await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify(payload)}); }
     logActivity("hierarchie_role", `${nomComplet.trim()} est passé au rôle : ${HIER_LABELS[newRole]||newRole}`);
     toast("✓ Rôle mis à jour pour "+nomComplet.trim());
     await loadComptes();
