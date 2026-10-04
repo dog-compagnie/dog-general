@@ -714,6 +714,22 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 .tl-date{font-size:10.5px;color:var(--text3);}
 .tl-text{font-size:12.5px;color:var(--text);margin-top:2px;line-height:1.5;}
 .tl-by{font-size:10.5px;color:var(--text3);}
+.cr-ladder{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 10px;}
+.cr-step{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);color:var(--text3);background:rgba(255,255,255,.03);}
+.cr-step.done{color:var(--text);background:rgba(var(--accent-rgb),.14);border-color:rgba(var(--accent-rgb),.4);}
+.cr-step.current{color:#fff;background:linear-gradient(135deg,rgba(var(--accent-rgb),.9),rgba(var(--accent-rgb),.5));border-color:rgba(var(--accent-rgb),.9);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.18);}
+.cr-arrow{color:var(--text3);font-size:14px;}
+.cr-head{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;}
+.cr-rail{position:relative;padding-left:36px;}
+.cr-rail::before{content:"";position:absolute;left:14px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--border),rgba(var(--accent-rgb),.6));}
+.cr-ms{position:relative;margin-bottom:12px;}
+.cr-node{position:absolute;left:-36px;top:3px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--bg2);border:2px solid var(--cr-c,var(--accent));box-shadow:0 0 0 3px rgba(0,0,0,.35);}
+.cr-card{background:rgba(255,255,255,.035);border:1px solid var(--border);border-left:3px solid var(--cr-c,var(--accent));border-radius:10px;padding:10px 12px;}
+.cr-ms.now .cr-card{background:rgba(var(--accent-rgb),.1);}
+.cr-title{font-size:13.5px;font-weight:700;color:#fff;}
+.cr-detail{font-size:11.5px;color:var(--text2);margin-top:3px;}
+.cr-meta{font-size:10.5px;color:var(--text3);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.cr-ms.hidden .cr-card{opacity:.45;border-style:dashed;}
 @media (max-width: 420px) {
   /* La carte a une mise en page à positions fixes (badges, texte) — sur très petit écran,
      on la réduit en bloc plutôt que de laisser ses éléments se chevaucher. */
@@ -1444,6 +1460,10 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
             <div class="field"><label>Nom de l'événement</label><input id="evt-nom" placeholder="Ex : Convoi VIP, Soirée…"></div>
             <div class="field"><label>Date</label><input id="evt-date" type="date"></div>
           </div>
+          <div class="field-row-2">
+            <div class="field"><label>Heure de début</label><input id="evt-debut" type="time"></div>
+            <div class="field"><label>Heure de fin</label><input id="evt-fin" type="time"></div>
+          </div>
           <div class="field"><label>Heures de présence (appliquées à tous ceux marqués « Présent »)</label><input id="evt-heures" type="number" min="0" step="0.5" placeholder="Ex : 3"></div>
           <button class="btn btn-primary btn-full" onclick="creerEvenement()">Créer l'événement</button>
         </div>
@@ -1586,6 +1606,10 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <div class="alert-popup-title" style="text-align:center;">📅 Nouvel évènement</div>
       <div id="cal-create-date" style="text-align:center;color:var(--text2);font-size:12px;margin-bottom:14px;"></div>
       <div class="field"><label>Nom de l'évènement</label><input id="cal-new-nom" placeholder="Ex : Formation conduite"></div>
+      <div class="field-row-2">
+        <div class="field"><label>Heure de début</label><input id="cal-new-debut" type="time"></div>
+        <div class="field"><label>Heure de fin</label><input id="cal-new-fin" type="time"></div>
+      </div>
       <div class="field"><label>Heures créditées aux présents (optionnel)</label><input id="cal-new-heures" type="number" min="0" step="0.5" placeholder="Ex : 2"></div>
       <button class="btn btn-success btn-full" style="margin-top:10px;" onclick="calCreate()">✓ Créer l'évènement</button>
       <button class="btn btn-ghost btn-full" style="margin-top:8px;" onclick="closeCalCreate()">Annuler</button>
@@ -5591,7 +5615,7 @@ function getNotifications() {
   }
   (eventsForNotif||[]).forEach(ev=>{
     const d = new Date(ev.date+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
-    list.push({type:"evt", id:ev.id, icon:"📅", text:`Évènement « ${ev.nom} » le ${d} — répondez : présent ou absent ?`, time:ev.created_at});
+    list.push({type:"evt", id:ev.id, icon:"📅", text:`Évènement « ${ev.nom} » le ${d}${ev.debut?` à ${fmtH(ev.debut)}`:""} — répondez : présent ou absent ?`, time:ev.created_at});
   });
   list.sort((x,y)=> new Date(y.time||0) - new Date(x.time||0));
   return list;
@@ -8653,13 +8677,21 @@ async function creerEvenement() {
   const nom = document.getElementById("evt-nom").value.trim();
   const date = document.getElementById("evt-date").value;
   const heuresDefaut = parseFloat(document.getElementById("evt-heures").value)||null;
+  const hDeb = document.getElementById("evt-debut")?.value || null;
+  const hFin = document.getElementById("evt-fin")?.value || null;
   if(!nom || !date) { toast("Merci d'indiquer le nom et la date de l'événement.","#E74C3C"); return; }
+  if(hFin && !hDeb) { toast("Indiquez aussi l'heure de début.","#E74C3C"); return; }
   try {
     const svc = myService();
-    const r = await fetch(SB_URL+"/rest/v1/evenements", {
-      method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-      body: JSON.stringify({nom, date_evenement:date, heures_defaut:heuresDefaut, created_by:identityLabel(), service:svc})
-    });
+    const base = {nom, date_evenement:date, heures_defaut:heuresDefaut, created_by:identityLabel(), service:svc};
+    const post = body => fetch(SB_URL+"/rest/v1/evenements", {method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors", body:JSON.stringify(body)});
+    let horaireSaved = !!(hDeb||hFin);
+    let r = await post(horaireSaved ? {...base, heure_debut:hDeb, heure_fin:hFin} : base);
+    if(!r.ok && horaireSaved) {
+      // colonnes d'horaire pas encore créées (SQL non exécuté) : l'évènement est créé quand même
+      horaireSaved = false;
+      r = await post(base);
+    }
     if(!r.ok) throw new Error(await r.text());
     const created = await r.json();
     const evtId = created && created[0] && created[0].id;
@@ -8684,13 +8716,16 @@ async function creerEvenement() {
       // Salon d'annonces propre à la filiale (≠ webhook des logs) ; pas de message si non configuré.
       sendDiscordWebhook(
         `📅 Nouvel évènement — ${nom}`,
-        `**Date :** ${dateLong}${heuresDefaut ? `\n**Heures créditées :** ${heuresDefaut} h` : ""}\n**Créé par :** ${identityLabel()}\n\n⚠️ **Merci de répondre : indiquez si vous serez présent ou absent.**\nAllez dans l'onglet **Calendrier** du site, ouvrez l'évènement puis cliquez sur « ✅ Je serai présent » ou « ❌ Je serai absent » :\n${site}`,
+        `**Date :** ${dateLong}${evtPlage({heure_debut:hDeb, heure_fin:hFin}) ? `\n**Horaire :** ${evtPlage({heure_debut:hDeb, heure_fin:hFin})}` : ""}${heuresDefaut ? `\n**Heures créditées :** ${heuresDefaut} h` : ""}\n**Créé par :** ${identityLabel()}\n\n⚠️ **Merci de répondre : indiquez si vous serez présent ou absent.**\nAllez dans l'onglet **Calendrier** du site, ouvrez l'évènement puis cliquez sur « ✅ Je serai présent » ou « ❌ Je serai absent » :\n${site}`,
         parseInt((ACCENT_BY_SERVICE[svc]||ACCENT_BY_SERVICE.securite).main.slice(1),16),
         "annonces_"+svc,
         [EVENT_PING_ROLES[svc]]
       );
     } catch(e) { console.warn("evenement webhook:", e.message); }
-    toast("✓ Événement créé");
+    if((hDeb||hFin) && !horaireSaved) toast("Évènement créé, mais l'horaire n'a pas pu être enregistré (mise à jour de la base à faire).","#F0A840");
+    else toast("✓ Événement créé");
+    document.getElementById("evt-debut").value = "";
+    document.getElementById("evt-fin").value = "";
     document.getElementById("evt-nom").value = "";
     document.getElementById("evt-date").value = "";
     document.getElementById("evt-heures").value = "";
@@ -8707,7 +8742,7 @@ async function loadEvenementsList() {
     el.innerHTML = rows.map(e=>`
       <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;">
-          <div style="cursor:pointer;flex:1;" onclick="toggleEvenementDetail('${e.id}')"><div style="font-size:13px;font-weight:700;color:#fff;">${esc(e.nom)}</div><div style="font-size:11px;color:var(--text2);">${e.date_evenement?new Date(e.date_evenement+"T12:00:00").toLocaleDateString("fr-FR"):"—"}</div></div>
+          <div style="cursor:pointer;flex:1;" onclick="toggleEvenementDetail('${e.id}')"><div style="font-size:13px;font-weight:700;color:#fff;">${esc(e.nom)}</div><div style="font-size:11px;color:var(--text2);">${e.date_evenement?new Date(e.date_evenement+"T12:00:00").toLocaleDateString("fr-FR"):"—"}${evtPlage(e)?` · 🕐 ${evtPlage(e)}`:""}</div></div>
           <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:var(--blue-light);cursor:pointer;" onclick="toggleEvenementDetail('${e.id}')">▾ Présences</span>
             ${role==="admin"?`<button class="btn btn-danger btn-sm" onclick="supprimerEvenement('${e.id}')">🗑</button>`:""}
@@ -9791,19 +9826,28 @@ async function setAgentDuMois(nom) {
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
+// ─── HORAIRES D'ÉVÈNEMENT ───────────────────────────────────────────
+const fmtH = t => t ? String(t).slice(0,5).replace(":","h") : "";
+function evtPlage(e) {
+  const a = fmtH(e && e.heure_debut), b = fmtH(e && e.heure_fin);
+  if(a && b) return `${a} – ${b}`;
+  if(a) return `à partir de ${a}`;
+  return "";
+}
+
 // ─── NOTIFICATIONS D'ÉVÈNEMENTS ─────────────────────────────────────
 // Un évènement à venir reste dans la cloche tant que la personne n'a pas répondu présent/absent.
 async function loadEventNotifs() {
   const me = calMyName();
   if(!me) return null;
   try {
-    const evs = ((await sb(`evenements?select=id,nom,date_evenement,service,created_at&date_evenement=gte.${calTodayStr()}&order=date_evenement`))||[])
+    const evs = ((await sb(`evenements?select=*&date_evenement=gte.${calTodayStr()}&order=date_evenement`))||[])
       .filter(e=>!e.service || e.service===myService());
     if(!evs.length) return [];
     const pres = await sb(`evenement_presences?select=evenement_id,inscription&agent_nom=eq.${encodeURIComponent(me)}&evenement_id=in.(${evs.map(e=>e.id).join(",")})`);
     const answered = {};
     (pres||[]).forEach(p=>{ if(p.inscription) answered[String(p.evenement_id)] = true; });
-    return evs.filter(e=>!answered[String(e.id)]).map(e=>({id:e.id, nom:e.nom, date:e.date_evenement, created_at:e.created_at}));
+    return evs.filter(e=>!answered[String(e.id)]).map(e=>({id:e.id, nom:e.nom, date:e.date_evenement, debut:e.heure_debut, created_at:e.created_at}));
   } catch(e) { return null; }
 }
 
@@ -9861,12 +9905,12 @@ async function renderCalendrier() {
   for(let i=0;i<blanks;i++) html += `<div class="cal-cell blank"></div>`;
   for(let d=1; d<=daysIn; d++) {
     const ds = `${y}-${pad(m+1)}-${pad(d)}`;
-    const evs = calEvents.filter(e=>e.date_evenement===ds);
+    const evs = calEvents.filter(e=>e.date_evenement===ds).sort((a,b)=>String(a.heure_debut||"99").localeCompare(String(b.heure_debut||"99")));
     html += `<div class="cal-cell${ds===today?" today":""}${isLeader?" clickable":""}" ${isLeader?`onclick="calOpenCreate('${ds}')"`:""}>
       <div class="cal-daynum">${d}</div>
       ${evs.slice(0,3).map(e=>{
         const mine = calPresences.some(p=>String(p.evenement_id)===String(e.id) && p.agent_nom===me && p.inscription==="Inscrit");
-        return `<div class="cal-evt${mine?" mine":""}${ds<today?" past":""}" title="${esc(e.nom)}" onclick="event.stopPropagation();calOpenEvent('${e.id}')">${mine?"✅ ":""}${esc(e.nom)}</div>`;
+        return `<div class="cal-evt${mine?" mine":""}${ds<today?" past":""}" title="${esc(e.nom)}${evtPlage(e)?" — "+esc(evtPlage(e)):""}" onclick="event.stopPropagation();calOpenEvent('${e.id}')">${mine?"✅ ":""}${e.heure_debut?`${fmtH(e.heure_debut)} `:""}${esc(e.nom)}</div>`;
       }).join("")}
       ${evs.length>3?`<div style="font-size:9px;color:var(--text3);">+${evs.length-3} autre(s)</div>`:""}
     </div>`;
@@ -9902,6 +9946,7 @@ function calOpenEvent(id) {
   document.getElementById("cal-modal-body").innerHTML = `
     <div class="alert-popup-title" style="text-align:left;">${esc(e.nom)}</div>
     <div style="font-size:12.5px;color:var(--text2);margin-bottom:4px;">📅 ${esc(dateLong)}</div>
+    ${evtPlage(e)?`<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">🕐 ${esc(evtPlage(e))}</div>`:`<div style="font-size:11.5px;color:var(--text3);margin-bottom:6px;">🕐 Horaire non précisé</div>`}
     ${e.heures_defaut?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">⏱ ${e.heures_defaut} h créditées aux présents</div>`:""}
     ${e.created_by?`<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Créé par ${esc(e.created_by)}</div>`:`<div style="margin-bottom:12px;"></div>`}
     ${rsvp}
@@ -9910,10 +9955,30 @@ function calOpenEvent(id) {
       ${inscrits.length ? `<div style="font-size:12px;color:var(--text);line-height:1.7;">${inscrits.map(n=>esc(n)).join(" · ")}</div>` : `<div style="font-size:12px;color:var(--text3);">Personne n'a encore confirmé sa présence.</div>`}
       ${(isLeader && sansReponse.length) ? `<div style="font-size:11px;color:var(--text3);margin-top:8px;">⏳ Sans réponse : ${sansReponse.map(n=>esc(n)).join(" · ")}</div>` : ""}
     </div>
-    ${isLeader?`<button class="btn btn-ghost btn-sm" style="margin-top:14px;" onclick="closeCalModal();goPage('effectifs');setEffTab('evenements');">⚙️ Gérer les présences</button>`:""}`;
+    ${isLeader?`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <div style="font-size:10.5px;color:var(--text3);margin-bottom:6px;">Horaire (modifiable par la direction)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="cal-h-debut" type="time" value="${esc((e.heure_debut||"").slice(0,5))}" style="background:rgba(13,21,32,0.7);border:1px solid var(--border);border-radius:7px;color:#fff;font-size:12px;padding:5px 8px;">
+        <span style="color:var(--text3);">→</span>
+        <input id="cal-h-fin" type="time" value="${esc((e.heure_fin||"").slice(0,5))}" style="background:rgba(13,21,32,0.7);border:1px solid var(--border);border-radius:7px;color:#fff;font-size:12px;padding:5px 8px;">
+        <button class="btn btn-ghost btn-sm" onclick="calSaveHoraire('${id}')">💾 Enregistrer</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="closeCalModal();goPage('effectifs');setEffTab('evenements');">⚙️ Gérer les présences</button>
+    </div>`:""}`;
   document.getElementById("cal-modal").classList.add("show");
 }
 function closeCalModal() { document.getElementById("cal-modal").classList.remove("show"); }
+async function calSaveHoraire(id) {
+  const hDeb = document.getElementById("cal-h-debut").value || null;
+  const hFin = document.getElementById("cal-h-fin").value || null;
+  if(hFin && !hDeb) { toast("Indiquez aussi l'heure de début.","#E74C3C"); return; }
+  try {
+    await sb(`evenements?id=eq.${id}`, {method:"PATCH", body:JSON.stringify({heure_debut:hDeb, heure_fin:hFin})});
+    toast("✓ Horaire enregistré");
+    await renderCalendrier();
+    calOpenEvent(id);
+  } catch(e) { toast("Erreur : l'horaire n'a pas pu être enregistré (la mise à jour de la base est peut-être à faire).","#E74C3C"); }
+}
 async function calRsvp(evtId, valeur) {
   const me = calMyName();
   if(!me) return;
@@ -9933,6 +9998,8 @@ function calOpenCreate(ds) {
   document.getElementById("cal-create-date").textContent = new Date(ds+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   document.getElementById("cal-new-nom").value = "";
   document.getElementById("cal-new-heures").value = "";
+  document.getElementById("cal-new-debut").value = "";
+  document.getElementById("cal-new-fin").value = "";
   document.getElementById("cal-create-modal").classList.add("show");
 }
 function closeCalCreate() { document.getElementById("cal-create-modal").classList.remove("show"); }
@@ -9943,13 +10010,58 @@ async function calCreate() {
   document.getElementById("evt-nom").value = nom;
   document.getElementById("evt-date").value = calCreateDate;
   document.getElementById("evt-heures").value = document.getElementById("cal-new-heures").value;
+  document.getElementById("evt-debut").value = document.getElementById("cal-new-debut").value;
+  document.getElementById("evt-fin").value = document.getElementById("cal-new-fin").value;
   await creerEvenement();
   if(document.getElementById("evt-nom").value === "") { closeCalCreate(); renderCalendrier(); }
 }
 
 // ─── DOSSIER AGENT (suite) ──────────────────────────────────────────
-const DOSSIER_TL_TYPES = ["hierarchie_role","hierarchie_general","hierarchie_formateur","hierarchie_adjoint","grade_ajoute","grade_retire","compte_cree","candidat_promu","candidature_statut","candidature_nouvelle","evaluation_creee","evaluation_supprimee","effectif_statut","absence_nouvelle","absence_statut","fiche_paie_creee","service_force_fin","securite_verrouillage_auto","compte_bloque","compte_debloque"];
-const DOSSIER_TL_ICONS = {hierarchie_role:"🔼",hierarchie_general:"⭐",hierarchie_formateur:"🎯",hierarchie_adjoint:"🏅",grade_ajoute:"➕",grade_retire:"➖",compte_cree:"🆕",candidat_promu:"🎉",candidature_statut:"📨",candidature_nouvelle:"📝",evaluation_creee:"⭐",evaluation_supprimee:"🗑",effectif_statut:"🔄",absence_nouvelle:"📅",absence_statut:"📅",fiche_paie_creee:"💶",service_force_fin:"⏹",securite_verrouillage_auto:"🚨",compte_bloque:"🔒",compte_debloque:"🔓"};
+// Plan de carrière : on ne garde du journal que ce qui compte dans un parcours (arrivée, rôles,
+// grades, évaluations, sanctions). Blocages, absences, fiches de paie… restent dans le journal.
+const DOSSIER_TL_TYPES = ["compte_cree","candidat_promu","hierarchie_role","hierarchie_general","hierarchie_adjoint","hierarchie_formateur","grade_ajoute","grade_retire","evaluation_creee","effectif_statut"];
+function careerMilestone(t) {
+  const m = t.message || "";
+  const yes = /devient/.test(m);
+  switch(t.type) {
+    case "compte_cree": return {icon:"🆕", c:"#52D98B", title:"Arrivée dans la Dog Compagnie", arrival:true};
+    case "candidat_promu": { const r = m.match(/a été promu (.+?) \((.+?)\)/); return {icon:"🎉", c:"#52D98B", title: r?`Recruté(e) comme ${r[1]}`:"Recrutement validé", detail: r?r[2]:"", arrival:true}; }
+    case "hierarchie_role": { const r = m.match(/rôle : (.+)$/); return {icon:"🔼", c:"#5DADE2", title: r?`Nouveau rôle : ${r[1]}`:"Changement de rôle"}; }
+    case "hierarchie_general": return yes ? {icon:"🌟", c:"#F0A840", title:"Nommé(e) Responsable Général"} : {icon:"▫️", c:"#7F9AB0", title:"N'est plus Responsable Général"};
+    case "hierarchie_adjoint": return yes ? {icon:"🏅", c:"#F0A840", title:"Nommé(e) PDG Adjoint"} : {icon:"▫️", c:"#7F9AB0", title:"N'est plus PDG Adjoint"};
+    case "hierarchie_formateur": return yes ? {icon:"🎯", c:"#C8A0E8", title:"Devient Formateur"} : {icon:"▫️", c:"#7F9AB0", title:"N'est plus Formateur"};
+    case "grade_ajoute": { const r = m.match(/Grade (.+?) ajouté \((.+?)\)/); return {icon:"➕", c:"#5DADE2", title: r?`Nouveau grade : ${r[1]}`:"Nouveau grade", detail: r?r[2]:""}; }
+    case "grade_retire": { const r = m.match(/Grade retiré : (.+)$/); return {icon:"➖", c:"#7F9AB0", title:"Grade retiré", detail: r?r[1]:""}; }
+    case "evaluation_creee": { const r = m.match(/\((.+?), (\d+)%\)/); return {icon:"⭐", c:"#F0C048", title: r?`Évaluation : ${r[1]}`:"Évaluation", pct: r?Number(r[2]):null}; }
+    case "effectif_statut": {
+      const r = m.match(/mis à jour : (.+)$/); const st = r && r[1].trim();
+      if(st==="Sanction") return {icon:"⚠️", c:"#E74C3C", title:"Sanction"};
+      if(st==="Démission") return {icon:"🚪", c:"#C0392B", title:"Démission"};
+      if(st==="Licencié") return {icon:"⛔", c:"#8B1A1A", title:"Licenciement"};
+      return null; // les autres changements de statut (en service, absent…) ne sont pas des étapes de carrière
+    }
+  }
+  return null;
+}
+function dossierAnciennete(dateStr) {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime())/86400000);
+  if(days < 1) return "depuis aujourd'hui";
+  if(days < 30) return `${days} jour${days>1?"s":""}`;
+  const months = Math.floor(days/30.44);
+  if(months < 12) return `${months} mois`;
+  const y = Math.floor(months/12), mo = months%12;
+  return `${y} an${y>1?"s":""}${mo?` et ${mo} mois`:""}`;
+}
+async function masquerEtapeDossier(id, masquer) {
+  if(role!=="admin") return;
+  if(masquer && !confirm("Retirer cette étape du plan de carrière ?\n\nElle disparaît du dossier mais reste visible dans le Journal d'activité (traçabilité). Vous pourrez la rétablir.")) return;
+  try {
+    await sb(`activity_logs?id=eq.${id}`, {method:"PATCH", body:JSON.stringify({masque_dossier:!!masquer})});
+    toast(masquer ? "✓ Étape retirée du dossier" : "✓ Étape rétablie");
+    if(window._dossierRerender) window._dossierRerender();
+  } catch(e) { toast("Impossible : la mise à jour de la base (SQL) n'a pas encore été faite.","#E74C3C"); }
+}
+function toggleDossierHidden() { window._dossierShowHidden = !window._dossierShowHidden; if(window._dossierRerender) window._dossierRerender(); }
 function openDossier(compteId) {
   if(!(role==="responsable"||role==="pdg"||role==="admin") || !compteId) return;
   window._dossierTargetId = compteId;
@@ -9988,7 +10100,7 @@ async function renderDossier(el, compteId, isOwn) {
       safe(sb(`services_logs?agent_nom=eq.${q}&fin=not.is.null&select=debut,duree_minutes&limit=5000`)),
       safe(sb(`ajustements_heures?agent_nom=eq.${q}&select=*`)),
       safe(sb(`evaluations?agent_nom=eq.${q}&select=*&order=date_eval.desc`)),
-      safe(sb(`activity_logs?select=type,message,acteur,created_at&message=ilike.${encodeURIComponent("*"+nom+"*")}&type=in.(${DOSSIER_TL_TYPES.join(",")})&order=created_at.desc&limit=80`)),
+      safe(sb(`activity_logs?select=*&message=ilike.${encodeURIComponent("*"+nom+"*")}&type=in.(${DOSSIER_TL_TYPES.join(",")})&order=created_at.desc&limit=200`)),
       (isLeader && !isOwn) ? safe(sb(`dossier_notes?compte_id=eq.${compteId}&select=*&order=created_at.desc`)) : Promise.resolve([]),
     ]);
     const now = new Date(), m = now.getMonth(), y = now.getFullYear();
@@ -10008,15 +10120,50 @@ async function renderDossier(el, compteId, isOwn) {
     const chips = (grades||[]).map(g=>`<span class="dos-chip">${SERVICE_ICONS[g.service]||""} ${esc(accountRoleLabel(g))} — ${esc(svcLabel(g.service))}</span>`).join("");
     const fmtD = d => new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
 
-    // Frise chronologique
-    let items = (tl||[]).map(t=>({date:t.created_at, icon:DOSSIER_TL_ICONS[t.type]||"•", text:t.message, by:(isLeader&&!isOwn)?t.acteur:null}));
-    if(compte.created_at && !(tl||[]).some(t=>t.type==="compte_cree"||t.type==="candidat_promu")) {
-      items.push({date:compte.created_at, icon:"🆕", text:"Compte créé", by:null});
+    // Plan de carrière : étapes marquantes, lues dans l'ordre chronologique, de l'arrivée à aujourd'hui
+    const isAdmin = (role==="admin");
+    const showHidden = isAdmin && !!window._dossierShowHidden;
+    let ms = [];
+    (tl||[]).forEach(t=>{
+      const mi = careerMilestone(t);
+      if(!mi) return;
+      const hidden = !!t.masque_dossier;
+      if(hidden && !showHidden) return;
+      ms.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
+    });
+    if(compte.created_at && !ms.some(x=>x.arrival)) {
+      ms.push({icon:"🆕", c:"#52D98B", title:"Arrivée dans la Dog Compagnie", date:compte.created_at, arrival:true});
     }
-    items.sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const tlHtml = items.length
-      ? `<div class="tl">${items.map(i=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-date">${esc(fmtD(i.date))}</div><div class="tl-text">${i.icon} ${esc(i.text)}${i.by?` <span class="tl-by">· par ${esc(i.by)}</span>`:""}</div></div>`).join("")}</div>`
-      : `<div style="font-size:12px;color:var(--text3);">Aucun évènement enregistré pour le moment.</div>`;
+    ms.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const arrival = ms.find(x=>x.arrival && !x.hidden);
+    const ancienneteHtml = arrival ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">Dans la Dog Compagnie depuis le <b style="color:#fff;">${esc(fmtD(arrival.date))}</b> — <b style="color:#fff;">${esc(dossierAnciennete(arrival.date))}</b> d'ancienneté</div>` : "";
+
+    // Échelle de grades (filiale affichée)
+    const rungs = [{k:"agent", l:agentLabel(svc)}, {k:"responsable", l:"Responsable"}, {k:"pdg", l:"PDG"}];
+    const curIdx = rungs.findIndex(r=>r.k===grade.role);
+    const ladderHtml = curIdx>=0 ? `<div class="cr-ladder">${rungs.map((r,i)=>`<span class="cr-step ${i<curIdx?"done":i===curIdx?"current":""}">${esc(r.l)}</span>${i<rungs.length-1?'<span class="cr-arrow">›</span>':""}`).join("")}</div>
+      <div>${grade.formateur?'<span class="dos-chip">🎯 Formateur</span>':""}${grade.general?'<span class="dos-chip">🌟 Responsable Général</span>':""}${grade.adjoint?'<span class="dos-chip">🏅 PDG Adjoint</span>':""}</div>` : "";
+
+    const msHtml = ms.length ? ms.map(x=>`<div class="cr-ms${x.hidden?" hidden":""}" style="--cr-c:${x.c};">
+        <div class="cr-node">${x.icon}</div>
+        <div class="cr-card">
+          <div class="cr-title">${esc(x.title)}${x.hidden?' <span style="font-size:10px;color:var(--text3);font-weight:600;">(retirée du dossier)</span>':""}</div>
+          ${x.detail?`<div class="cr-detail">${esc(x.detail)}</div>`:""}
+          ${x.pct!=null?`<div class="cr-detail">${starsHTML(x.pct,14)} <span style="margin-left:6px;">${(x.pct/20).toFixed(1)}/5</span></div>`:""}
+          <div class="cr-meta">
+            <span>${esc(fmtD(x.date))}</span>
+            ${x.by?`<span>par ${esc(x.by)}</span>`:""}
+            ${(isAdmin && x.id) ? (x.hidden
+              ? `<a href="#" style="color:#52D98B;text-decoration:none;" onclick="masquerEtapeDossier('${x.id}',false);return false;">↩ Rétablir</a>`
+              : `<a href="#" style="color:#E74C3C;text-decoration:none;" onclick="masquerEtapeDossier('${x.id}',true);return false;">🗑 Retirer</a>`) : ""}
+          </div>
+        </div>
+      </div>`).join("") : `<div style="font-size:12px;color:var(--text3);">Aucune étape enregistrée pour le moment.</div>`;
+    const nowHtml = (grade && grade.role) ? `<div class="cr-ms now" style="--cr-c:var(--accent);">
+        <div class="cr-node">📍</div>
+        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}</div></div>
+      </div>` : "";
+    const tlHtml = `<div class="cr-head">Étapes marquantes</div><div class="cr-rail">${msHtml}${nowHtml}</div>`;
 
     // Évaluations récentes
     const evHtml = evalsOk.length
@@ -10091,8 +10238,13 @@ async function renderDossier(el, compteId, isOwn) {
       ${notesHtml}
 
       <div class="card" style="max-width:760px;margin-bottom:16px;">
-        <div class="card-hdr"><div class="card-hdr-title">🕰️ Parcours</div></div>
-        <div class="card-body">${tlHtml}</div>
+        <div class="card-hdr"><div class="card-hdr-title">🎖️ Plan de carrière</div>${isAdmin?`<button class="btn btn-ghost btn-sm" onclick="toggleDossierHidden()">${showHidden?"🙈 Masquer les étapes retirées":"👁 Afficher les étapes retirées"}</button>`:""}</div>
+        <div class="card-body">
+          <div style="font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;">Position actuelle — ${esc(svcLabel(svc))}</div>
+          ${ladderHtml}
+          ${ancienneteHtml}
+          ${tlHtml}
+        </div>
       </div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement du dossier.</p></div>'; console.warn("renderDossier:", e); }
 }
@@ -10605,7 +10757,7 @@ async function ajouterGrade() {
       method:"POST", headers:{...H,"Prefer":"return=minimal"}, mode:"cors",
       body:JSON.stringify({compte_id:personneId, service, role:role_g, statut_effectif:"Hors Service"})
     });
-    logActivity("grade_ajoute", `Grade ${accountRoleLabel({role:role_g,service})} ajouté (${svcLabel(service)})`);
+    logActivity("grade_ajoute", `${p?`${p.prenom} ${p.nom} — `:""}Grade ${accountRoleLabel({role:role_g,service})} ajouté (${svcLabel(service)})`);
     toast("✓ Grade ajouté");
     await loadComptes();
     openPersonne(personneId);
@@ -10616,8 +10768,10 @@ async function ajouterGrade() {
 async function supprimerGrade(gradeId) {
   if(!confirm("Retirer ce grade ? La personne perdra l'accès à ce service.")) return;
   try {
+    const _p = allPersonnes.find(x=>String(x.id)===String(currentPersonneId));
+    const _g = _p && (_p.grades||[]).find(g=>String(g.id)===String(gradeId));
     await sb(`agents_grades?id=eq.${gradeId}`, {method:"DELETE"});
-    logActivity("grade_retire", "Un grade a été retiré");
+    logActivity("grade_retire", `${_p?`${_p.prenom} ${_p.nom} — `:""}Grade retiré${_g?` : ${accountRoleLabel(_g)} (${svcLabel(_g.service)})`:""}`);
     toast("✓ Grade retiré");
     await loadComptes();
     if(currentPersonneId) openPersonne(currentPersonneId);
