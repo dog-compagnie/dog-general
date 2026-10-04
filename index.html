@@ -8524,6 +8524,7 @@ function renderEffectifsList(comptesAll) {
             </select>
           </div>
           <div class="field"><label>Date de recrutement</label><input type="date" value="${c.date_recrutement||""}" onchange="updateDateRecrutement('${c.id}', this.value)"></div>
+          ${statut==="Sanction" ? `<div class="field"><label>Sanctionné(e) depuis le</label><input type="date" value="${c.sanction_depuis||""}" onchange="updateSanctionDepuis('${c.id}', this.value)"></div>` : ""}
           ${isDeparted ? `<div class="field"><label>Date de départ</label><input type="date" value="${c.date_depart||""}" onchange="updateDateDepart('${c.id}', this.value)"></div>` : ""}
         </div>
         <div class="eff-heures">
@@ -8631,9 +8632,15 @@ async function updateStatutEffectif(id, statut) {
   try {
     const payload = {statut_effectif: statut, statut_avant_absence: null};
     if(statut!=="Démission" && statut!=="Licencié") payload.date_depart = null;
-    await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(payload)});
     const _cStat = effectifsComptesCache.find(x=>String(x.id)===String(id));
-    logActivity("effectif_statut", `${_cStat?`${_cStat.prenom} ${_cStat.nom} — `:""}Statut d'effectif mis à jour : ${statut}`);
+    const _avant = (_cStat && _cStat.statut_effectif) || "En service"; // le cache n'est pas encore rafraîchi : c'est l'ancien statut
+    // Date de début de sanction : posée automatiquement en passant en « Sanction », effacée au retour
+    // (si la colonne n'existe pas encore, on enregistre le statut sans elle)
+    const sanctionDepuis = (statut==="Sanction") ? ((_avant==="Sanction" && _cStat && _cStat.sanction_depuis) || calTodayStr()) : null;
+    try { await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({...payload, sanction_depuis:sanctionDepuis})}); }
+    catch(e) { await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(payload)}); }
+    const _depuis = (_avant==="Sanction" && statut!=="Sanction" && _cStat && _cStat.sanction_depuis) ? ` [sanction depuis ${_cStat.sanction_depuis}]` : "";
+    logActivity("effectif_statut", `${_cStat?`${_cStat.prenom} ${_cStat.nom} — `:""}Statut d'effectif mis à jour : ${_avant} → ${statut}${_depuis}`);
     if(statut==="Démission" || statut==="Licencié") {
       const c = effectifsComptesCache.find(x=>String(x.id)===String(id));
       if(c) await archiverAncienAgent(c, statut);
@@ -8664,6 +8671,14 @@ async function updateDateRecrutement(id, val) {
     await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({date_recrutement: val||null})});
     toast("✓ Date de recrutement mise à jour");
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function updateSanctionDepuis(id, val) {
+  try {
+    await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({sanction_depuis: val||null})});
+    const row = effectifsComptesCache.find(x=>String(x.id)===String(id));
+    if(row) row.sanction_depuis = val||null;
+    toast("✓ Date de sanction mise à jour");
+  } catch(e) { toast("Erreur : la mise à jour de la base (SQL) n'a peut-être pas encore été faite.","#E74C3C"); }
 }
 async function updateDateDepart(id, val) {
   try {
@@ -10033,15 +10048,56 @@ function careerMilestone(t) {
     case "grade_ajoute": { const r = m.match(/Grade (.+?) ajouté \((.+?)\)/); return {icon:"➕", c:"#5DADE2", title: r?`Nouveau grade : ${r[1]}`:"Nouveau grade", detail: r?r[2]:""}; }
     case "grade_retire": { const r = m.match(/Grade retiré : (.+)$/); return {icon:"➖", c:"#7F9AB0", title:"Grade retiré", detail: r?r[1]:""}; }
     case "evaluation_creee": { const r = m.match(/\((.+?), (\d+)%\)/); return {icon:"⭐", c:"#F0C048", title: r?`Évaluation : ${r[1]}`:"Évaluation", pct: r?Number(r[2]):null}; }
-    case "effectif_statut": {
-      const r = m.match(/mis à jour : (.+)$/); const st = r && r[1].trim();
-      if(st==="Sanction") return {icon:"⚠️", c:"#E74C3C", title:"Sanction"};
-      if(st==="Démission") return {icon:"🚪", c:"#C0392B", title:"Démission"};
-      if(st==="Licencié") return {icon:"⛔", c:"#8B1A1A", title:"Licenciement"};
-      return null; // les autres changements de statut (en service, absent…) ne sont pas des étapes de carrière
-    }
+    case "effectif_statut": return null; // traité à part par statutMilestones() (besoin du statut précédent)
   }
   return null;
+}
+// Statuts d'effectif retenus dans le plan de carrière : sanction (début ET retour), départ, et les
+// changements entre hors service / en service / en duo / en duo responsable. L'absence est ignorée.
+function dossierDuree(d1, d2) {
+  const h = Math.floor((new Date(d2) - new Date(d1)) / 3600000);
+  if(h < 1) return "moins d'une heure";
+  if(h < 24) return `${h} h`;
+  const j = Math.floor(h/24);
+  return `${j} jour${j>1?"s":""}`;
+}
+function statutMilestones(rows) {
+  // rows : lignes « effectif_statut » de CETTE personne, de la plus ancienne à la plus récente
+  const label = st => st==="Hors Service" ? "Hors service" : st;
+  const DEF = {
+    "En service":         {icon:"🟢", c:"#52D98B", title:"Passe en service"},
+    "Hors Service":       {icon:"⚫", c:"#7F9AB0", title:"Passe hors service"},
+    "En duo":             {icon:"👥", c:"#5DADE2", title:"Passe en duo"},
+    "En duo responsable": {icon:"👥", c:"#C8A0E8", title:"Passe en duo responsable"},
+  };
+  const out = [];
+  let prev = null, sanctionStart = null;
+  rows.forEach(t=>{
+    const mm = (t.message||"").match(/mis à jour : (?:(.+?) → )?([^\[]+)/);
+    if(!mm) return;
+    const from = mm[1] ? mm[1].trim() : prev;  // ancien statut : écrit dans le message, sinon déduit du changement précédent
+    const to = mm[2].trim();
+    prev = to;
+    if(from === to) return;
+    if(to === "Sanction") { sanctionStart = t.created_at; out.push({t, mi:{icon:"⚠️", c:"#E74C3C", title:"Mis(e) en sanction"}}); return; }
+    if(to === "Démission") { out.push({t, mi:{icon:"🚪", c:"#C0392B", title:"Démission"}}); return; }
+    if(to === "Licencié")  { out.push({t, mi:{icon:"⛔", c:"#8B1A1A", title:"Licenciement"}}); return; }
+    if(from === "Sanction") {
+      // le retour peut porter la date de début (« [sanction depuis 2026-10-01] ») : on reconstitue alors
+      // l'étape de mise en sanction même si sa propre ligne de journal n'est pas rattachable à la personne
+      const dm = (t.message||"").match(/\[sanction depuis (\d{4}-\d{2}-\d{2})\]/);
+      if(!sanctionStart && dm) {
+        sanctionStart = dm[1] + "T12:00:00";
+        out.push({t, synthetic:true, date:sanctionStart, mi:{icon:"⚠️", c:"#E74C3C", title:"Mis(e) en sanction"}});
+      }
+      const dur = sanctionStart ? dossierDuree(sanctionStart, t.created_at) : "";
+      sanctionStart = null;
+      out.push({t, mi:{icon:"✅", c:"#52D98B", title:"Retour de sanction", detail:`Repasse « ${label(to)} »${dur?` · sanction de ${dur}`:""}`}});
+      return;
+    }
+    if(DEF[to]) out.push({t, mi:{...DEF[to], detail: (from && from!=="Absent") ? `${label(from)} → ${label(to)}` : ""}});
+  });
+  return out;
 }
 function dossierAnciennete(dateStr) {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime())/86400000);
@@ -10140,8 +10196,28 @@ async function renderDossier(el, compteId, isOwn) {
       if(hidden && !showHidden) return;
       ms.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
     });
+    const statutRows = (tl||[]).filter(t=>t.type==="effectif_statut").slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    statutMilestones(statutRows).forEach(({t,mi,synthetic,date})=>{
+      const hidden = !!t.masque_dossier;
+      if(hidden && !showHidden) return;
+      ms.push({...mi, id:synthetic?undefined:t.id, date:date||t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
+    });
+    // Sanction en cours : lue dans le statut actuel de la Gestion des effectifs + sa date de début
+    const sinceSanction = (gradeFiliale && gradeFiliale.sanction_depuis) ? gradeFiliale.sanction_depuis + "T12:00:00" : null;
+    if(gradeFiliale && gradeFiliale.statut_effectif==="Sanction") {
+      const byDate = ms.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+      let open = null;
+      byDate.forEach(x=>{ if(x.title==="Mis(e) en sanction") open = x; else if(x.title==="Retour de sanction") open = null; });
+      if(sinceSanction) {
+        if(open) open.date = sinceSanction;
+        else ms.push({icon:"⚠️", c:"#E74C3C", title:"Mis(e) en sanction", detail:"Sanction en cours", date:sinceSanction});
+      } else if(!open) {
+        ms.push({icon:"⚠️", c:"#E74C3C", title:"En sanction", detail:(isLeader&&!isOwn) ? "Date non renseignée — à saisir dans la Gestion des effectifs" : "Date non renseignée", date:null});
+      }
+    }
     if(dateRecrut) ms.push({icon:"🎉", c:"#52D98B", title:`Entrée à ${svcLabel(svc)}`, detail:promuDetail, date:dateRecrut});
-    ms.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const _tv = x => x.date ? new Date(x.date).getTime() : 8.64e15; // sans date : en fin de liste
+    ms.sort((a,b)=>_tv(a)-_tv(b));
     const ancienneteHtml = dateRecrut
       ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">Dans <b style="color:#fff;">${esc(svcLabel(svc))}</b> depuis le <b style="color:#fff;">${esc(fmtD(dateRecrut))}</b> — <b style="color:#fff;">${esc(dossierAnciennete(dateRecrut))}</b> d'ancienneté</div>`
       : `<div style="font-size:12px;color:var(--text3);margin-top:2px;">Date de recrutement ${esc(svcLabel(svc))} non renseignée${(isLeader&&!isOwn)?" — à saisir dans la Gestion des effectifs":""}.</div>`;
@@ -10159,7 +10235,7 @@ async function renderDossier(el, compteId, isOwn) {
           ${x.detail?`<div class="cr-detail">${esc(x.detail)}</div>`:""}
           ${x.pct!=null?`<div class="cr-detail">${starsHTML(x.pct,14)} <span style="margin-left:6px;">${(x.pct/20).toFixed(1)}/5</span></div>`:""}
           <div class="cr-meta">
-            <span>${esc(fmtD(x.date))}</span>
+            <span>${x.date ? esc(fmtD(x.date)) : "Date non renseignée"}</span>
             ${x.by?`<span>par ${esc(x.by)}</span>`:""}
             ${(isAdmin && x.id) ? (x.hidden
               ? `<a href="#" style="color:#52D98B;text-decoration:none;" onclick="masquerEtapeDossier('${x.id}',false);return false;">↩ Rétablir</a>`
@@ -10169,7 +10245,7 @@ async function renderDossier(el, compteId, isOwn) {
       </div>`).join("") : `<div style="font-size:12px;color:var(--text3);">Aucune étape enregistrée pour le moment.</div>`;
     const nowHtml = (grade && grade.role) ? `<div class="cr-ms now" style="--cr-c:var(--accent);">
         <div class="cr-node">📍</div>
-        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}</div></div>
+        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}${(statut==="Sanction" && sinceSanction) ? ` depuis le ${esc(fmtD(sinceSanction))}` : ""}</div></div>
       </div>` : "";
     const tlHtml = `<div class="cr-head">Étapes marquantes</div><div class="cr-rail">${msHtml}${nowHtml}</div>`;
 
