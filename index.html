@@ -10123,20 +10123,28 @@ async function renderDossier(el, compteId, isOwn) {
     // Plan de carrière : étapes marquantes, lues dans l'ordre chronologique, de l'arrivée à aujourd'hui
     const isAdmin = (role==="admin");
     const showHidden = isAdmin && !!window._dossierShowHidden;
+    // L'entrée en filiale vient de la « Date de recrutement » saisie dans la Gestion des effectifs
+    // (propre à chaque filiale) — pas de la date de création du compte ni d'une ligne du journal.
+    const gradeFiliale = (grades||[]).find(g=>g.service===svc);
+    const dateRecrut = (gradeFiliale && gradeFiliale.date_recrutement) ? gradeFiliale.date_recrutement + "T12:00:00" : null;
+    let promuDetail = "";
     let ms = [];
     (tl||[]).forEach(t=>{
       const mi = careerMilestone(t);
       if(!mi) return;
+      if(mi.arrival) { // remplacé par l'étape « Entrée à … » ; on garde seulement l'intitulé du poste d'embauche
+        if(t.type==="candidat_promu" && mi.detail===svcLabel(svc) && !promuDetail) promuDetail = mi.title;
+        return;
+      }
       const hidden = !!t.masque_dossier;
       if(hidden && !showHidden) return;
       ms.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
     });
-    if(compte.created_at && !ms.some(x=>x.arrival)) {
-      ms.push({icon:"🆕", c:"#52D98B", title:"Arrivée dans la Dog Compagnie", date:compte.created_at, arrival:true});
-    }
+    if(dateRecrut) ms.push({icon:"🎉", c:"#52D98B", title:`Entrée à ${svcLabel(svc)}`, detail:promuDetail, date:dateRecrut});
     ms.sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const arrival = ms.find(x=>x.arrival && !x.hidden);
-    const ancienneteHtml = arrival ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">Dans la Dog Compagnie depuis le <b style="color:#fff;">${esc(fmtD(arrival.date))}</b> — <b style="color:#fff;">${esc(dossierAnciennete(arrival.date))}</b> d'ancienneté</div>` : "";
+    const ancienneteHtml = dateRecrut
+      ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">Dans <b style="color:#fff;">${esc(svcLabel(svc))}</b> depuis le <b style="color:#fff;">${esc(fmtD(dateRecrut))}</b> — <b style="color:#fff;">${esc(dossierAnciennete(dateRecrut))}</b> d'ancienneté</div>`
+      : `<div style="font-size:12px;color:var(--text3);margin-top:2px;">Date de recrutement ${esc(svcLabel(svc))} non renseignée${(isLeader&&!isOwn)?" — à saisir dans la Gestion des effectifs":""}.</div>`;
 
     // Échelle de grades (filiale affichée)
     const rungs = [{k:"agent", l:agentLabel(svc)}, {k:"responsable", l:"Responsable"}, {k:"pdg", l:"PDG"}];
