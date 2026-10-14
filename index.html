@@ -1565,7 +1565,7 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
       <div class="field-row-2">
         <div class="field"><label>Intitulé du grade (affiché sur la carte)</label><input id="cpg-grade-label"></div>
         <div class="field">
-          <label>Photo de l'agent</label>
+          <label>Photo de l'agent <span style="color:#E74C3C;">* obligatoire</span></label>
           <div id="cpg-photo-preview"></div>
           <input type="file" accept="image/*" id="cpg-photo-file" style="display:none;" onchange="handleCartePhotoUpload(this)">
           <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="document.getElementById('cpg-photo-file').click()">📷 Choisir une photo</button>
@@ -9649,7 +9649,7 @@ function renderCartePhotoPreview() {
            <button type="button" class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:11px;" onclick="removeCartePhoto()">🗑</button>
          </div>
        </div>`
-    : `<div style="font-size:11px;color:var(--text3);">Aucune photo — l'icône du service sera utilisée par défaut.</div>`;
+    : `<div style="font-size:11px;color:var(--text3);"><span style="color:#E74C3C;">Aucune photo — elle est obligatoire pour enregistrer la carte.</span></div>`;
 }
 function handleCartePhotoUpload(input) {
   const file = input.files && input.files[0];
@@ -9796,6 +9796,7 @@ async function saveCartePro() {
     created_by: `${currentAgent?.prenom||""} ${currentAgent?.nom||""}`.trim(),
   };
   if(cpgMode==="comite") payload.fonction = (document.getElementById("cpg-fonction")?.value||"").trim() || null;
+  if(!payload.photo_b64) { toast("📷 Une photo est obligatoire pour enregistrer la carte.","#E74C3C"); return; }
   if(!payload.date_expiration) { toast("Merci de renseigner une date d'expiration.","#E74C3C"); return; }
   try {
     if(cpgCurrentCarteId) {
