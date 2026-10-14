@@ -2442,6 +2442,10 @@ function updateCandLicenceLabel() {
 }
 function accountRoleLabel(c) {
   if(!c) return "—";
+  // Titre spécial = seul titre affiché (pas « PDG · PDG Adjoint »)
+  if(c.adjoint && (c.role==="pdg"||c.role==="responsable")) return "PDG Adjoint";
+  if(c.general && c.role==="responsable") return "Responsable Général";
+  if(c.role==="agent" && c.formateur) return "Formateur";
   if(c.role==="agent") return agentLabel(c.service);
   if(c.role==="responsable") return "Responsable";
   if(c.role==="pdg") return "PDG";
@@ -2534,7 +2538,7 @@ function journalMeta(type) { return JOURNAL_TYPES[type] || {color:"#7F9AB0", lab
 function specialRoleLabel() {
   if(role==="responsable" && currentCompte && currentCompte.general) return "Responsable Général";
   if(role==="pdg" && currentCompte && currentCompte.adjoint) return "PDG Adjoint";
-  if(role==="agent" && currentCompte && currentCompte.formateur) return agentLabel(currentCompte.service)+" (Formateur)";
+  if(role==="agent" && currentCompte && currentCompte.formateur) return "Formateur";
   if(role==="agent") return agentLabel(currentCompte && currentCompte.service);
   return ROLE_LABELS[role]||role;
 }
@@ -9314,9 +9318,7 @@ function flatGrades() {
 
 // ─── CARTES PROFESSIONNELLES ────────────────────────────────────────────
 function carteDefaultGradeLabel(g) {
-  let base = accountRoleLabel(g);
-  if(g.role==="agent" && g.formateur) base += " (Formateur)";
-  return base;
+  return accountRoleLabel(g);
 }
 function genMatricule() {
   return String(Date.now()).slice(-6) + String(Math.floor(1000+Math.random()*9000));
@@ -9687,11 +9689,10 @@ async function initCartesProGestion() {
 // Cartes du Comité de direction : PDG, PDG Adjoints et Responsables Généraux (toutes filiales confondues)
 function comiteTitres(p) {
   const gs = p.grades||[];
-  const t = [];
-  if(gs.some(g=>g.role==="pdg")) t.push("PDG");
-  if(gs.some(g=>g.general)) t.push("Responsable Général");
-  if(gs.some(g=>g.adjoint)) t.push("PDG Adjoint");
-  return t;
+  if(gs.some(g=>g.role==="pdg" && !g.adjoint)) return ["PDG"];
+  if(gs.some(g=>g.adjoint)) return ["PDG Adjoint"];
+  if(gs.some(g=>g.general)) return ["Responsable Général"];
+  return [];
 }
 async function renderComiteCartes() {
   const box = document.getElementById("cpg-comite");
@@ -9729,7 +9730,7 @@ function renderCartesProList(list) {
       <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
         <div style="flex:1;min-width:180px;">
           <div style="font-weight:700;color:#fff;">${esc(g.prenom)} ${esc(g.nom)}</div>
-          <div style="font-size:11.5px;color:var(--text3);">${esc(accountRoleLabel(g))}${g.formateur?" · Formateur":""}</div>
+          <div style="font-size:11.5px;color:var(--text3);">${esc(accountRoleLabel(g))}</div>
         </div>
         <div style="font-size:11.5px;color:${carte?"#52D98B":"var(--text3)"};min-width:170px;">
           ${carte ? `✅ Carte active · exp. ${expLabel}` : "⚠️ Aucune carte créée"}
@@ -10480,7 +10481,7 @@ async function renderDossier(el, compteId, isOwn) {
       </div>`).join("") : `<div style="font-size:12px;color:var(--text3);">Aucune étape enregistrée pour le moment.</div>`;
     const nowHtml = (grade && grade.role) ? `<div class="cr-ms now" style="--cr-c:var(--accent);">
         <div class="cr-node">📍</div>
-        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc([accountRoleLabel(grade), grade.general?"Responsable Général":"", grade.adjoint?"PDG Adjoint":"", grade.formateur?"Formateur":""].filter(Boolean).join(" · "))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}${(statut==="Sanction" && sinceSanction) ? ` depuis le ${esc(fmtD(sinceSanction))}` : ""}</div></div>
+        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}${(statut==="Sanction" && sinceSanction) ? ` depuis le ${esc(fmtD(sinceSanction))}` : ""}</div></div>
       </div>` : "";
     const tlHtml = `<div class="cr-head">Étapes marquantes</div><div class="cr-rail">${msHtml}${nowHtml}</div>`;
 
