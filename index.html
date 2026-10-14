@@ -10194,6 +10194,7 @@ async function renderDossier(el, compteId, isOwn) {
     const dateRecrut = (gradeFiliale && gradeFiliale.date_recrutement) ? gradeFiliale.date_recrutement + "T12:00:00" : null;
     let promuDetail = "";
     let ms = [];
+    const rgLogs = [];
     (tl||[]).forEach(t=>{
       const mi = careerMilestone(t);
       if(!mi) return;
@@ -10203,12 +10204,25 @@ async function renderDossier(el, compteId, isOwn) {
       }
       // Une étape n'a de sens que dans SA filiale : changements de rôle/statut → filiale où ils ont été faits
       // (la Hiérarchie et les Effectifs sont limités à la filiale affichée) ; grades → filiale citée dans le message.
+      // Responsable Général : statut de la PERSONNE, valable dans toutes ses filiales — on garde la 1re nomination
+      // (n'importe quelle filiale) et on l'affiche ici si le grade de cette filiale porte le drapeau « général ».
+      if(t.type==="hierarchie_general" && /devient/.test(t.message||"")) {
+        const hid = !!t.masque_dossier;
+        if(hid && !showHidden) return;
+        rgLogs.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden:hid, detail:t.service!==svc?`Nommé(e) depuis ${svcLabel(t.service)}`:""});
+        return;
+      }
       const okSvc = (t.type==="grade_ajoute" || t.type==="grade_retire") ? (mi.detail||"").includes(svcLabel(svc)) : (t.service===svc);
       if(!okSvc) return;
       const hidden = !!t.masque_dossier;
       if(hidden && !showHidden) return;
       ms.push({...mi, id:t.id, date:t.created_at, by:(isLeader&&!isOwn)?t.acteur:null, hidden});
     });
+    if(gradeFiliale && gradeFiliale.general) {
+      rgLogs.sort((a,b)=>new Date(a.date)-new Date(b.date));
+      if(rgLogs.length) ms.push(rgLogs[0]);
+      else ms.push({icon:"🌟", c:"#F0A840", title:"Nommé(e) Responsable Général", detail:(isLeader&&!isOwn)?"Date non renseignée":"", date:null});
+    }
     const statutRows = (tl||[]).filter(t=>t.type==="effectif_statut" && t.service===svc).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
     statutMilestones(statutRows).forEach(({t,mi,synthetic,date})=>{
       const hidden = !!t.masque_dossier;
@@ -10249,7 +10263,10 @@ async function renderDossier(el, compteId, isOwn) {
     }
     if(dateRecrut) ms.push({icon:"🎉", c:"#52D98B", title:`Entrée à ${svcLabel(svc)}`, detail:promuDetail, date:dateRecrut});
     const _tv = x => x.date ? new Date(x.date).getTime() : 8.64e15; // sans date : en fin de liste
-    ms.sort((a,b)=>_tv(a)-_tv(b));
+    // Même jour : ordre logique (Entrée → Responsable → Responsable Général), puis heure
+    const _day = x => x.date ? new Date(x.date).toLocaleDateString("fr-CA") : "9999";
+    const _rank = x => /^Entrée à/.test(x.title)?0 : x.title==="Nommé(e) Responsable Général"?3 : (/^Nommé\(e\) /.test(x.title)||/^Nouveau rôle/.test(x.title))?1 : 2;
+    ms.sort((a,b)=>{ const da=_day(a), db=_day(b); if(da!==db) return da<db?-1:1; const ra=_rank(a), rb=_rank(b); if(ra!==rb) return ra-rb; return _tv(a)-_tv(b); });
     const ancienneteHtml = dateRecrut
       ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">Dans <b style="color:#fff;">${esc(svcLabel(svc))}</b> depuis le <b style="color:#fff;">${esc(fmtD(dateRecrut))}</b> — <b style="color:#fff;">${esc(dossierAnciennete(dateRecrut))}</b> d'ancienneté</div>`
       : `<div style="font-size:12px;color:var(--text3);margin-top:2px;">Date de recrutement ${esc(svcLabel(svc))} non renseignée${(isLeader&&!isOwn)?" — à saisir dans la Gestion des effectifs":""}.</div>`;
