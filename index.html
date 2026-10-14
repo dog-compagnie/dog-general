@@ -10730,7 +10730,9 @@ async function initMaCartePro() {
     window._maCarteComite = (comiteRows&&comiteRows[0]) || null;
     const comiteHtml = window._maCarteComite ? `<div style="margin-top:34px;"><div style="text-align:center;font-weight:800;color:#F0C860;margin-bottom:12px;">👑 Carte du comité de direction</div>
       <div class="pro-card-wrap">${buildProCardHTML(window._maCarteComite)}</div>
-      <div style="text-align:center;margin-top:14px;"><button class="btn btn-primary" onclick="downloadCartePro(true)">📥 Télécharger la carte du comité (PNG)</button></div></div>` : "";
+      <div style="text-align:center;margin-top:14px;"><button class="btn btn-primary" onclick="downloadCartePro(true)">📥 Télécharger la carte du comité (PNG)</button>
+        <button class="btn btn-ghost" style="margin-left:8px;" onclick="shareCartePro(true)">🔗 Copier le lien de partage</button>
+        ${window._maCarteComite.share_token?`<button class="btn btn-ghost" style="color:#E74C3C;margin-left:8px;" onclick="revokeCarteShareLink(true)">✕ Invalider le lien</button>`:""}</div></div>` : "";
     if(!carte && comiteHtml) { el.innerHTML = `<div class="empty"><div class="empty-icon">🪪</div><p>Aucune carte professionnelle n'a encore été créée pour vous sur cette filiale.</p></div>` + comiteHtml; return; }
     if(!carte) {
       el.innerHTML = `<div class="empty"><div class="empty-icon">🪪</div><p>Aucune carte professionnelle n'a encore été créée pour vous sur cette filiale.<br>Elle est délivrée par votre responsable ou le PDG.</p></div>`;
@@ -11147,8 +11149,8 @@ function genShareToken() {
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,"");
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
 }
-async function shareCartePro() {
-  const carte = currentMaCarteData;
+async function shareCartePro(comite) {
+  const carte = comite===true ? window._maCarteComite : currentMaCarteData;
   if(!carte) return;
   try {
     let token = carte.share_token;
@@ -11156,7 +11158,7 @@ async function shareCartePro() {
       token = genShareToken();
       await sb(`cartes_pro?id=eq.${carte.id}`, { method:"PATCH", body: JSON.stringify({share_token: token}) });
       carte.share_token = token;
-      currentMaCarteData = carte;
+      if(comite!==true) currentMaCarteData = carte;
     }
     const url = `${window.location.origin}${window.location.pathname}?carte=${token}`;
     if(navigator.clipboard && navigator.clipboard.writeText) {
@@ -11168,14 +11170,14 @@ async function shareCartePro() {
     initMaCartePro();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
-async function revokeCarteShareLink() {
-  const carte = currentMaCarteData;
+async function revokeCarteShareLink(comite) {
+  const carte = comite===true ? window._maCarteComite : currentMaCarteData;
   if(!carte || !carte.share_token) return;
   if(!confirm("L'ancien lien ne fonctionnera plus. Continuer ?")) return;
   try {
     await sb(`cartes_pro?id=eq.${carte.id}`, { method:"PATCH", body: JSON.stringify({share_token: null}) });
     carte.share_token = null;
-    currentMaCarteData = carte;
+    if(comite!==true) currentMaCarteData = carte;
     toast("✓ Lien invalidé");
     initMaCartePro();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
@@ -11199,7 +11201,7 @@ async function initPublicCarteView(token) {
     document.documentElement.style.setProperty("--accent-rgb", accent.rgb);
     document.documentElement.style.setProperty("--accent-deep", accent.deep);
     el.innerHTML = `<div class="pro-card-wrap" style="user-select:none;-webkit-user-select:none;pointer-events:none;">${buildProCardHTML(carte)}</div>
-      <div style="color:#4A5A6A;font-size:10.5px;margin-top:14px;">Carte professionnelle Dog Compagnie — consultation uniquement</div>`;
+      <div style="color:#4A5A6A;font-size:10.5px;margin-top:14px;">${carte.service==="comite"?"Carte du comité de direction":"Carte professionnelle"} Dog Compagnie — consultation uniquement</div>`;
   } catch(e) {
     document.getElementById("pcv-content").innerHTML = `<div style="color:#F08080;">Erreur de chargement.</div>`;
   }
