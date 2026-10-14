@@ -10170,7 +10170,7 @@ async function renderDossier(el, compteId, isOwn) {
     ]);
     const now = new Date(), m = now.getMonth(), y = now.getFullYear();
     const grade = (grades||[]).find(g=>g.service===svc) || (grades||[])[0] || {};
-    const carte = (cartes||[]).find(c=>c.service===svc) || (cartes||[])[0];
+    const carte = (cartes||[]).find(c=>c.service===svc); // la carte pro est propre à chaque filiale
     const sum = arr => arr.reduce((s,x)=>s+(x||0),0);
     const logsOk = logs||[];
     const ajSvc = (ajust||[]).filter(a=>a.service===svc);
@@ -10316,15 +10316,17 @@ async function renderDossier(el, compteId, isOwn) {
     let notesHtml = "";
     if(isLeader && !isOwn) {
       const canDeleteAny = (role==="pdg"||role==="admin");
+      // Une remarque appartient à la filiale où elle a été écrite ; les anciennes (sans filiale) restent visibles, étiquetées
+      const notesSvc = (notes||[]).filter(n=>!n.service || n.service===svc);
       notesHtml = `<div class="card" style="max-width:760px;margin-bottom:16px;">
         <div class="card-hdr"><div class="card-hdr-title">📝 Remarques de la direction</div></div>
         <div class="card-body">
           <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Visibles uniquement par les responsables et PDG — jamais par la personne concernée. Idéal pour garder une trace de ce que vous constatez en direct.</div>
           <textarea id="dossier-note-input" rows="3" placeholder="Écrire une remarque…" style="width:100%;background:rgba(10,9,6,.55);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:12.5px;padding:10px;"></textarea>
           <button class="btn btn-primary btn-sm" style="margin:8px 0 14px;" onclick="ajouterDossierNote('${compteId}')">+ Ajouter la remarque</button>
-          ${(notes||[]).length ? (notes||[]).map(n=>`<div style="padding:10px 0;border-top:1px solid var(--border);">
+          ${notesSvc.length ? notesSvc.map(n=>`<div style="padding:10px 0;border-top:1px solid var(--border);">
               <div style="display:flex;justify-content:space-between;gap:10px;">
-                <div style="font-size:10.5px;color:var(--text3);">${esc(fmtD(n.created_at))} · ${esc(n.auteur||"—")}</div>
+                <div style="font-size:10.5px;color:var(--text3);"><b style="color:var(--text2);">${n.service?esc((SERVICE_ICONS[n.service]||"")+" "+svcLabel(n.service)):"Filiale non précisée (ancienne remarque)"}</b> · ${esc(fmtD(n.created_at))} · ${esc(n.auteur||"—")}</div>
                 ${(canDeleteAny || n.auteur===identityLabel()) ? `<button class="btn btn-ghost btn-sm" style="color:#E74C3C;padding:2px 8px;" onclick="supprimerDossierNote('${n.id}')">🗑</button>` : ""}
               </div>
               <div style="font-size:12.5px;color:var(--text);margin-top:4px;white-space:pre-line;">${esc(n.contenu||"")}</div>
@@ -10386,7 +10388,7 @@ async function ajouterDossierNote(compteId) {
   const contenu = (input?.value||"").trim();
   if(!contenu) { toast("Écrivez d'abord une remarque.","#E74C3C"); return; }
   try {
-    await sb("dossier_notes", {method:"POST", body:JSON.stringify({compte_id:compteId, auteur:identityLabel(), contenu})});
+    await sb("dossier_notes", {method:"POST", body:JSON.stringify({compte_id:compteId, auteur:identityLabel(), contenu, service:myService()})});
     toast("✓ Remarque ajoutée");
     if(window._dossierRerender) window._dossierRerender();
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
