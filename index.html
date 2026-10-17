@@ -280,6 +280,12 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 /* ═══ SIDENAV ═══ */
 .sidenav{position:fixed;top:58px;left:0;bottom:0;width:212px;background:linear-gradient(165deg,rgba(8,9,11,0.94),rgba(5,6,8,0.97));border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:90;overflow-y:auto;box-shadow:6px 0 24px -12px rgba(0,0,0,0.55);}
 .sidenav-section{font-family:var(--font-display);font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;padding:16px 14px 6px;}
+.nav-sec-hd{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;padding:12px 14px 6px;margin-top:4px;border-top:1px solid rgba(255,255,255,.05);}
+.nav-sec-hd:hover{color:var(--text2);}
+.nav-sec-chev{display:inline-block;font-size:10px;transition:transform .2s;}
+.nav-sec-hd.closed .nav-sec-chev{transform:rotate(-90deg);}
+.nav-sec-badge{margin-left:auto;min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#E74C3C;color:#fff;font-size:10px;font-weight:700;align-items:center;justify-content:center;}
+.nav-group.closed{display:none;}
 .sidenav-profile{display:flex;align-items:center;gap:11px;padding:18px 14px 16px;border-bottom:1px solid var(--border);margin-bottom:4px;}
 .sidenav-avatar{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.35);}
 .sidenav-name{font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
@@ -5446,12 +5452,21 @@ function renderSidenav() {
       ${svcBadge}
     </div>
   </div>`;
-  const items = getNavConfig().filter(it=>it.roles.includes(role));
-  let lastSection = null;
+  const items = getNavConfig().filter(it=>it.roles.includes(role)).map(it=>({...it, section: NAV_SECTION_OF[it.page] || it.section}));
+  // Regroupe par rubrique, dans l'ordre voulu (l'ordre interne de chaque rubrique est conservé)
+  const order = s => { const i = NAV_SECTION_ORDER.indexOf(s); return i<0 ? 99 : i; };
+  items.sort((a,b)=>order(a.section)-order(b.section));
+  const collapsed = _navCollapsedLoad();
+  const activeId = (document.querySelector(".page.active")?.id||"").replace(/^page-/,"");
+  let lastSection = null, open = false;
   items.forEach(it=>{
     if(it.section && it.section!==lastSection) {
-      html += `<div class="sidenav-section">${it.section}</div>`;
-      lastSection = it.section;
+      if(open) html += `</div>`;
+      const hasActive = items.some(x=>x.section===it.section && x.page===activeId);
+      const isOpen = hasActive || !collapsed[it.section];
+      html += `<div class="sidenav-section nav-sec-hd${isOpen?"":" closed"}" data-sec="${esc(it.section)}" onclick="toggleNavSection(this.dataset.sec)">
+        <span class="nav-sec-chev">▾</span><span>${it.section}</span><span class="nav-sec-badge" style="display:none;"></span></div><div class="nav-group${isOpen?"":" closed"}" data-sec="${esc(it.section)}">`;
+      lastSection = it.section; open = true;
     }
     html += `<button class="nav-item" id="nav-${it.page}" onclick="goPage('${it.page}')">
       <div class="nav-icon">${it.icon}</div>
@@ -5459,8 +5474,59 @@ function renderSidenav() {
       ${it.badgeId?`<span class="nav-badge" id="${it.badgeId}" style="display:none;">0</span>`:""}
     </button>`;
   });
+  if(open) html += `</div>`;
   nav.innerHTML = html;
   updateNotifBadges();
+}
+
+// Rubriques du menu de gauche : plus fines que « Opérations / Gestion », repliables (état mémorisé)
+const NAV_SECTION_ORDER = ["Mon espace","Opérations","Ma filiale","Équipe","Documents","Administration"];
+const NAV_SECTION_OF = {
+  "mon-service":"Mon espace","absence-form":"Mon espace","ma-carte-pro":"Mon espace","mes-evaluations":"Mon espace","mes-notes":"Mon espace","mon-dossier":"Mon espace",
+  "patrouilles":"Opérations","incident":"Opérations","bilans":"Opérations","dossiers-patients":"Opérations","calendrier":"Opérations",
+  "hierarchie":"Ma filiale","tableau-de-bord":"Ma filiale","notes-service":"Ma filiale",
+  "candidatures":"Équipe","effectifs":"Équipe","absences-gestion":"Équipe","evaluations":"Équipe","cartes-pro-gestion":"Équipe","logs-service":"Équipe",
+  "doc-rh":"Documents","devis":"Documents","facturation":"Documents","dossiers-clients":"Documents",
+};
+function _navCollapsedLoad() {
+  try {
+    const raw = localStorage.getItem("dc_nav_collapsed");
+    if(raw===null) return {"Ma filiale":true,"Équipe":true,"Documents":true,"Administration":true}; // par défaut : l'essentiel ouvert
+    return JSON.parse(raw)||{};
+  } catch(e) { return {}; }
+}
+function toggleNavSection(sec) {
+  const c = _navCollapsedLoad();
+  const hd = document.querySelector(`.nav-sec-hd[data-sec="${CSS.escape(sec)}"]`);
+  const grp = document.querySelector(`.nav-group[data-sec="${CSS.escape(sec)}"]`);
+  if(!hd||!grp) return;
+  const nowClosed = !grp.classList.contains("closed");
+  grp.classList.toggle("closed", nowClosed); hd.classList.toggle("closed", nowClosed);
+  c[sec] = nowClosed;
+  try { localStorage.setItem("dc_nav_collapsed", JSON.stringify(c)); } catch(e) {}
+  updateNavSectionBadges();
+}
+// Une rubrique repliée affiche le total des pastilles qu'elle contient
+function updateNavSectionBadges() {
+  document.querySelectorAll(".nav-group").forEach(g=>{
+    let tot = 0;
+    g.querySelectorAll(".nav-badge").forEach(b=>{ if(b.style.display!=="none") tot += parseInt(b.textContent,10)||0; });
+    const hd = g.previousElementSibling;
+    const bd = hd && hd.querySelector(".nav-sec-badge");
+    if(!bd) return;
+    const show = tot>0 && g.classList.contains("closed");
+    bd.textContent = tot; bd.style.display = show ? "inline-flex" : "none";
+  });
+}
+// Ouvre la rubrique qui contient la page affichée
+function revealNavSection(pageId) {
+  const btn = document.getElementById("nav-"+pageId);
+  const grp = btn && btn.closest(".nav-group");
+  if(grp && grp.classList.contains("closed")) {
+    grp.classList.remove("closed");
+    grp.previousElementSibling && grp.previousElementSibling.classList.remove("closed");
+    updateNavSectionBadges();
+  }
 }
 
 function toggleSidenav() {
@@ -5482,6 +5548,7 @@ function goPage(pageId) {
   document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
   const navBtn = document.getElementById("nav-"+pageId);
   if(navBtn) navBtn.classList.add("active");
+  revealNavSection(pageId);
   closeSidenav();
 
   if(pageId==="patrouilles")       renderPatrols();
@@ -5541,6 +5608,37 @@ let evalsForNotif = [];
 let debutRequestsForNotif = [];
 let securityAlertsForNotif = [];
 let eventsForNotif = [];
+
+// Mémoire LOCALE des notifications déjà lues (par compte). Elle double l'enregistrement serveur :
+// si une synchro renvoie une ancienne version de la ligne (requête partie avant la lecture, ou marque
+// écrasée par un autre compte qui écrivait en même temps), la notification ne réapparaît pas.
+function _seenStoreKey() { return "dc_notif_seen_" + (viewerKey()||"x"); }
+function _seenLoad() {
+  try { return JSON.parse(localStorage.getItem(_seenStoreKey())||"{}") || {}; } catch(e) { return {}; }
+}
+function rememberNotifSeen(n) {
+  try {
+    const m = _seenLoad();
+    m[n.type+":"+n.id] = n.text;
+    const keys = Object.keys(m);
+    if(keys.length>600) keys.slice(0, keys.length-600).forEach(k=>delete m[k]);
+    localStorage.setItem(_seenStoreKey(), JSON.stringify(m));
+  } catch(e) {}
+}
+function isNotifSeenLocally(n) {
+  if(n.type==="evt") return false;
+  const m = _seenLoad();
+  return m[n.type+":"+n.id]===n.text;
+}
+// Relit la marque « vu » du serveur juste avant d'écrire, pour ne pas écraser celle d'un autre compte
+async function freshVus(table, id, fallback) {
+  let base = fallback || {};
+  try {
+    const rows = await sb(`${table}?id=eq.${id}&select=vus_par`);
+    if(rows && rows[0] && rows[0].vus_par) base = rows[0].vus_par;
+  } catch(e) {}
+  return Object.assign({}, base);
+}
 
 function getNotifications() {
   const canSeeLeadershipStuff = (role==="responsable"||role==="pdg"||role==="admin");
@@ -5643,7 +5741,7 @@ function getNotifications() {
     list.push({type:"evt", id:ev.id, icon:"📅", text:`Évènement « ${ev.nom} » le ${d}${ev.debut?` à ${fmtH(ev.debut)}`:""} — répondez : présent ou absent ?`, time:ev.created_at});
   });
   list.sort((x,y)=> new Date(y.time||0) - new Date(x.time||0));
-  return list;
+  return list.filter(n=>!isNotifSeenLocally(n));
 }
 
 function computeNotifCounts() {
@@ -5704,59 +5802,60 @@ document.addEventListener("click", (e)=>{
 async function markOneSeen(type, id) {
   const vk = viewerKey();
   if(!vk) return;
+  { const n0 = getNotifications().find(x=>x.type===type && String(x.id)===String(id)); if(n0) rememberNotifSeen(n0); }
   if(type==="cand") {
     const c = candidatures.find(x=>String(x.id)===String(id));
     if(!c) return;
-    const vus = Object.assign({}, c.vus_par||{});
+    const vus = await freshVus('candidatures', id, c.vus_par);
     vus[vk] = { statut: c.statut||"Nouvelle", msgCount: c.msg_count||0 };
     try { await sb(`candidatures?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); c.vus_par = vus; }
     catch(e) { console.warn("markOneSeen cand error:", e.message); }
   } else if(type==="abs") {
     const a = absences.find(x=>String(x.id)===String(id));
     if(!a) return;
-    const vus = Object.assign({}, a.vus_par||{});
+    const vus = await freshVus('absences', id, a.vus_par);
     vus[vk] = a.statut||"En attente";
     try { await sb(`absences?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); a.vus_par = vus; }
     catch(e) { console.warn("markOneSeen abs error:", e.message); }
   } else if(type==="inc") {
     const r = incidentDocs.find(x=>String(x.id)===String(id));
     if(!r) return;
-    const vus = Object.assign({}, r.vus_par||{});
+    const vus = await freshVus('documents', id, r.vus_par);
     vus[vk] = { statut: r.statut||"À traiter", suiviCount: (r.suivi||[]).length };
     try { await sb(`documents?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); r.vus_par = vus; }
     catch(e) { console.warn("markOneSeen inc error:", e.message); }
   } else if(type==="eval") {
     const ev = evalsForNotif.find(x=>String(x.id)===String(id));
     if(!ev) return;
-    const vus = Object.assign({}, ev.vus_par||{});
+    const vus = await freshVus('evaluations', id, ev.vus_par);
     vus[vk] = true;
     try { await sb(`evaluations?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); ev.vus_par = vus; }
     catch(e) { console.warn("markOneSeen eval error:", e.message); }
   } else if(type==="note") {
     const n = (allNotesService||[]).find(x=>String(x.id)===String(id));
     if(!n) return;
-    const vus = Object.assign({}, n.vus_par||{});
+    const vus = await freshVus('notes_service', id, n.vus_par);
     vus[vk] = true;
     try { await sb(`notes_service?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); n.vus_par = vus; }
     catch(e) { console.warn("markOneSeen note error:", e.message); }
   } else if(type==="eval_mine") {
     const ev = evalsForNotif.find(x=>String(x.id)===String(id));
     if(!ev) return;
-    const vus = Object.assign({}, ev.vus_par||{});
+    const vus = await freshVus('evaluations', id, ev.vus_par);
     vus[vk] = true;
     try { await sb(`evaluations?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); ev.vus_par = vus; }
     catch(e) { console.warn("markOneSeen eval_mine error:", e.message); }
   } else if(type==="secu") {
     const a = securityAlertsForNotif.find(x=>String(x.id)===String(id));
     if(!a) return;
-    const vus = Object.assign({}, a.vus_par||{});
+    const vus = await freshVus('alertes_securite', id, a.vus_par);
     vus[vk] = true;
     try { await sb(`alertes_securite?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); a.vus_par = vus; }
     catch(e) { console.warn("markOneSeen secu error:", e.message); }
   } else if(type==="debut") {
     const l = debutRequestsForNotif.find(x=>String(x.id)===String(id));
     if(!l) return;
-    const vus = Object.assign({}, l.vus_par||{});
+    const vus = await freshVus('services_logs', id, l.vus_par);
     vus[vk] = { debut_demande: l.debut_demande };
     try { await sb(`services_logs?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({vus_par:vus})}); l.vus_par = vus; }
     catch(e) { console.warn("markOneSeen debut error:", e.message); }
@@ -5836,6 +5935,7 @@ function updateNotifBadges() {
   if(navCal) { navCal.textContent = evt; navCal.style.display = evt>0 ? "inline-flex" : "none"; }
   const navDebut = document.getElementById("nav-badge-logs");
   if(navDebut) { navDebut.textContent = debut; navDebut.style.display = debut>0 ? "inline-flex" : "none"; }
+  updateNavSectionBadges();
   const panel = document.getElementById("notif-panel");
   if(panel && panel.classList.contains("show")) renderNotifPanel();
 }
