@@ -1014,6 +1014,475 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
 .cal-cell{min-height:110px;}
 .page [style*="max-width:9"],.page [style*="max-width: 9"],.page [style*="max-width:8"],.page [style*="max-width:7"]{max-width:none !important;}
 #calendrier-content > *{max-width:none !important;}
+
+
+
+
+/* ═══ v6 — Salle de régulation (patrouilles) ═══ */
+#page-patrouilles #patrol-stats{display:none;}
+#page-patrouilles .patrol-table-wrap{background:none;border:0;box-shadow:none;overflow:visible;}
+#page-patrouilles .patrol-table-wrap::before{display:none;}
+.pb-strip{margin-bottom:18px;}
+.pb-bar{display:flex;height:10px;border-radius:10px;overflow:hidden;gap:3px;background:rgba(255,255,255,.04);}
+.pb-seg{display:block;border-radius:10px;transition:flex .4s ease;}
+.pb-counts{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:11px;font-size:12.5px;color:var(--text2);}
+.pb-count{display:inline-flex;align-items:center;gap:7px;}
+.pb-count i{width:9px;height:9px;border-radius:50%;background:var(--sc);box-shadow:0 0 8px var(--sc);}
+.pb-count b{color:#fff;font-family:var(--font-display);font-size:15px;}
+.pb-count.zero{opacity:.38;}
+.pb-count.tot{margin-left:auto;color:var(--text3);}
+.st-dispo{--sc:#52D98B}.st-indispo{--sc:#F08080}.st-inter{--sc:#FF6B4A}.st-convoi{--sc:#F0A840}.st-formation{--sc:#5DADE2}.st-hors{--sc:#5C6E82}
+.pb-seg{background:var(--sc);}
+.pb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;}
+.pb-card{position:relative;display:flex;flex-direction:column;gap:13px;padding:18px 18px 16px;border-radius:20px;overflow:hidden;background:linear-gradient(165deg,rgba(26,36,52,.92),rgba(9,12,18,.97));border:1px solid rgba(255,255,255,.07);box-shadow:0 22px 44px -30px #000;}
+.pb-card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--sc);box-shadow:0 0 22px 2px var(--sc);}
+.pb-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(110% 70% at 0% 0%,color-mix(in srgb,var(--sc) 17%,transparent),transparent 60%);}
+.pb-card.st-hors{filter:saturate(.45);}
+.pb-card.st-inter::before{animation:pbPulse 1.8s ease-in-out infinite;}
+@keyframes pbPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pb-card>*{position:relative;z-index:1;}
+.pb-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 10px;flex-wrap:wrap;}
+.pb-call{flex:1 1 150px;min-width:0;}
+.pb-call b{display:block;font-family:var(--font-display);font-size:23px;font-weight:700;color:#fff;line-height:1.1;letter-spacing:-.01em;}
+.pb-hq .pb-call b{color:var(--uc);}
+.pb-call small{display:block;margin-top:4px;font-size:11px;color:var(--text3);letter-spacing:.03em;}
+.pb-state{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:color-mix(in srgb,var(--sc) 20%,transparent);border:1px solid color-mix(in srgb,var(--sc) 55%,transparent);white-space:nowrap;}
+.pb-led{width:9px;height:9px;border-radius:50%;background:var(--sc);box-shadow:0 0 10px var(--sc);}
+.pb-leds{display:flex;gap:8px;}
+.pb-dot{flex:1;height:30px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.pb-dot i{width:11px;height:11px;border-radius:50%;background:var(--sc);opacity:.5;transition:all .15s;}
+.pb-dot:hover{border-color:var(--sc);}
+.pb-dot:hover i{opacity:1;}
+.pb-dot.on{background:color-mix(in srgb,var(--sc) 24%,transparent);border-color:var(--sc);}
+.pb-dot.on i{opacity:1;box-shadow:0 0 12px var(--sc);transform:scale(1.25);}
+.pb-crew{display:flex;flex-direction:column;gap:6px;}
+.pb-seat{display:grid;grid-template-columns:104px 1fr;align-items:center;gap:8px;}
+.pb-seat-l{font-size:11.5px;color:var(--text2);white-space:nowrap;}
+.pb-seat.drv .pb-seat-l{color:#F0A840;font-weight:700;}
+.pb-seat .member-select{width:100%;}
+.pb-foot{display:flex;flex-direction:column;gap:7px;margin-top:2px;}
+.pb-foot .vehicle-inp,.pb-foot .notes-inp{width:100%;}
+.pb-upd{font-size:10.5px;color:var(--text3);}
+@media (max-width:860px){.pb-grid{grid-template-columns:1fr;}.pb-count.tot{margin-left:0;width:100%;}}
+
+/* ═══ v6 — Pouls de la filiale ═══ */
+.hp{display:grid;grid-template-columns:minmax(260px,380px) minmax(0,1fr);gap:0;margin-bottom:18px;border:1px solid var(--border);border-radius:22px;overflow:hidden;background:linear-gradient(160deg,rgba(24,34,50,.85),rgba(9,13,20,.96));box-shadow:0 26px 50px -34px #000;}
+@media (max-width:860px){.hp{grid-template-columns:1fr;}}
+.hp-live{padding:20px 22px;background:radial-gradient(130% 120% at 0% 0%,rgba(var(--accent-rgb),.26),transparent 62%);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
+@media (max-width:860px){.hp-live{border-right:0;border-bottom:1px solid var(--border);}}
+.hp-t{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:13px;font-weight:700;color:#fff;margin-bottom:6px;}
+.hp-live .hp-t{margin:0;}
+.hp-pulse{width:10px;height:10px;border-radius:50%;background:#52D98B;box-shadow:0 0 0 0 rgba(82,217,139,.6);animation:hpPing 2s ease-out infinite;}
+@keyframes hpPing{0%{box-shadow:0 0 0 0 rgba(82,217,139,.55)}80%,100%{box-shadow:0 0 0 12px rgba(82,217,139,0)}}
+.hp-big{display:flex;align-items:baseline;gap:10px;}
+.hp-big b{font-family:var(--font-display);font-size:54px;line-height:1;font-weight:700;color:#fff;}
+.hp-big span{font-size:14px;color:var(--text2);}
+.hp-faces{display:flex;flex-wrap:wrap;}
+.hp-face{width:38px;height:38px;margin-right:-8px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-deep));border:2px solid #0b1019;}
+.hp-face.more{background:#26324a;}
+.hp-none{font-size:12.5px;color:var(--text3);}
+.hp-units{display:flex;gap:6px;flex-wrap:wrap;}
+.hp-unit{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+.hp-unit i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);}
+.hp-feed{padding:18px 22px;min-width:0;}
+.hp-it{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;color:var(--text2);}
+.hp-it:last-child{border:0;}
+.hp-ic{width:26px;text-align:center;flex-shrink:0;}
+.hp-tx{flex:1;min-width:0;}
+.hp-tx b{color:#fff;font-weight:600;}
+.hp-it time{font-size:11.5px;color:var(--text3);white-space:nowrap;}
+
+/* ═══ v6 — Nouvelle peau : salle de contrôle ═══ */
+body{background:
+  radial-gradient(1200px 620px at 82% -8%,rgba(var(--accent-rgb),.34),transparent 64%),
+  radial-gradient(1000px 560px at -6% 108%,rgba(var(--accent-rgb),.20),transparent 64%),
+  linear-gradient(rgba(150,185,225,.075) 1px,transparent 1px) 0 0/46px 46px,
+  linear-gradient(90deg,rgba(150,185,225,.075) 1px,transparent 1px) 0 0/46px 46px,
+  #060910;background-attachment:fixed;}
+.topbar{background:linear-gradient(180deg,rgba(8,12,19,.92),rgba(6,9,15,.86));backdrop-filter:blur(18px) saturate(1.3);border-bottom:0;box-shadow:0 1px 0 rgba(255,255,255,.05),0 12px 30px -20px rgba(0,0,0,.9);}
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.65),transparent);}
+.sidenav{background:linear-gradient(180deg,rgba(8,12,19,.9),rgba(5,8,13,.94));border-right:1px solid rgba(255,255,255,.05);}
+.page-title{font-size:36px;font-weight:700;letter-spacing:-.025em;margin-bottom:8px;gap:14px;}
+.page-title::before{width:6px;height:34px;border-radius:6px;}
+.page-sub{font-size:13.5px;color:var(--text2);max-width:78ch;margin-bottom:26px;}
+.card,.hm-card,.hm-kpi{border-radius:20px;border:1px solid rgba(255,255,255,.075);background:linear-gradient(160deg,rgba(26,37,55,.78),rgba(9,13,21,.92));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 44px -30px #000;}
+.hm-kpi{position:relative;overflow:hidden;}
+.hm-kpi::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 70%);pointer-events:none;}
+.hm-kpi-v{font-size:34px;letter-spacing:-.02em;}
+.hm-hello{font-size:34px;letter-spacing:-.025em;}
+.card-hdr{border-bottom:1px solid rgba(255,255,255,.06);}
+.btn{border-radius:12px;padding:10px 18px;}
+.btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff),var(--accent-deep));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 22px -10px rgba(var(--accent-rgb),.7);}
+.btn-ghost{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);color:#cdd8e6;}
+.btn-ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(var(--accent-rgb),.6);color:#fff;}
+.field input,.field select,.field textarea{border-radius:12px;}
+.hm-chip{border-radius:12px;}
+.bg{background:
+  radial-gradient(1200px 640px at 84% -10%,rgba(var(--accent-rgb),.30),transparent 64%),
+  radial-gradient(1000px 560px at -8% 110%,rgba(var(--accent-rgb),.18),transparent 64%),
+  linear-gradient(rgba(150,185,225,.045) 1px,transparent 1px) 0 0/46px 46px,
+  linear-gradient(90deg,rgba(150,185,225,.045) 1px,transparent 1px) 0 0/46px 46px,
+  #060910;background-size:auto,auto,46px 46px,46px 46px,auto;animation:none;}
+table tbody tr{transition:background .15s;}
+table tbody tr:hover{background:rgba(var(--accent-rgb),.07);}
+@media (max-width:860px){.page-title{font-size:28px;}.hm-hello{font-size:28px;}}
+
+/* ═══ v6.4 — évaluations ═══ */
+.ui-ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block;}
+.nav-icon .ui-ic{width:18px;height:18px;}
+.pb-eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px;margin-left:2px;}
+.pb-eq i{width:3px;border-radius:2px;background:var(--sc);animation:pbEq 1s ease-in-out infinite;}
+.pb-eq i:nth-child(1){height:5px;animation-delay:-.2s}.pb-eq i:nth-child(2){height:11px;animation-delay:-.5s}.pb-eq i:nth-child(3){height:7px;animation-delay:-.8s}
+@keyframes pbEq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.pb-eq i,.pb-card.st-inter::before,.hp-pulse{animation:none;}}
+*{scrollbar-width:thin;scrollbar-color:rgba(130,165,205,.28) transparent;}
+::-webkit-scrollbar{width:9px;height:9px;}::-webkit-scrollbar-thumb{background:rgba(130,165,205,.26);border-radius:9px;border:2px solid transparent;background-clip:padding-box;}
+::selection{background:rgba(var(--accent-rgb),.45);color:#fff;}
+:focus-visible{outline:2px solid var(--accent-light);outline-offset:2px;border-radius:8px;}
+.nav-item.active{background:linear-gradient(90deg,rgba(var(--accent-rgb),.22),rgba(var(--accent-rgb),.04));box-shadow:inset 3px 0 0 var(--accent-light);}
+.sidenav-avatar{box-shadow:0 0 0 2px rgba(255,255,255,.1),0 8px 18px -8px rgba(var(--accent-rgb),.8);}
+
+.am-sum{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;}
+.am-sum::-webkit-details-marker{display:none;}
+.am-sum::after{content:"Afficher ▾";font-size:11px;color:var(--text3);}
+details[open]>.am-sum::after{content:"Masquer ▴";}
+#agents-manage-wrap{padding:13px 18px;}
+.pb-call{flex-basis:100px;}
+@media (max-width:860px){
+  .page-title{display:block;line-height:1.15;}
+  .page-title::before{display:inline-block;vertical-align:middle;margin:-4px 12px 0 0;height:28px;}
+  .page-title span{display:inline;}
+}
+
+/* ═══ v6.2 — cartes patrouilles, version finale ═══ */
+.pb-card{padding:20px 20px 18px;gap:14px;background:linear-gradient(165deg,rgba(30,42,62,.95),rgba(8,11,17,.98));}
+.pb-ghost{position:absolute !important;right:10px;bottom:46px;z-index:0 !important;font-family:var(--font-display);font-weight:800;font-size:128px;line-height:1;letter-spacing:-.06em;color:color-mix(in srgb,var(--sc) 12%,transparent);pointer-events:none;user-select:none;}
+.pb-call b{font-size:25px;}
+.pb-call small{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.05);font-size:10.5px;}
+.pb-since{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:-4px;}
+.pb-since span:first-child{color:#fff;font-weight:600;}
+.pb-state{font-size:12.5px;padding:7px 14px;box-shadow:0 0 22px -8px var(--sc);}
+.pb-dot{height:34px;border-radius:12px;}
+.pb-crew{gap:8px;}
+.pb-seat{grid-template-columns:38px 1fr;gap:11px;padding:7px 10px 7px 8px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);transition:border-color .15s,background .15s;}
+.pb-seat:hover,.pb-seat:focus-within{border-color:color-mix(in srgb,var(--sc) 55%,transparent);background:rgba(255,255,255,.06);}
+.pb-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;border:1.5px dashed rgba(255,255,255,.22);background:transparent;}
+.pb-seat.has .pb-av{border:0;background:linear-gradient(145deg,var(--accent),var(--accent-deep));box-shadow:0 6px 14px -6px rgba(var(--accent-rgb),.9);}
+.pb-seat.drv .pb-av{box-shadow:0 0 0 2px #F0A840,0 6px 14px -6px rgba(240,168,64,.8);}
+.pb-seat.drv:not(.has) .pb-av{border-color:rgba(240,168,64,.5);color:#F0A840;box-shadow:none;}
+.pb-seat-b{display:flex;flex-direction:column;min-width:0;}
+.pb-seat-l{font-size:10.5px;letter-spacing:.02em;color:var(--text3);}
+.pb-seat.drv .pb-seat-l{color:#F0A840;}
+.pb-card .pb-seat .member-select{background:transparent !important;border:0 !important;box-shadow:none !important;padding:1px 0 !important;font-size:14px;font-weight:600;color:#fff !important;min-height:0;width:100%;cursor:pointer;}
+.pb-card .pb-seat .member-select option{background:#10161f;color:#fff;}
+.pb-card .pb-foot .vehicle-inp,.pb-card .pb-foot .notes-inp{border-radius:12px;background:rgba(0,0,0,.28);}
+.pb-hq{background:linear-gradient(165deg,color-mix(in srgb,var(--uc) 16%,#1a2436),rgba(8,11,17,.98));}
+.pb-hq .pb-call b{color:#fff;}
+.pb-hq .pb-call small{background:color-mix(in srgb,var(--uc) 28%,transparent);color:#fff;}
+
+/* ═══ v6.3 — même style sur toutes les fenêtres ═══ */
+/* Tuiles de chiffres */
+.stats-bar{gap:14px;}
+.stat-pill{position:relative;overflow:hidden;min-width:150px;padding:18px 22px;border-radius:20px;border:1px solid rgba(255,255,255,.075);background:linear-gradient(160deg,rgba(26,37,55,.78),rgba(9,13,21,.92));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 44px -30px #000;}
+.stat-pill::after{content:"";position:absolute;right:-34px;top:-34px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(var(--accent-rgb),.2),transparent 70%);pointer-events:none;}
+.stat-num{font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.05;}
+.stat-lbl{margin-top:6px;font-size:12px;letter-spacing:.01em;text-transform:none;color:var(--text2);font-weight:600;}
+/* Cartes : liseré d'accent en haut, titre plus net */
+.card{position:relative;}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.7),transparent);opacity:.7;pointer-events:none;z-index:1;}
+.card-hdr{padding:16px 22px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.10),transparent 70%);}
+.card-hdr-title{font-size:14.5px;font-weight:700;letter-spacing:-.005em;color:#fff;}
+.card-body{padding:22px;}
+/* Listes : lignes en cartes */
+.log-item,.absence-item,.cand-item,.eff-card,.dos-stat{border-radius:16px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(160deg,rgba(28,40,58,.7),rgba(10,14,22,.88));box-shadow:inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .18s,transform .18s,box-shadow .18s;}
+.log-item:hover,.absence-item:hover,.cand-item:hover,.eff-card:hover{border-color:rgba(var(--accent-rgb),.55);transform:translateY(-1px);box-shadow:0 18px 34px -24px rgba(var(--accent-rgb),.55);}
+.log-item,.absence-item{position:relative;padding-left:20px;}
+.log-item::before,.absence-item::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+.log-agent{font-family:var(--font-display);font-weight:700;color:#fff;}
+/* Boutons de filtre / tri / onglets : pilules */
+.page .btn-sm{border-radius:999px;padding:7px 15px;}
+.page .btn-sm.btn-primary{box-shadow:0 8px 18px -10px rgba(var(--accent-rgb),.9);}
+/* Tableaux */
+table{border-collapse:separate;border-spacing:0;}
+thead tr{background:rgba(255,255,255,.035);border-bottom:0;}
+thead th{padding:14px 14px;font-size:10.5px;color:var(--text2);letter-spacing:.07em;border-bottom:1px solid rgba(var(--accent-rgb),.35);}
+tbody td{border-bottom:1px solid rgba(255,255,255,.045);}
+tbody tr{border-bottom:0;}
+tbody tr:nth-child(even){background:transparent;}
+tbody tr:hover{box-shadow:none;}
+.eval-table-wrap,.patrol-table-wrap{border-radius:18px;}
+/* États vides */
+.empty{padding:52px 20px;}
+.empty-icon{width:74px;height:74px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;opacity:1;background:radial-gradient(circle at 30% 25%,rgba(var(--accent-rgb),.28),rgba(var(--accent-rgb),.06));border:1px solid rgba(var(--accent-rgb),.28);box-shadow:0 14px 30px -16px rgba(var(--accent-rgb),.8);}
+.empty p{font-size:13.5px;color:var(--text2);}
+/* Formulaires */
+.field label{font-size:10.5px;letter-spacing:.07em;color:var(--text2);}
+.field input,.field select,.field textarea{background:rgba(5,8,14,.55);border:1px solid rgba(150,180,215,.16);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(var(--accent-rgb),.8);}
+/* Fenêtres d'alerte */
+.alert-popup-box{border-radius:24px;border:1px solid rgba(255,255,255,.1);box-shadow:0 50px 100px -30px #000,inset 0 1px 0 rgba(255,255,255,.07);}
+/* Dossier agent, effectifs, hiérarchie, titres de section */
+.doc-section-title,.bil-section-title{font-family:var(--font-display);font-weight:700;color:#fff;letter-spacing:-.005em;}
+.eff-card{padding:18px 20px;}
+
+/* v6.3 — une seule famille de titres dans l'application */
+#app [style*="--font-serif"],#app .dos-name,#app .dos-stat-val{font-family:var(--font-display) !important;letter-spacing:-.015em;}
+
+/* ═══ v6.4 — Évaluations ═══ */
+.ev-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;}
+@media (max-width:1100px){.ev-layout{grid-template-columns:1fr;}}
+.ev-meta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.075);background:linear-gradient(160deg,rgba(26,37,55,.78),rgba(9,13,21,.92));}
+.ev-cat{margin-bottom:16px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.075);background:linear-gradient(160deg,rgba(26,37,55,.7),rgba(9,13,21,.9));}
+.ev-cat-h{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;font-family:var(--font-display);font-size:14.5px;font-weight:700;color:#fff;background:linear-gradient(90deg,rgba(var(--accent-rgb),.16),transparent 75%);border-bottom:1px solid rgba(255,255,255,.06);}
+.ev-cat-h em{font-style:normal;font-size:13px;}
+.ev-row{display:grid;grid-template-columns:minmax(0,1fr) 62px auto auto;gap:12px;align-items:center;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.045);}
+.ev-row:last-child{border-bottom:0;}
+.ev-row.locked{background:rgba(240,128,128,.07);box-shadow:inset 3px 0 0 #F08080;}
+@media (max-width:760px){.ev-row{grid-template-columns:1fr auto;}.ev-seg{grid-column:1/-1;}.ev-flag,.ev-flag-sp{grid-column:1/-1;justify-self:start;}}
+.ev-name{font-size:13.5px;color:#eaf0f8;line-height:1.35;}
+.ev-pts{font-size:11.5px;color:var(--text3);text-align:right;white-space:nowrap;}
+.ev-pts b{font-family:var(--font-display);font-size:17px;color:#fff;}
+.ev-seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);}
+.ev-seg button{border:0;background:transparent;color:var(--text2);font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;}
+.ev-seg button:hover:not(:disabled){color:#fff;}
+.ev-seg button:disabled{opacity:.35;cursor:not-allowed;}
+.ev-seg button.on.a{background:rgba(82,217,139,.22);color:#6EE7A8;box-shadow:0 0 0 1px rgba(82,217,139,.55);}
+.ev-seg button.on.i{background:rgba(240,168,64,.22);color:#F5BE7A;box-shadow:0 0 0 1px rgba(240,168,64,.55);}
+.ev-seg button.on.n{background:rgba(127,154,176,.22);color:#c3d1de;box-shadow:0 0 0 1px rgba(127,154,176,.45);}
+.ev-flag{border:1px solid rgba(240,128,128,.35);background:transparent;color:#d58a8a;font-size:11px;font-weight:700;padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+.ev-flag:hover{background:rgba(240,128,128,.14);}
+.ev-flag.on{background:#C0392B;border-color:#C0392B;color:#fff;}
+.ev-flag-sp{width:0;}
+.ev-side{position:sticky;top:78px;}
+.ev-side-in{padding:24px 22px;border-radius:22px;text-align:center;border:1px solid color-mix(in srgb,var(--vc,#5C6E82) 45%,transparent);background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--vc,#5C6E82) 22%,transparent),transparent 70%),linear-gradient(160deg,rgba(26,37,55,.85),rgba(9,13,21,.95));box-shadow:0 26px 50px -32px #000;}
+.ev-verdict-t{margin-top:14px;font-family:var(--font-display);font-size:19px;font-weight:700;color:#fff;}
+.ev-verdict-s{margin-top:4px;font-size:12.5px;color:var(--text2);}
+.ev-prog{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:18px;}
+.ev-prog i{display:block;height:100%;border-radius:6px;background:var(--vc,#5C6E82);transition:width .3s;}
+.ev-prog-l{margin-top:7px;font-size:11.5px;color:var(--text3);}
+.ev-leg{display:flex;flex-direction:column;gap:6px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07);text-align:left;font-size:11.5px;color:var(--text2);}
+.ev-leg span{display:flex;align-items:center;gap:8px;}
+.ev-leg i{width:9px;height:9px;border-radius:50%;}
+/* anneau */
+.ev-ring{position:relative;display:inline-block;flex-shrink:0;}
+.ev-ring svg{width:100%;height:100%;transform:rotate(0);}
+.ev-ring circle{fill:none;stroke-width:3.2;}
+.ev-ring .bg{stroke:rgba(255,255,255,.09);}
+.ev-ring .fg{stroke:var(--c);stroke-linecap:round;filter:drop-shadow(0 0 3px var(--c));}
+.ev-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#fff;letter-spacing:-.02em;}
+.ev-ring b small{font-size:.5em;margin-left:1px;opacity:.7;}
+/* cartes d'évaluation */
+.ev-hist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.ev-card{position:relative;padding:18px 20px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.075);background:linear-gradient(160deg,rgba(28,40,58,.78),rgba(9,13,21,.94));display:flex;flex-direction:column;gap:13px;}
+.ev-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--vc);box-shadow:0 0 18px var(--vc);}
+.ev-card-top{display:flex;gap:15px;align-items:center;}
+.ev-card-n{font-family:var(--font-display);font-size:17px;font-weight:700;color:#fff;}
+.ev-card-d{font-size:12px;color:var(--text2);margin-top:2px;}
+.ev-badge{align-self:flex-start;padding:5px 13px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:color-mix(in srgb,var(--vc) 22%,transparent);border:1px solid color-mix(in srgb,var(--vc) 55%,transparent);}
+.ev-bars{display:flex;flex-direction:column;gap:7px;}
+.ev-bar{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 38px;gap:9px;align-items:center;font-size:11.5px;color:var(--text2);}
+.ev-bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ev-bar i{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+.ev-bar em{display:block;height:100%;border-radius:6px;}
+.ev-bar b{text-align:right;color:#fff;font-weight:600;}
+.ev-card-act{display:flex;gap:8px;margin-top:auto;}
+.ev-card-act .btn:first-child{flex:1;justify-content:center;}
+.ev-quote{font-size:13px;line-height:1.6;color:#dfe8f2;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.04);border-left:3px solid var(--accent);white-space:pre-line;font-style:italic;}
+/* Mes évaluations : en-tête */
+.ev-hero{display:flex;gap:30px;align-items:center;flex-wrap:wrap;padding:26px 30px;margin-bottom:20px;border-radius:24px;border:1px solid rgba(255,255,255,.08);background:radial-gradient(120% 140% at 0% 0%,rgba(var(--accent-rgb),.24),transparent 60%),linear-gradient(160deg,rgba(26,37,55,.85),rgba(9,13,21,.96));box-shadow:0 30px 60px -38px #000;}
+.ev-hero-b{min-width:200px;}
+.ev-hero-k{font-size:12.5px;color:var(--text2);font-weight:600;margin-bottom:4px;}
+.ev-hero-v{font-family:var(--font-display);font-size:48px;font-weight:700;color:#fff;line-height:1.05;letter-spacing:-.03em;margin-bottom:6px;}
+.ev-hero-v small{font-size:20px;color:var(--text2);font-weight:500;}
+.ev-hero-s{font-size:12.5px;color:var(--text2);margin-top:8px;max-width:340px;line-height:1.5;}
+.ev-hero-c{flex:1;min-width:220px;}
+.ev-spark{width:100%;height:84px;}
+.ev-hist-me .ev-card{padding-top:22px;}
+/* Détail */
+.ev-det-head{display:flex;gap:18px;align-items:center;margin-bottom:16px;}
+.ev-det-cat{margin-top:14px;border-radius:16px;border:1px solid rgba(255,255,255,.07);overflow:hidden;}
+.ev-det-cat-t{padding:10px 16px;font-family:var(--font-display);font-weight:700;font-size:13px;color:#fff;background:rgba(var(--accent-rgb),.12);}
+.ev-det-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 16px;border-top:1px solid rgba(255,255,255,.05);font-size:12.5px;color:#e6edf6;}
+.ev-det-row b{white-space:nowrap;font-size:12px;}
+.ev-det-elim{font-style:normal;font-size:10.5px;font-weight:800;color:#fff;background:#C0392B;padding:2px 8px;border-radius:999px;margin-left:auto;}
+
+/* ═══ v6.4 — la carte prend la couleur du statut ═══ */
+.pb-card{border-color:color-mix(in srgb,var(--sc) 38%,rgba(255,255,255,.06));background:linear-gradient(165deg,color-mix(in srgb,var(--sc) 20%,#161f2f),color-mix(in srgb,var(--sc) 5%,#080b11) 75%);box-shadow:0 26px 48px -30px color-mix(in srgb,var(--sc) 70%,#000);}
+.pb-card::after{background:radial-gradient(120% 60% at 0% 0%,color-mix(in srgb,var(--sc) 26%,transparent),transparent 62%);}
+.pb-ghost{color:color-mix(in srgb,var(--sc) 17%,transparent);}
+.pb-hq{background:linear-gradient(165deg,color-mix(in srgb,var(--sc) 20%,#161f2f),color-mix(in srgb,var(--sc) 5%,#080b11) 75%);}
+.pb-card .pb-seat{border-color:color-mix(in srgb,var(--sc) 22%,rgba(255,255,255,.05));background:color-mix(in srgb,var(--sc) 7%,rgba(255,255,255,.025));}
+.pb-card.st-hors{filter:saturate(.55);}
+.pb-card.st-inter{box-shadow:0 26px 54px -26px color-mix(in srgb,var(--sc) 90%,#000),0 0 0 1px color-mix(in srgb,var(--sc) 40%,transparent);}
+.pb-state{background:color-mix(in srgb,var(--sc) 32%,transparent);}
+
+.pb-card.st-dispo{--sc:#52D98B}.pb-card.st-indispo{--sc:#F08080}.pb-card.st-inter{--sc:#FF6B4A}.pb-card.st-convoi{--sc:#F0A840}.pb-card.st-formation{--sc:#5DADE2}.pb-card.st-hors{--sc:#5C6E82}
+
+/* v6.4b — colonnes alignées dans la grille d'évaluation */
+.ev-row{grid-template-columns:minmax(0,1fr) 64px 300px 128px;}
+.ev-seg{display:flex;width:300px;}
+.ev-seg button{flex:1;padding-left:6px;padding-right:6px;text-align:center;}
+.ev-flag{width:128px;text-align:center;padding-left:6px;padding-right:6px;}
+.ev-flag-sp{display:block;width:128px;}
+@media (max-width:1250px){.ev-row{grid-template-columns:minmax(0,1fr) 64px;}.ev-seg{grid-column:1/-1;width:100%;}.ev-flag,.ev-flag-sp{grid-column:1/-1;width:auto;justify-self:start;}.ev-flag-sp{display:none;}}
+
+/* ═══ v7 — refonte de toutes les pages ═══ */
+/* Mon service : console */
+.ms-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px;align-items:start;}
+.ms-hero{display:flex;align-items:center;gap:36px;padding:36px 40px;border-radius:28px;border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden;background:radial-gradient(90% 120% at 0% 0%,rgba(var(--accent-rgb),.22),transparent 60%),linear-gradient(165deg,#141d2b,#080b11);box-shadow:0 30px 60px -34px rgba(0,0,0,.8);}
+.ms-hero.on{background:radial-gradient(90% 120% at 0% 0%,rgba(82,217,139,.26),transparent 60%),linear-gradient(165deg,#12261e,#080b11);border-color:rgba(82,217,139,.3);}
+.ms-ring{position:relative;width:236px;height:236px;flex:none;}
+.ms-ring-spin{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));}
+.ms-hero.on .ms-ring-spin{background:conic-gradient(from 0deg,#52D98B,rgba(82,217,139,.08) 65%,#52D98B);animation:ms-spin 5s linear infinite;filter:drop-shadow(0 0 10px rgba(82,217,139,.6));}
+@keyframes ms-spin{to{transform:rotate(360deg);}}
+.ms-ring-in{position:absolute;inset:18px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.06),rgba(6,9,14,.92) 70%);border:1px solid rgba(255,255,255,.06);padding:0 !important;margin:0 !important;}
+.ms-ring-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);}
+.ms-ring-badge{margin-top:6px;font-family:var(--font-display);font-weight:700;font-size:16px;color:#fff;}
+.ms-off{color:var(--text3);}
+.ms-elapsed{font-family:var(--font-display);font-size:34px;font-weight:800;color:#52D98B;font-variant-numeric:tabular-nums;letter-spacing:.01em;text-shadow:0 0 24px rgba(82,217,139,.5);}
+.ms-hero-side{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1;}
+.ms-hero-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.ms-hero-text{font-size:13px;line-height:1.6;color:var(--text2);max-width:340px;}
+.ms-hero-side .service-btn{width:100% !important;min-width:0;align-self:stretch;margin-top:6px;}
+.ms-col{display:flex;flex-direction:column;gap:18px;grid-row:1/span 2;grid-column:2;}
+.ms-month{border-radius:22px;padding:22px 26px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(240,168,64,.16),rgba(10,13,19,.9) 70%);position:relative;overflow:hidden;}
+.ms-month::after{content:"⏱";position:absolute;right:18px;top:6px;font-size:70px;opacity:.07;}
+.ms-month-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);}
+.ms-month-val{font-family:var(--font-display);font-size:42px;font-weight:800;color:#F5B454;margin:6px 0 2px;font-variant-numeric:tabular-nums;line-height:1.05;}
+.ms-month-sub{font-size:12px;color:var(--text3);}
+.ms-hist{margin:0 !important;}
+.ms-hist .log-item{padding:11px 14px;}
+@media (max-width:1180px){.ms-wrap{grid-template-columns:1fr;}.ms-col{grid-row:auto;grid-column:1;}}
+@media (max-width:560px){.ms-hero{flex-direction:column;padding:26px 20px;gap:20px;}.ms-ring{width:200px;height:200px;}.ms-hero-side{align-items:stretch;text-align:center;}.ms-hero-text{max-width:none;}}
+
+/* Tableau de bord */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px;}
+.kpi{position:relative;overflow:hidden;border-radius:20px;padding:18px 20px 16px;border:1px solid color-mix(in srgb,var(--k) 28%,rgba(255,255,255,.06));background:linear-gradient(160deg,color-mix(in srgb,var(--k) 14%,#141c29),#090c12 80%);box-shadow:0 20px 40px -28px color-mix(in srgb,var(--k) 70%,#000);}
+.kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--k),transparent);}
+.kpi-ico{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:color-mix(in srgb,var(--k) 22%,transparent);margin-bottom:14px;}
+.kpi-val{font-family:var(--font-display);font-size:34px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.kpi-val small{font-size:15px;color:var(--text3);font-weight:600;margin-left:3px;}
+.kpi-lbl{margin-top:8px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);}
+.kpi-bar{height:5px;border-radius:9px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden;}
+.kpi-bar i{display:block;height:100%;border-radius:9px;background:var(--k);}
+.dash-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;}
+.dash-hero{border-radius:24px;padding:24px 28px;border:1px solid rgba(240,168,64,.3);background:radial-gradient(80% 110% at 0% 0%,rgba(240,168,64,.24),transparent 62%),linear-gradient(165deg,#1c1a14,#0a0b0e);position:relative;overflow:hidden;}
+.dash-hero-tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#F5B454;font-weight:800;}
+.dash-hero-body{display:flex;align-items:center;gap:22px;padding:18px 0 6px;}
+.dash-hero-trophy{font-size:64px;filter:drop-shadow(0 8px 20px rgba(240,168,64,.5));}
+.dash-hero-name{font-family:var(--font-display);font-size:32px;font-weight:800;color:#fff;letter-spacing:-.015em;line-height:1.1;}
+.dash-hero-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.dash-hero-meta span{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;}
+.dash-hero-note{font-size:11px;color:var(--text3);margin-top:10px;}
+.dash-pod-card,.dash-chart-card{margin:0 !important;}
+.dash-chart-card{grid-column:1/-1;}
+@media (max-width:980px){.dash-grid{grid-template-columns:1fr;}}
+
+/* Notes de service */
+.ns-layout{display:flex;gap:24px;align-items:flex-start;}
+#ns-list-col{flex:1;min-width:0;display:flex;flex-direction:column;}
+#ns-create-card{width:380px;flex:none;position:sticky;top:76px;margin:0 !important;order:2;}
+.ns-note{position:relative;border-radius:20px;padding:22px 26px 18px 30px;margin-bottom:16px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(165deg,#141d2b,#0a0e15);overflow:hidden;}
+.ns-note::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,var(--accent-light),var(--accent));}
+.ns-note.restricted{border-color:rgba(231,76,60,.3);}
+.ns-note.restricted::before{background:linear-gradient(180deg,#F08080,#C0392B);}
+.ns-note-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.ns-chip{font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.07);color:var(--text2);}
+.ns-chip.red{background:rgba(192,57,43,.2);color:#F08080;}
+.ns-date{margin-left:auto;font-size:11px;color:var(--text3);}
+.ns-note-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#fff;letter-spacing:-.01em;margin:0 0 8px;}
+.ns-note-body{font-size:13.5px;line-height:1.75;color:#d3deea;white-space:pre-line;}
+.ns-note-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);}
+.ns-author{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--text2);}
+.ns-author i{font-style:normal;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-light));}
+@media (max-width:1100px){.ns-layout{flex-direction:column;}#ns-create-card{width:100%;position:static;order:0;}#ns-list-col{width:100%;}}
+
+/* Formulaire + historique */
+.form-split{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start;}
+.form-split .card{margin:0 !important;}
+.form-split .form-side{position:sticky;top:76px;}
+.form-split .form-main .card-hdr{background:linear-gradient(90deg,rgba(var(--accent-rgb),.16),transparent);}
+@media (max-width:1100px){.form-split{grid-template-columns:1fr;}.form-split .form-side{position:static;}}
+@media (min-width:1101px){
+  #page-doc-rh.active{grid-template-columns:minmax(0,1fr) 340px;}
+  #page-doc-rh.active > .doc-subform{grid-column:1 !important;grid-row:4;}
+  #page-doc-rh.active > .card:has(#doc-rh-history){grid-column:2;grid-row:4;position:sticky;top:76px;align-self:start;}
+}
+
+/* Effectifs : tableau de cartes */
+#effectifs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;}
+#effectifs-list > .empty{grid-column:1/-1;}
+.eff-card{margin:0;border-radius:22px;padding:0;overflow:hidden;position:relative;border:1px solid color-mix(in srgb,var(--sc,#5DADE2) 30%,rgba(255,255,255,.06));background:linear-gradient(165deg,color-mix(in srgb,var(--sc,#5DADE2) 12%,#141c29),#090c12 78%);box-shadow:0 22px 44px -32px color-mix(in srgb,var(--sc,#5DADE2) 70%,#000);}
+.eff-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--sc,#5DADE2),transparent);}
+.eff-card-top{margin:0;padding:18px 20px 12px;align-items:flex-start;}
+.eff-avatar{width:54px;height:54px;font-size:17px;border:2px solid rgba(255,255,255,.14);}
+.eff-nom{font-family:var(--font-display);font-size:16px;font-weight:700;}
+.eff-chip{display:inline-block;margin-top:6px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:999px;color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent);border:1px solid color-mix(in srgb,var(--sc) 35%,transparent);}
+.eff-card-body{border-top:none;padding:0 20px 18px;display:flex;flex-direction:column;}
+.eff-heures{order:-1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.eff-heures-item{border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);padding:9px 12px;}
+.eff-heures-item .eff-heures-val{font-family:var(--font-display);font-size:16px;color:#fff;}
+.eff-heures > .btn{grid-column:1/-1;justify-self:start;}
+.eff-field-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:0;}
+.eff-field-row .field{margin-bottom:6px;}
+@media (max-width:520px){#effectifs-list{grid-template-columns:1fr;}.eff-heures{grid-template-columns:1fr 1fr;}}
+
+/* Logs : frise */
+#logs-list .log-item{border-radius:14px;padding:12px 16px 12px 20px;position:relative;overflow:hidden;background:linear-gradient(165deg,#141d2b,#0b0f17);}
+#logs-list .log-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);opacity:.85;}
+#logs-list .log-item:has(.log-en-cours)::before{background:#52D98B;box-shadow:0 0 14px #52D98B;}
+#logs-list .log-agent{font-family:var(--font-display);font-size:14.5px;}
+.log-duree{font-family:var(--font-display);font-weight:800;font-size:13px;color:#F5B454;background:rgba(240,168,64,.12);padding:5px 12px;border-radius:999px;}
+.log-en-cours{font-weight:800;font-size:12px;color:#52D98B;background:rgba(82,217,139,.14);padding:5px 12px;border-radius:999px;}
+.log-day-header{display:flex;align-items:center;gap:12px;background:none;border:none;padding:6px 2px;margin:22px 0 10px;font-family:var(--font-display);font-size:13px;color:#fff;}
+.log-day-header::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.18),transparent);}
+
+/* Gestion des comptes */
+#comptes-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;max-height:none !important;}
+#comptes-list > div:not(.admin-compte){grid-column:1/-1;}
+#comptes-list .admin-compte{margin:0;border-radius:16px;background:linear-gradient(165deg,#141d2b,#0b0f17);}
+#comptes-list .ac-nom{font-family:var(--font-display);font-size:14.5px;}
+
+/* Absences & candidatures */
+#absences-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;align-items:start;}
+#absences-list > :first-child{grid-column:1/-1;}
+.absence-item{margin:0 !important;border-radius:18px;position:relative;overflow:hidden;padding-left:22px;background:linear-gradient(165deg,#141d2b,#0b0f17);}
+.absence-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#F0A840;}
+.absence-item:has(.as-validee)::before{background:#52D98B;}
+.absence-item:has(.as-refusee)::before{background:#F08080;}
+.absence-agent{font-family:var(--font-display);font-size:16px;font-weight:700;}
+#candidatures-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px;align-items:start;}
+#candidatures-list > .empty{grid-column:1/-1;}
+.cand-item{margin:0 !important;border-radius:20px;padding:20px 22px 18px 26px;background:linear-gradient(165deg,#141d2b,#0b0f17);}
+.cand-item::before{width:5px;opacity:1;}
+.cand-name{font-family:var(--font-display);font-size:17px;font-weight:700;}
+
+/* Cartes pro */
+#cpg-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px;}
+.cp-row{border-radius:18px !important;background:linear-gradient(165deg,#141d2b,#0b0f17) !important;}
+.cp-row.ok{border-color:rgba(82,217,139,.28) !important;}
+.cp-ava{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-light));flex:none;}
+
+/* Calendrier */
+.cal-cell{border-radius:14px;min-height:118px;background:linear-gradient(165deg,#131b28,#0a0e15);}
+.cal-cell.today{background:linear-gradient(165deg,rgba(var(--accent-rgb),.22),#0a0e15);}
+.cal-cell.blank{background:transparent;}
+
+/* Formulaires : champs et sections plus lisibles */
+.card-hdr{background:linear-gradient(90deg,rgba(var(--accent-rgb),.10),transparent 70%);}
+.card-hdr-title{font-family:var(--font-display);letter-spacing:-.005em;}
+.page.active > .card:has(.field){background:linear-gradient(165deg,#141d2b,#0a0e15);border-radius:22px;}
+.ms-ring-in#service-status-display{border-radius:50%;border:1px solid rgba(255,255,255,.06);background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.06),rgba(6,9,14,.92) 70%);}
+
+/* Hiérarchie, journal, pages denses */
+.hier-row{border-radius:20px !important;background:linear-gradient(165deg,#141d2b,#0b0f17) !important;}
+#page-journal.active{grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));}
+.stat-pill{min-width:150px;padding:16px 22px;}
+.stat-pill .stat-num{font-family:var(--font-display);font-size:30px;font-weight:800;line-height:1.05;}
+.stat-pill .stat-lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}
+.stat-pill:nth-child(1)::before{display:block;}
+#page-candidatures .stat-pill,#page-absences-gestion .stat-pill{border-top:3px solid rgba(var(--accent-rgb),.6);}
+.page.active > .card:has(.field) .card-hdr-title::before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:var(--accent-light);margin-right:9px;vertical-align:-2px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -1224,29 +1693,22 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
 
     <div class="stats-bar" id="patrol-stats"></div>
 
-    <div class="agents-manage" id="agents-manage-wrap">
-      <div style="font-size:11px;font-weight:700;color:#A8CFEA;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+    <details class="agents-manage" id="agents-manage-wrap">
+      <summary class="am-sum"><div style="font-size:12px;font-weight:700;color:#A8CFEA;display:flex;align-items:center;gap:8px;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         <span id="agents-manage-title">Dépanneurs disponibles (menus déroulants)</span>
-      </div>
+      </div></summary>
+      <div style="height:10px"></div>
       <div class="agents-chips" id="agents-chips"></div>
       <div class="add-agent-row" id="add-agent-row" style="display:none;">
         <input class="add-agent-inp" id="new-agent-inp" placeholder="Ajouter un dépanneur…" maxlength="40" onkeydown="if(event.key==='Enter')addAgent()">
         <button class="add-agent-btn" onclick="addAgent()">+ Ajouter</button>
       </div>
       <div id="agents-readonly-note" style="display:none;font-size:11px;color:var(--text3);font-style:italic;margin-top:4px;">La gestion des dépanneurs est réservée au Responsable et au PDG.</div>
-    </div>
+    </details>
 
     <div class="patrol-table-wrap" id="patrol-table-wrap"></div>
 
-    <div class="legend" id="patrol-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#52D98B"></div>Disponible</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#F08080"></div>Indisponible</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#FF6B4A"></div>Intervention</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#F0A840"></div>Convoi</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#5DADE2"></div>Formation</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#4A5A6A"></div>Hors service</div>
-    </div>
   </div>
 
   <!-- PAGE ABSENCES (déclarer) -->
@@ -1361,32 +1823,32 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
   <div class="page" id="page-mon-service">
     <div class="page-title">Mon <span>service</span></div>
     <div class="page-sub" id="service-sub">Gérez votre prise et fin de service.</div>
-    <div style="max-width:420px;">
-      <div class="card">
-        <div class="card-hdr"><div class="card-hdr-title">🟢 Statut de service</div></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
-          <div id="service-status-display" style="text-align:center;padding:10px 0;">
-            <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Statut actuel</div>
-            <div id="service-current-badge" style="font-size:15px;font-weight:700;color:var(--text3);">⬛ Hors service</div>
+    <div class="ms-wrap">
+      <div class="ms-hero" id="ms-hero">
+        <div class="ms-ring">
+          <div class="ms-ring-spin"></div>
+          <div class="ms-ring-in" id="service-status-display">
+            <div class="ms-ring-lbl">Statut actuel</div>
+            <div id="service-current-badge" class="ms-ring-badge">⬛ Hors service</div>
+            <div id="service-timer" style="display:none;">
+              <div class="ms-ring-lbl" style="margin-top:6px;">En service depuis</div>
+              <div id="service-elapsed" class="ms-elapsed">00:00:00</div>
+            </div>
           </div>
-          <div id="service-timer" style="display:none;text-align:center;padding:6px 0;">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">En service depuis</div>
-            <div id="service-elapsed" style="font-size:28px;font-weight:900;color:#52D98B;font-variant-numeric:tabular-nums;">00:00:00</div>
-          </div>
-          <button id="btn-prise-service" class="service-btn service-btn-start" onclick="toggleService()">
-            🟢 Prendre le service
-          </button>
+        </div>
+        <div class="ms-hero-side">
+          <div class="ms-hero-title">Console de service</div>
+          <div class="ms-hero-text">Prenez votre service dès que vous êtes disponible : vos heures sont comptées automatiquement.</div>
+          <button id="btn-prise-service" class="service-btn service-btn-start" onclick="toggleService()">🟢 Prendre le service</button>
         </div>
       </div>
-      <div class="card">
-        <div class="card-body" id="mon-service-mois-box" style="padding:16px 0;">
-          <div class="empty"><p>Chargement…</p></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><div class="card-hdr-title">📋 Mes derniers services</div></div>
-        <div class="card-body" id="mes-services-list">
-          <div class="empty"><p>Aucun service enregistré.</p></div>
+      <div class="ms-col">
+        <div class="ms-month" id="mon-service-mois-box"><div class="empty"><p>Chargement…</p></div></div>
+        <div class="card ms-hist">
+          <div class="card-hdr"><div class="card-hdr-title">📋 Mes derniers services</div></div>
+          <div class="card-body" id="mes-services-list">
+            <div class="empty"><p>Aucun service enregistré.</p></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2211,41 +2673,19 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
   <div class="page" id="page-evaluations">
     <div class="page-title">Évaluations <span>des agents</span></div>
     <div class="page-sub" id="eval-page-sub">Grille de notation standardisée pour les dépanneurs.</div>
-    <div class="card" style="max-width:920px;">
-      <div class="card-hdr">
-        <div class="card-hdr-title">☑ Grille d'évaluation en cours</div>
-        <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;">Date :
-          <input type="date" id="eval-date" style="background:rgba(13,21,32,0.6);border:1px solid rgba(41,128,185,0.2);border-radius:6px;color:#fff;font-size:11px;padding:3px 6px;">
+    <div class="ev-layout">
+      <div class="ev-main">
+        <div class="ev-meta">
+          <div class="field" style="flex:1;min-width:220px;margin:0;"><label id="eval-agent-label">Dépanneur évalué *</label><input id="eval-agent" placeholder="Prénom NOM" list="eval-agents-list"><datalist id="eval-agents-list"></datalist></div>
+          <div class="field" style="width:190px;margin:0;"><label>Date</label><input type="date" id="eval-date"></div>
         </div>
+        <div id="eval-grid"></div>
+        <div class="field" style="margin-top:6px;"><label>Note libre (observations, commentaires…)</label><textarea id="eval-notes" rows="3" placeholder="Ce qui s'est bien passé, ce qui est à travailler…"></textarea></div>
       </div>
-      <div class="card-body">
-        <div class="field" style="max-width:340px;margin-bottom:16px;">
-          <label id="eval-agent-label">Dépanneur évalué *</label>
-          <input id="eval-agent" placeholder="Prénom NOM" list="eval-agents-list">
-          <datalist id="eval-agents-list"></datalist>
-        </div>
-        <div class="patrol-table-wrap">
-          <table id="eval-table"><thead><tr>
-            <th>Critère</th><th class="center">Pts max</th><th class="center">Acquis</th><th class="center">Insuffisant</th><th class="center">Non noté</th><th class="center">Éliminatoire</th><th class="center">Score</th>
-          </tr></thead><tbody id="eval-tbody"></tbody></table>
-        </div>
-        <div class="field" style="margin-top:16px;">
-          <label>Note libre (observations, commentaires…)</label>
-          <textarea id="eval-notes" rows="3" placeholder="Note libre (observations, commentaires…)"></textarea>
-        </div>
-        <div class="card-hdr" id="eval-verdict-bar" style="margin-top:16px;border-radius:10px;">
-          <div class="card-hdr-title" id="eval-verdict-text">En attente de notation… <span style="font-weight:400;color:var(--text2);">Complétez la grille pour obtenir le verdict.</span></div>
-        </div>
-        <div class="legend" style="margin-top:12px;">
-          <div class="legend-item"><div class="legend-dot" style="background:#52D98B"></div>Acquis = 100%</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#F0A840"></div>Insuffisant = 50%</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#7F9AB0"></div>Non noté = exclu du calcul</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#C0392B"></div>Éliminatoire = échec immédiat</div>
-        </div>
-        <button class="btn btn-success btn-full" style="margin-top:16px;" onclick="enregistrerEvaluation()">💾 Enregistrer l'évaluation</button>
-      </div>
+      <aside class="ev-side"><div class="ev-side-in" id="ev-verdict"></div>
+        <button class="btn btn-success btn-full" style="margin-top:16px;justify-content:center;padding:13px;" onclick="enregistrerEvaluation()">💾 Enregistrer l'évaluation</button></aside>
     </div>
-    <div class="card" style="max-width:920px;margin-top:20px;">
+    <div class="card" style="margin-top:24px;">
       <div class="card-hdr">
         <div class="card-hdr-title">📚 Évaluations passées</div>
         <div style="display:flex;gap:8px;" id="eval-sort-bar"></div>
@@ -2390,7 +2830,8 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
   <div class="page" id="page-incident">
     <div class="page-title">Rapport <span>d'incident</span></div>
     <div class="page-sub">Documentez un incident survenu pendant le service.</div>
-    <div class="card" style="max-width:760px;">
+    <div class="form-split">
+    <div class="card form-main">
       <div class="card-hdr"><div class="card-hdr-title">🚨 Nouveau — Rapport d'incident</div></div>
       <div class="card-body">
         <div class="field-row-2">
@@ -2414,9 +2855,10 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
         </div>
       </div>
     </div>
-    <div class="card" style="max-width:760px;margin-top:16px;">
+    <div class="card form-side">
       <div class="card-hdr"><div class="card-hdr-title">📚 Rapports récents</div></div>
       <div class="card-body" id="doc-incident-history"><div class="empty"><p>Chargement…</p></div></div>
+    </div>
     </div>
   </div>
 
@@ -2425,7 +2867,9 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
     <div class="page-title">Notes <span>de service</span></div>
     <div class="page-sub">Consignes, informations importantes et bilans de réunion.</div>
 
-    <div class="card" id="ns-create-card" style="max-width:760px;display:none;">
+    <div class="ns-layout">
+    <div id="ns-list-col"><div id="ns-list"><div class="empty"><p>Chargement…</p></div></div></div>
+    <div class="card" id="ns-create-card" style="display:none;">
       <div class="card-hdr"><div class="card-hdr-title">✏️ Nouvelle publication</div></div>
       <div class="card-body">
         <div class="field-row-2">
@@ -2449,8 +2893,7 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
         <button class="btn btn-primary" onclick="publierNoteService()">📤 Publier</button>
       </div>
     </div>
-
-    <div id="ns-list"><div class="empty"><p>Chargement…</p></div></div>
+    </div>
   </div>
 
   <!-- PAGE CANDIDATURES (gestion) -->
@@ -2908,25 +3351,23 @@ function renderNotesService() {
     const isRestricted = n.visibilite==="responsables";
     const scopeLabel = n.service ? `${SERVICE_ICONS[n.service]||""} ${svcLabel(n.service).replace(/^Dog\s+/,"")}` : "🌐 Tous les services";
     const date = n.created_at ? new Date(n.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
-    return `<div class="card" style="max-width:760px;${isRestricted?"--accent-rgb:192,57,43;":""}">
-      <div class="card-hdr">
-        <div class="card-hdr-title">${isRestricted?"🔒":"📋"} ${esc(n.titre)}</div>
-        <span style="display:flex;gap:6px;flex-wrap:wrap;">
-          ${isRestricted ? `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(192,57,43,0.15);color:#F08080;">Responsables/PDG</span>` : ""}
-          <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(255,255,255,0.06);color:var(--text2);">${scopeLabel}</span>
+    const ini = (n.auteur||"?").split(/\s+/).map(x=>x[0]||"").join("").slice(0,2).toUpperCase();
+    return `<article class="ns-note${isRestricted?" restricted":""}">
+      <div class="ns-note-top">
+        <span class="ns-chip">${scopeLabel}</span>
+        ${isRestricted ? `<span class="ns-chip red">🔒 Responsables/PDG</span>` : ""}
+        <span class="ns-date">${date}</span>
+      </div>
+      <h3 class="ns-note-title">${esc(n.titre)}</h3>
+      <div class="ns-note-body">${esc(n.contenu)}</div>
+      <div class="ns-note-foot">
+        <span class="ns-author"><i>${esc(ini)}</i>${esc(n.auteur||"—")}</span>
+        <span style="display:flex;gap:6px;">
+          ${canDelete||role==="responsable" ? `<button class="btn btn-ghost btn-sm" onclick="ouvrirLecteursNote('${n.id}')">👁 Qui a lu ?</button>` : ""}
+          ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="supprimerNoteService('${n.id}')">🗑</button>` : ""}
         </span>
       </div>
-      <div class="card-body">
-        <div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-line;margin-bottom:10px;">${esc(n.contenu)}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3);">
-          <span>Par ${esc(n.auteur||"—")} · ${date}</span>
-          <span style="display:flex;gap:6px;">
-            ${canDelete||role==="responsable" ? `<button class="btn btn-ghost btn-sm" onclick="ouvrirLecteursNote('${n.id}')">👁 Qui a lu ?</button>` : ""}
-            ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="supprimerNoteService('${n.id}')">🗑</button>` : ""}
-          </span>
-        </div>
-      </div>
-    </div>`;
+    </article>`;
   }).join("");
 }
 async function publierNoteService() {
@@ -3328,29 +3769,41 @@ function getEvalCriteres(svc) { return EVAL_CRITERES_BY_SERVICE[svc||myService()
 let evalState = {};
 let evalElim = {};
 
-function renderEvalTable() {
-  const tbody = document.getElementById("eval-tbody");
-  if(!tbody) return;
-  let html = "", lastCat = null;
-  getEvalCriteres().forEach((c,i)=>{
-    if(c.cat!==lastCat) {
-      html += `<tr><td colspan="7" style="background:rgba(26,82,118,0.3);font-size:10px;font-weight:800;color:#7EAAC8;text-transform:uppercase;letter-spacing:0.08em;padding:8px 12px;">${esc(c.cat)}</td></tr>`;
-      lastCat = c.cat;
-    }
-    const st = evalState[i]||"non_note";
-    const score = st==="acquis"?c.max : st==="insuffisant"?Math.round(c.max*0.5) : null;
-    const locked = !!evalElim[i];
-    html += `<tr>
-      <td style="padding:10px 12px;font-size:12px;">${esc(c.nom)}</td>
-      <td class="center" style="font-weight:700;">${c.max}</td>
-      <td class="center"><button class="eval-btn ${st==="acquis"?"active-acquis":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'acquis')">✓</button></td>
-      <td class="center"><button class="eval-btn ${st==="insuffisant"?"active-insuffisant":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'insuffisant')">~</button></td>
-      <td class="center"><button class="eval-btn ${st==="non_note"?"active-nn":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'non_note')">NN</button></td>
-      <td class="center">${c.elim?`<button class="eval-elim-badge ${locked?"active":""}" onclick="toggleElim(${i})" title="Marquer ce critère comme éliminatoire pour cette évaluation">ÉLIM</button>`:"—"}</td>
-      <td class="center" style="font-weight:800;">${locked?"—":(score===null?"—":score)}</td>
-    </tr>`;
+const EV_COL = pct => pct>=80 ? "#52D98B" : pct>=60 ? "#5DADE2" : pct>=40 ? "#F0A840" : "#F08080";
+function evRing(pct, size=84, color) {
+  const r = 15.9155, c = color || EV_COL(pct||0), v = Math.max(0, Math.min(100, pct||0));
+  return `<div class="ev-ring" style="width:${size}px;height:${size}px;--c:${c}"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${r}" class="bg"/><circle cx="18" cy="18" r="${r}" class="fg" stroke-dasharray="${v} ${100-v}" stroke-dashoffset="25"/></svg><b style="font-size:${Math.round(size*.27)}px">${pct==null?"—":Math.round(v)+"<small>%</small>"}</b></div>`;
+}
+function evCatStats(criteres) {
+  const cats = {};
+  (criteres||[]).forEach(c=>{
+    const k = c.cat||"Général"; cats[k] = cats[k]||{ach:0,max:0};
+    if(c.statut==="acquis") { cats[k].ach += c.max; cats[k].max += c.max; }
+    else if(c.statut==="insuffisant") { cats[k].ach += c.max*0.5; cats[k].max += c.max; }
   });
-  tbody.innerHTML = html;
+  return Object.entries(cats).map(([k,v])=>({cat:k, pct: v.max ? Math.round(v.ach/v.max*100) : null}));
+}
+const evBars = criteres => `<div class="ev-bars">${evCatStats(criteres).map(c=>`<div class="ev-bar"><span>${esc(c.cat)}</span><i><em style="width:${c.pct||0}%;background:${c.pct==null?"#45576b":EV_COL(c.pct)}"></em></i><b>${c.pct==null?"—":c.pct+"%"}</b></div>`).join("")}</div>`;
+
+function renderEvalTable() {
+  const host = document.getElementById("eval-grid");
+  if(!host) return;
+  const crit = getEvalCriteres();
+  const cats = []; crit.forEach((c,i)=>{ let g = cats.find(x=>x.cat===c.cat); if(!g) { g = {cat:c.cat, rows:[]}; cats.push(g); } g.rows.push([c,i]); });
+  host.innerHTML = cats.map(g=>{
+    let ach=0, mx=0;
+    g.rows.forEach(([c,i])=>{ const st = evalState[i]||"non_note"; if(st==="acquis"){ach+=c.max;mx+=c.max;} else if(st==="insuffisant"){ach+=c.max*.5;mx+=c.max;} });
+    const pct = mx ? Math.round(ach/mx*100) : null;
+    return `<section class="ev-cat"><header class="ev-cat-h"><span>${esc(g.cat)}</span><em style="color:${pct==null?"var(--text3)":EV_COL(pct)}">${pct==null?"non noté":pct+"%"}</em></header>
+      ${g.rows.map(([c,i])=>{
+        const st = evalState[i]||"non_note", locked = !!evalElim[i];
+        const pts = locked ? "—" : st==="acquis" ? c.max : st==="insuffisant" ? Math.round(c.max*.5) : "·";
+        return `<div class="ev-row ${locked?"locked":""}"><div class="ev-name">${esc(c.nom)}</div>
+          <div class="ev-pts"><b>${pts}</b> / ${c.max}</div>
+          <div class="ev-seg" role="group"><button type="button" class="a ${st==="acquis"?"on":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'acquis')">✓ Acquis</button><button type="button" class="i ${st==="insuffisant"?"on":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'insuffisant')">~ Insuffisant</button><button type="button" class="n ${st==="non_note"?"on":""}" ${locked?"disabled":""} onclick="setEvalState(${i},'non_note')">Non noté</button></div>
+          ${c.elim?`<button type="button" class="ev-flag ${locked?"on":""}" onclick="toggleElim(${i})" title="Marquer ce critère comme éliminatoire pour cette évaluation">⚑ Éliminatoire</button>`:'<span class="ev-flag-sp"></span>'}</div>`;
+      }).join("")}</section>`;
+  }).join("");
   updateEvalVerdict();
 }
 function setEvalState(i, state) { if(evalElim[i]) return; evalState[i] = state; renderEvalTable(); }
@@ -3384,19 +3837,17 @@ function updateEvalVerdict() {
   });
   getEvalCriteres().forEach((c,i)=>{ if(c.elim && evalElim[i]) eliminated = true; });
   const pct = max>0 ? Math.round((achieved/max)*100) : 0;
-  const bar = document.getElementById("eval-verdict-bar");
-  const txt = document.getElementById("eval-verdict-text");
-  if(txt && bar) {
-    if(!anyGraded) {
-      txt.innerHTML = 'En attente de notation… <span style="font-weight:400;color:var(--text2);">Complétez la grille pour obtenir le verdict.</span>';
-      bar.style.background = "";
-    } else {
-      const verdict = computeVerdict(pct, eliminated);
-      const meta = VERDICT_META[verdict];
-      const detail = eliminated ? "critère éliminatoire en échec" : "score : "+pct+"%";
-      txt.innerHTML = `${meta.icon} ${verdict.toUpperCase()} <span style="font-weight:400;color:var(--text2);">— ${detail}${eliminated?" (score : "+pct+"%)":""}</span>`;
-      bar.style.background = `linear-gradient(90deg,${meta.color}66,rgba(22,30,42,0.2))`;
-    }
+  const side = document.getElementById("ev-verdict");
+  if(side) {
+    const total = getEvalCriteres().length, noted = getEvalCriteres().filter((c,i)=>(evalState[i]||"non_note")!=="non_note").length;
+    const verdict = anyGraded ? computeVerdict(pct, eliminated) : null;
+    const meta = verdict ? VERDICT_META[verdict] : null;
+    side.style.setProperty("--vc", meta ? meta.color : "#5C6E82");
+    side.innerHTML = `${evRing(anyGraded ? pct : null, 132, meta ? meta.color : "#5C6E82")}
+      <div class="ev-verdict-t">${meta ? `${meta.icon} ${verdict}` : "En attente de notation"}</div>
+      <div class="ev-verdict-s">${!anyGraded ? "Complétez la grille pour obtenir le verdict." : eliminated ? "Un critère éliminatoire est en échec." : `${achieved} sur ${max} points`}</div>
+      <div class="ev-prog"><i style="width:${total?Math.round(noted/total*100):0}%"></i></div><div class="ev-prog-l">${noted} critère${noted>1?"s":""} noté${noted>1?"s":""} sur ${total}</div>
+      <div class="ev-leg"><span><i style="background:#52D98B"></i>Acquis = 100 %</span><span><i style="background:#F0A840"></i>Insuffisant = 50 %</span><span><i style="background:#7F9AB0"></i>Non noté = exclu</span><span><i style="background:#F08080"></i>Éliminatoire = échec</span></div>`;
   }
   return {pct, eliminated, achieved, max, anyGraded};
 }
@@ -3457,21 +3908,16 @@ function renderEvalHistory(rows) {
   if(!allEvals.length) { el.innerHTML = '<div class="empty"><p>Aucune évaluation enregistrée.</p></div>'; return; }
   const list = [...allEvals];
   if(window._evalSort==="nom") list.sort((a,b)=>(a.agent_nom||"").localeCompare(b.agent_nom||"","fr",{sensitivity:"base"}));
-  el.innerHTML = list.map(r=>{
-    const d = new Date(r.date_eval+"T12:00:00").toLocaleDateString("fr-FR");
-    const vcolor = (VERDICT_META[r.verdict]||{}).color || "#fff";
-    return `<div class="log-item">
-      <div><div class="log-agent">${esc(r.agent_nom)}</div><div class="log-dates">${d} · évalué par ${esc(r.evaluateur||"—")}</div></div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="text-align:right;">
-          <div style="font-weight:800;color:${vcolor}">${esc(r.verdict)}</div>
-          <div style="font-size:11px;color:var(--text2);">${r.pourcentage}%</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="viewEvaluationDetail('${r.id}')">👁 Voir</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteEvaluation('${r.id}')">🗑</button>
-      </div>
-    </div>`;
-  }).join("");
+  el.innerHTML = `<div class="ev-hist">${list.map(r=>{
+    const d = new Date(r.date_eval+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+    const meta = VERDICT_META[r.verdict] || {color:"#fff",icon:""};
+    return `<article class="ev-card" style="--vc:${meta.color}">
+      <div class="ev-card-top">${evRing(r.pourcentage, 72, meta.color)}<div class="ev-card-id"><div class="ev-card-n">${esc(r.agent_nom)}</div><div class="ev-card-d">${d}</div><div class="ev-card-d">par ${esc(r.evaluateur||"—")}</div></div></div>
+      <div class="ev-badge" style="--vc:${meta.color}">${meta.icon} ${esc(r.verdict)}</div>
+      ${evBars(r.criteres)}
+      <div class="ev-card-act"><button class="btn btn-ghost btn-sm" onclick="viewEvaluationDetail('${r.id}')">Voir le détail</button><button class="btn btn-danger btn-sm" title="Supprimer" onclick="deleteEvaluation('${r.id}')">🗑</button></div>
+    </article>`;
+  }).join("")}</div>`;
 }
 function setEvalSort(mode) { window._evalSort = mode; renderEvalHistory(); }
 async function deleteEvaluation(id) {
@@ -3498,31 +3944,13 @@ function viewEvaluationDetail(id) {
   if(!ev) return;
   const d = new Date(ev.date_eval+"T12:00:00").toLocaleDateString("fr-FR");
   const meta = VERDICT_META[ev.verdict]||{};
-  const rows = (ev.criteres||[]).map(c=>{
-    const sm = EVAL_STATUT_META[c.statut]||{label:c.statut, color:"#fff"};
-    return `<tr style="border-bottom:1px solid rgba(41,128,185,0.06);">
-      <td style="padding:7px 10px;font-size:12px;color:var(--text);">${esc(c.nom)}</td>
-      <td class="center" style="padding:7px;font-size:11px;font-weight:700;color:${sm.color};white-space:nowrap;">${sm.label}</td>
-      <td class="center" style="padding:7px;font-size:11px;">${c.eliminatoire_coche?'<span style="color:#F08080;font-weight:800;">ÉLIM</span>':"—"}</td>
-    </tr>`;
-  }).join("");
+  const groups = []; (ev.criteres||[]).forEach(c=>{ let g = groups.find(x=>x.cat===(c.cat||"Général")); if(!g){ g={cat:c.cat||"Général",rows:[]}; groups.push(g);} g.rows.push(c); });
   const content = document.getElementById("eval-detail-content");
   if(!content) return;
   content.innerHTML = `
-    <div style="margin-bottom:14px;">
-      <div style="font-size:15px;font-weight:800;color:#fff;">${esc(ev.agent_nom)}</div>
-      <div style="font-size:12px;color:var(--text2);">${d} · évalué par ${esc(ev.evaluateur||"—")}</div>
-      <div style="margin-top:8px;font-weight:800;color:${meta.color||"#fff"};">${meta.icon||""} ${esc(ev.verdict)} <span style="font-weight:400;color:var(--text2);">— ${ev.pourcentage}% (${ev.score_total}/${ev.score_max} pts)</span></div>
-      ${ev.notes ? `<div style="margin-top:8px;font-size:12px;color:var(--text);background:rgba(41,128,185,0.06);border-left:3px solid var(--blue);padding:8px 12px;border-radius:0 6px 6px 0;font-style:italic;">${esc(ev.notes)}</div>` : ""}
-    </div>
-    <div class="patrol-table-wrap">
-      <table style="min-width:0;">
-        <thead><tr>
-          <th style="padding:8px 10px;">Critère</th><th class="center">Statut</th><th class="center">Élim.</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    <div class="ev-det-head" style="--vc:${meta.color||"#fff"}">${evRing(ev.pourcentage, 96, meta.color)}<div><div class="ev-card-n" style="font-size:19px">${esc(ev.agent_nom)}</div><div class="ev-card-d">${d} · évalué par ${esc(ev.evaluateur||"—")}</div><div class="ev-badge" style="--vc:${meta.color||"#fff"};margin-top:8px">${meta.icon||""} ${esc(ev.verdict)} · ${ev.score_total}/${ev.score_max} pts</div></div></div>
+    ${ev.notes ? `<div class="ev-quote">« ${esc(ev.notes)} »</div>` : ""}
+    ${groups.map(g=>`<div class="ev-det-cat"><div class="ev-det-cat-t">${esc(g.cat)}</div>${g.rows.map(c=>{ const sm = EVAL_STATUT_META[c.statut]||{label:c.statut, color:"#fff"}; return `<div class="ev-det-row"><span>${esc(c.nom)}</span>${c.eliminatoire_coche?'<em class="ev-det-elim">Éliminatoire</em>':""}<b style="color:${sm.color}">${sm.label}</b></div>`; }).join("")}</div>`).join("")}`;
   document.getElementById("eval-detail-modal")?.classList.add("show");
 }
 function closeEvalDetail() {
@@ -5733,6 +6161,10 @@ function getNavConfig() {
   return items;
 }
 
+const UI_ICONS = {"home": "<path d=\"M3 11l9-8 9 8\"/><path d=\"M5 9.5V21h5v-6h4v6h5V9.5\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5\"/>", "tool": "<path d=\"M14.7 6.3a4 4 0 0 0-5.4 5.1L3 17.7V21h3.3l6.3-6.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z\"/>", "building": "<rect x=\"5\" y=\"3\" width=\"14\" height=\"18\" rx=\"1.5\"/><path d=\"M9 7.5h2M13 7.5h2M9 11.5h2M13 11.5h2M10 21v-4h4v4\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-5.5 6.5-5.5s6.5 1.9 6.5 5.5\"/><path d=\"M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.8c2.2.6 3.5 2.2 3.5 5.2\"/>", "doc": "<path d=\"M6 3h8l4 4v14H6z\"/><path d=\"M14 3v4h4M9 12h6M9 16h6\"/>", "sliders": "<path d=\"M4 7h9M17 7h3M4 17h3M11 17h9\"/><circle cx=\"15\" cy=\"7\" r=\"2\"/><circle cx=\"9\" cy=\"17\" r=\"2\"/>", "radio": "<rect x=\"3\" y=\"9\" width=\"18\" height=\"11\" rx=\"2\"/><path d=\"M7 9l10-5M8 14.5h5M16.5 13.5v2\"/>", "shield": "<path d=\"M12 3l8 3v6c0 4.8-3.4 7.9-8 9-4.6-1.1-8-4.2-8-9V6z\"/>", "trophy": "<path d=\"M8 4h8v5a4 4 0 0 1-8 0z\"/><path d=\"M8 6H4v1.5A3.5 3.5 0 0 0 8 11M16 6h4v1.5a3.5 3.5 0 0 1-4 3.5M12 13v4M8.5 21h7M10 17h4\"/>", "calendar": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "power": "<path d=\"M12 3v9\"/><path d=\"M6.3 6.8a8 8 0 1 0 11.4 0\"/>", "calx": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M10 14l4 4M14 14l-4 4\"/>", "alert": "<path d=\"M12 3.5l9.5 16.5h-19z\"/><path d=\"M12 10v4.5M12 17.4h.01\"/>", "clip": "<rect x=\"6\" y=\"4\" width=\"12\" height=\"17\" rx=\"2\"/><path d=\"M9 4h6v3H9zM9 12h6M9 16h4\"/>", "idcard": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><circle cx=\"9\" cy=\"11\" r=\"2\"/><path d=\"M6 16c.6-2.2 5.4-2.2 6 0M14.5 10h3.5M14.5 14h2.5\"/>", "star": "<path d=\"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z\"/>", "pen": "<path d=\"M4 20l1-4L16 5l3 3L8 19z\"/><path d=\"M14 7l3 3\"/>", "folder": "<path d=\"M3 6.5h6l2 2.5h10V19H3z\"/>", "heart": "<path d=\"M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z\"/>", "archive": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 9v10h14V9M10 13h4\"/>", "bars": "<path d=\"M5 20V11M12 20V4M19 20v-6\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 7.5l9 6 9-6\"/>", "target": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1.5\"/>", "receipt": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>", "coin": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"2\"/><path d=\"M21 16l-5-5-9 9\"/>", "history": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "send": "<path d=\"M21 3L3 11l7 3 3 7z\"/><path d=\"M10 14L21 3\"/>"};
+const PAGE_ICON = {"patrouilles": "radio", "hierarchie": "shield", "tableau-de-bord": "trophy", "calendrier": "calendar", "mon-service": "power", "absence-form": "calx", "incident": "alert", "notes-service": "clip", "ma-carte-pro": "idcard", "mes-evaluations": "star", "mes-notes": "pen", "mon-dossier": "folder", "bilans": "heart", "dossiers-patients": "archive", "absences-gestion": "clip", "logs-service": "bars", "candidatures": "mail", "evaluations": "target", "doc-rh": "archive", "devis": "receipt", "effectifs": "users", "cartes-pro-gestion": "idcard", "facturation": "coin", "dossiers-clients": "archive", "admin-comptes": "sliders", "landing-editor": "image", "journal": "history", "candidature-form": "send"};
+const SEC_ICON = {"Mon espace": "user", "Opérations": "tool", "Ma filiale": "building", "Équipe": "users", "Documents": "doc", "Administration": "sliders"};
+const uiIcon = n => UI_ICONS[n] ? `<svg class="ui-ic" viewBox="0 0 24 24" aria-hidden="true">${UI_ICONS[n]}</svg>` : "";
 function renderSidenav() {
   const nav = document.getElementById("sidenav");
   if(!nav) return;
@@ -5831,6 +6263,10 @@ document.addEventListener("click", e=>{
 
 // ─── ACCUEIL EN TUILES ─────────────────────────────────────────────
 async function renderAccueil() {
+  await _renderAccueilBase();
+  try { await renderHomePulse(); } catch(e) { console.warn('pulse', e); }
+}
+async function _renderAccueilBase() {
   const el = document.getElementById("accueil-content"); if(!el) return;
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
   const hr = now.getHours();
@@ -7753,35 +8189,34 @@ function renderPatrols() {
   };
   const PATROL_DEFS = PATROL_DEFS_ALL[myService()];
 
-  let html = `<table><thead><tr>
-    <th>${opsLabel()} / Fréq.</th>
-    <th class="conductor-hdr" style="color:#F0A840">Conducteur</th>
-    <th>Équipier 1</th><th>Équipier 2</th><th>Équipier 3</th>
-    <th>Véhicule</th>
-    <th class="center">Statut</th>
-    <th>Notes</th>
-    <th class="center">Màj</th>
-  </tr></thead><tbody>`;
-
+  const ST_META = {"Disponible":"dispo","Indisponible":"indispo","Intervention":"inter","Convoi":"convoi","Transfert CH":"convoi","Formation":"formation","Hors service":"hors"};
+  const states = svcStatuses();
+  const unitOf = def => patrols.find(x=>x.patrol_id===def.id)||{patrol_id:def.id,conducteur:"",e1:"",e2:"",e3:"",vehicule:"",statut:"Hors service",notes:"",updated_at:null,updated_by:""};
+  const counts = {}; states.forEach(st=>counts[st]=0);
+  PATROL_DEFS.forEach(d=>{ const st = unitOf(d).statut||"Hors service"; counts[st] = (counts[st]||0)+1; });
+  const total = PATROL_DEFS.length;
+  let html = `<div class="pb-strip"><div class="pb-bar">${states.filter(st=>counts[st]).map(st=>`<span class="pb-seg st-${ST_META[st]}" style="flex:${counts[st]}" title="${st} : ${counts[st]}"></span>`).join("")}</div>
+    <div class="pb-counts">${states.map(st=>`<span class="pb-count st-${ST_META[st]} ${counts[st]?"":"zero"}"><i></i><b>${counts[st]}</b> ${st}</span>`).join("")}<span class="pb-count tot">${total} postes · ${agents.length} ${agentLabelPlural().toLowerCase()} listés</span></div></div>
+    <div class="pb-grid">`;
   PATROL_DEFS.forEach(def => {
-    const p = patrols.find(x=>x.patrol_id===def.id)||{patrol_id:def.id,conducteur:"",e1:"",e2:"",e3:"",vehicule:"",statut:"Hors service",notes:"",updated_at:null,updated_by:""};
-    const cls = svcStatusCls()[p.statut]||"s-hors";
-    html += `<tr>
-      <td class="patrol-name-cell">
-        <div class="patrol-label" style="color:${def.color}">${def.label}</div>
-        <div class="patrol-freq">${def.freq}</div>
-      </td>
-      <td class="member-cell"><select class="member-select" style="border-color:rgba(240,168,64,0.2);color:#F0A840;" onchange="updatePatrol('${def.id}','conducteur',this.value)">${mkAgentOpts(p.conducteur)}</select></td>
-      <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e1',this.value)">${mkAgentOpts(p.e1)}</select></td>
-      <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e2',this.value)">${mkAgentOpts(p.e2)}</select></td>
-      <td class="member-cell"><select class="member-select" onchange="updatePatrol('${def.id}','e3',this.value)">${mkAgentOpts(p.e3)}</select></td>
-      <td class="vehicle-cell"><input class="vehicle-inp" data-patrol-id="${def.id}" value="${esc(p.vehicule||"")}" placeholder="Véhicule…" onchange="updatePatrol('${def.id}','vehicule',this.value)"></td>
-      <td class="status-cell"><select class="status-select ${cls}" onchange="updateStatus('${def.id}',this)">${mkStatusOpts(p.statut||"Hors service")}</select></td>
-      <td class="notes-cell"><textarea class="notes-inp" data-patrol-id="${def.id}" rows="2" placeholder="Notes…" onchange="updatePatrol('${def.id}','notes',this.value)">${esc(p.notes||"")}</textarea></td>
-      <td class="upd-cell">${fmtUpd(p.updated_at)}<br><span style="font-size:8px;color:#1E3348">${esc(p.updated_by||"")}</span></td>
-    </tr>`;
+    const p = unitOf(def); const stt = p.statut||"Hors service"; const k = ST_META[stt]||"hors";
+    const hq = def.id==="centrale"||def.id==="cmd";
+    const crew = [["conducteur","Conducteur"],["e1","Équipier 1"],["e2","Équipier 2"],["e3","Équipier 3"]];
+    const ini = n => (n||"").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+    const ghost = def.id==="centrale" ? "C" : def.id==="cmd" ? "★" : def.id;
+    const filled = crew.filter(([f])=>p[f]).length;
+    html += `<article class="pb-card st-${k} ${hq?"pb-hq":""}" style="--uc:${def.color}">
+      <div class="pb-ghost" aria-hidden="true">${ghost}</div>
+      <header class="pb-head"><div class="pb-call"><b>${def.label}</b><small>📻 ${def.freq}</small></div><div class="pb-state"><i class="pb-led"></i>${stt}${k==="inter"?'<span class="pb-eq"><i></i><i></i><i></i></span>':""}</div></header>
+      <div class="pb-since"><span>${filled} à bord</span><span>${p.updated_at?"Statut "+_ago(p.updated_at).replace("il y a ","depuis "):"Aucune activité"}</span></div>
+      <div class="pb-leds" role="group" aria-label="Changer le statut">${states.map(st=>`<button type="button" class="pb-dot st-${ST_META[st]} ${st===stt?"on":""}" title="${st}" aria-label="${st}" onclick="setPatrolStatus('${def.id}','${st}')"><i></i></button>`).join("")}</div>
+      <div class="pb-crew">${crew.map(([f,lb])=>`<label class="pb-seat ${f==="conducteur"?"drv":""} ${p[f]?"has":""}"><span class="pb-av">${p[f]?esc(ini(p[f])):"+"}</span><span class="pb-seat-b"><span class="pb-seat-l">${lb}</span><select class="member-select" onchange="updatePatrol('${def.id}','${f}',this.value)">${mkAgentOpts(p[f])}</select></span></label>`).join("")}</div>
+      <div class="pb-foot"><input class="vehicle-inp" data-patrol-id="${def.id}" value="${esc(p.vehicule||"")}" placeholder="🚗 Véhicule…" onchange="updatePatrol('${def.id}','vehicule',this.value)">
+        <textarea class="notes-inp" data-patrol-id="${def.id}" rows="2" placeholder="Notes de l'équipe…" onchange="updatePatrol('${def.id}','notes',this.value)">${esc(p.notes||"")}</textarea>
+        <div class="pb-upd">${p.updated_at?`Dernière modification à ${fmtUpd(p.updated_at)}${p.updated_by?" par "+esc(p.updated_by):""}`:"Jamais modifié"}</div></div>
+    </article>`;
   });
-  html += "</tbody></table>";
+  html += "</div>";
   document.getElementById("patrol-table-wrap").innerHTML = html;
 
   // On restitue le texte en cours de frappe (et le focus + la position du curseur) dans le
@@ -7898,7 +8333,9 @@ function updateStatus(patrol_id, sel) {
   updatePatrol(patrol_id,"statut",sel.value);
 }
 
+function setPatrolStatus(id, st) { updatePatrol(id,"statut",st); }
 function updatePatrolStats() {
+  try { if(document.getElementById("page-patrouilles")?.classList.contains("active")) renderPatrols(); } catch(e) {}
   const active  = patrols.filter(p=>["Disponible","Intervention","Convoi","Formation"].includes(p.statut)).length;
   const inter   = patrols.filter(p=>p.statut==="Intervention").length;
   const dispo   = patrols.filter(p=>p.statut==="Disponible").length;
@@ -8752,10 +9189,10 @@ async function loadMesHeuresMois() {
     const mins = (logs||[]).reduce((s,l)=>s+(l.duree_minutes||0),0);
     const capitalize = s => s.charAt(0).toUpperCase()+s.slice(1);
     const label = capitalize(startThisMonth.toLocaleDateString("fr-FR",{month:"long"}));
-    el.innerHTML = `<div style="text-align:center;">
-      <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Mes heures de service — ${label} (en cours)</div>
-      <div style="font-size:24px;font-weight:900;color:var(--orange-light);font-variant-numeric:tabular-nums;">${fmtDuree(mins)}</div>
-    </div>`;
+    const nbS = (logs||[]).length;
+    el.innerHTML = `<div class="ms-month-lbl">⏱ Mes heures — ${label}</div>
+      <div class="ms-month-val">${fmtDuree(mins)}</div>
+      <div class="ms-month-sub">${nbS} service${nbS>1?"s":""} terminé${nbS>1?"s":""} ce mois-ci</div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
 }
 
@@ -8763,6 +9200,7 @@ function setServiceUI(enService) {
   const btn = document.getElementById("btn-prise-service");
   const badge = document.getElementById("service-current-badge");
   const timer = document.getElementById("service-timer");
+  const heroEl = document.getElementById("ms-hero"); if(heroEl) heroEl.classList.toggle("on", !!enService);
   if(enService) {
     btn.className = "service-btn service-btn-end";
     btn.innerHTML = "🔴 Fin de service";
@@ -8774,7 +9212,7 @@ function setServiceUI(enService) {
   } else {
     btn.className = "service-btn service-btn-start";
     btn.innerHTML = "🟢 Prendre le service";
-    badge.innerHTML = '<span style="font-size:15px;font-weight:700;color:var(--text3);">⬛ Hors service</span>';
+    badge.innerHTML = '<span class="ms-off">⬛ Hors service</span>';
     timer.style.display = "none";
     clearInterval(serviceTimer); serviceTimer=null;
   }
@@ -9121,13 +9559,14 @@ function renderEffectifsList(comptesAll) {
     const heuresTotal = fmtHeuresMin(heuresPourAgent(nomComplet, undefined, undefined, c.service));
     const heuresMois = fmtHeuresMin(heuresPourAgent(nomComplet, now.getMonth(), now.getFullYear(), c.service));
     const moyEval = moyenneEvalPourAgent(nomComplet);
-    return `<div class="eff-card">
+    return `<div class="eff-card" style="--sc:${statutColor}">
       <div class="eff-card-top">
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="eff-avatar" style="background:linear-gradient(135deg,${statutColor},${statutColor}99);">${esc(initials)}</div>
           <div>
             <div class="eff-nom" style="cursor:pointer;" title="Ouvrir le dossier" onclick="openDossier('${c.compte_id}')">${esc(nomComplet)}</div>
             <div class="eff-role">${accountRoleLabel(c)} · ${SERVICE_LABELS[c.service]||"—"}</div>
+            <span class="eff-chip">${esc(statut)}</span>
             ${c.telephone ? `<div style="font-size:10.5px;color:var(--text3);margin-top:2px;">
               <a href="tel:${esc(c.telephone)}" style="color:inherit;text-decoration:none;">📞 ${esc(fmtTel(c.telephone))}</a>
             </div>` : ""}
@@ -10320,9 +10759,10 @@ function renderCartesProList(list) {
   el.innerHTML = list.map(g=>{
     const carte = cartesProCache.find(c=>String(c.compte_id)===String(g.compte_id));
     const expLabel = carte ? new Date(carte.date_expiration+"T00:00:00").toLocaleDateString("fr-FR") : null;
-    return `<div class="card" style="margin-bottom:10px;">
+    return `<div class="card cp-row${carte?" ok":""}" style="margin-bottom:0;">
       <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:180px;">
+        <div class="cp-ava">${esc(((g.prenom||"?")[0]||"")+((g.nom||"?")[0]||"")).toUpperCase()}</div>
+        <div style="flex:1;min-width:150px;">
           <div style="font-weight:700;color:#fff;">${esc(g.prenom)} ${esc(g.nom)}</div>
           <div style="font-size:11.5px;color:var(--text3);">${esc(accountRoleLabel(g))}</div>
         </div>
@@ -10577,37 +11017,38 @@ async function initTableauDeBord() {
           ${manual?`<button class="btn btn-ghost btn-sm" onclick="setAgentDuMois('')">↺ Calcul auto</button>`:""}
         </div></div>` : "";
 
+    const evTxt = avgAll===null ? "—" : (avgAll/20).toFixed(1);
+    const pctBar = avgAll===null ? 0 : Math.round(avgAll);
     el.innerHTML = `
-      <div class="dos-stats" style="max-width:980px;">
-        <div class="dos-stat"><div class="dos-stat-lbl">Agents actifs</div><div class="dos-stat-val">${active.size}</div></div>
-        <div class="dos-stat"><div class="dos-stat-lbl">Heures — ${esc(monthLabel)}</div><div class="dos-stat-val">${fmtHeuresMin(totalMonth)}</div></div>
-        <div class="dos-stat"><div class="dos-stat-lbl">Moyenne évaluations</div><div class="dos-stat-val">${avgAll===null?"—":`⭐ ${(avgAll/20).toFixed(1)}<span style="font-size:14px;color:var(--text2);"> /5</span>`}${trendHtml}</div></div>
-        <div class="dos-stat"><div class="dos-stat-lbl">Patrouilles actives</div><div class="dos-stat-val">${patrolsActives}</div></div>
-        ${isLeader?`<div class="dos-stat"><div class="dos-stat-lbl">Candidatures en attente</div><div class="dos-stat-val">${candAtt}</div></div>`:""}
+      <div class="kpi-row">
+        <div class="kpi" style="--k:#5DADE2"><div class="kpi-ico">👥</div><div class="kpi-val">${active.size}</div><div class="kpi-lbl">Agents actifs</div></div>
+        <div class="kpi" style="--k:#F0A840"><div class="kpi-ico">⏱</div><div class="kpi-val">${fmtHeuresMin(totalMonth)}</div><div class="kpi-lbl">Heures — ${esc(monthLabel)}</div></div>
+        <div class="kpi" style="--k:#52D98B"><div class="kpi-ico">⭐</div><div class="kpi-val">${evTxt}<small>/5</small>${trendHtml}</div><div class="kpi-lbl">Moyenne évaluations</div><div class="kpi-bar"><i style="width:${pctBar}%"></i></div></div>
+        <div class="kpi" style="--k:#FF6B4A"><div class="kpi-ico">🚨</div><div class="kpi-val">${patrolsActives}</div><div class="kpi-lbl">Patrouilles actives</div></div>
+        ${isLeader?`<div class="kpi" style="--k:#B388EB"><div class="kpi-ico">📥</div><div class="kpi-val">${candAtt}</div><div class="kpi-lbl">Candidatures en attente</div></div>`:""}
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:980px;margin-bottom:16px;">
-        <div class="card" style="margin:0;">
-          <div class="card-hdr"><div class="card-hdr-title">🏅 Agent du mois</div></div>
-          <div class="card-body">
-            ${winner ? `<div style="text-align:center;padding:6px 0;">
-                <div style="font-size:34px;">🏆</div>
-                <div style="font-family:var(--font-serif);font-size:26px;font-weight:700;color:#fff;margin:4px 0;">${esc(winner)}</div>
-                <div style="font-size:12px;color:var(--text2);">${fmtHeuresMin(wMins)} ce mois-ci${wEv!==null?` · ⭐ ${(wEv/20).toFixed(1)}/5`:""}</div>
-                <div style="font-size:10.5px;color:var(--text3);margin-top:6px;">${manual?"Désigné par la direction":"Calculé : 60 % heures + 40 % évaluations"}</div>
-              </div>` : `<div style="font-size:12px;color:var(--text3);">Pas assez de données ce mois-ci.</div>`}
-            ${leaderControls}
-          </div>
+      <div class="dash-grid">
+        <div class="dash-hero">
+          <div class="dash-hero-tag">🏅 Agent du mois</div>
+          ${winner ? `<div class="dash-hero-body">
+              <div class="dash-hero-trophy">🏆</div>
+              <div>
+                <div class="dash-hero-name">${esc(winner)}</div>
+                <div class="dash-hero-meta"><span>⏱ ${fmtHeuresMin(wMins)}</span>${wEv!==null?`<span>⭐ ${(wEv/20).toFixed(1)}/5</span>`:""}</div>
+                <div class="dash-hero-note">${manual?"Désigné par la direction":"Calculé : 60 % heures + 40 % évaluations"}</div>
+              </div>
+            </div>` : `<div style="font-size:12px;color:var(--text3);padding:14px 0;">Pas assez de données ce mois-ci.</div>`}
+          ${leaderControls}
         </div>
-        <div class="card" style="margin:0;">
+        <div class="card dash-pod-card">
           <div class="card-hdr"><div class="card-hdr-title">🥇 Podium des heures — ${esc(monthLabel)}</div></div>
           <div class="card-body">${podHtml}</div>
         </div>
-      </div>
-
-      <div class="card" style="max-width:980px;">
-        <div class="card-hdr"><div class="card-hdr-title">📈 Heures de service par semaine (8 dernières semaines)</div></div>
-        <div class="card-body">${chart}</div>
+        <div class="card dash-chart-card">
+          <div class="card-hdr"><div class="card-hdr-title">📈 Heures de service par semaine (8 dernières semaines)</div></div>
+          <div class="card-body">${chart}</div>
+        </div>
       </div>`;
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement du tableau de bord.</p></div>'; console.warn("initTableauDeBord:", e); }
 }
@@ -11269,29 +11710,28 @@ async function initMesEvaluations() {
       return;
     }
     const moyenne = evals.reduce((s,e)=>s+(e.pourcentage||0),0)/evals.length;
+    const chrono = [...evals].reverse();
+    const vals = chrono.map(e=>e.pourcentage||0), lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(20, hi-lo);
+    const pts = chrono.map((e,i)=>{ const x = chrono.length>1 ? 12+i*(276/(chrono.length-1)) : 150; const y = 56 - (((e.pourcentage||0)-lo)/span)*44; return [x,y]; });
+    const spark = chrono.length>1 ? `<svg class="ev-spark" viewBox="0 0 300 66" preserveAspectRatio="none"><polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="var(--accent-light)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#0b1019" stroke="var(--accent-light)" stroke-width="2"/>`).join("")}</svg>` : "";
+    const last = evals[0], prev = evals[1];
+    const delta = prev ? Math.round(((last.pourcentage||0)-(prev.pourcentage||0))/20*10)/10 : null;
     el.innerHTML = `
-      <div class="card" style="max-width:520px;margin-bottom:20px;">
-        <div class="card-body" style="text-align:center;padding:22px;">
-          <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Moyenne générale</div>
-          ${starsHTML(moyenne)}
-          <div style="font-family:var(--font-serif);font-size:26px;font-weight:700;color:#fff;margin-top:8px;">${(moyenne/20).toFixed(1)} / 5</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Basée sur ${evals.length} évaluation${evals.length>1?"s":""}</div>
-        </div>
-      </div>
-      ${evals.map(e=>{
-        const d = e.date_eval ? new Date(e.date_eval+"T12:00:00").toLocaleDateString("fr-FR") : "";
+      <section class="ev-hero">${evRing(moyenne, 128)}
+        <div class="ev-hero-b"><div class="ev-hero-k">Moyenne générale</div><div class="ev-hero-v">${(moyenne/20).toFixed(1)}<small> / 5</small></div>${starsHTML(moyenne)}
+          <div class="ev-hero-s">${evals.length} évaluation${evals.length>1?"s":""}${delta!==null?` · dernière : ${delta>0?"▲ +":delta<0?"▼ ":"= "}${delta!==0?delta:"stable"} point${Math.abs(delta)>1?"s":""} par rapport à la précédente`:""}</div></div>
+        ${spark?`<div class="ev-hero-c"><div class="ev-hero-k">Évolution</div>${spark}</div>`:""}</section>
+      <div class="ev-hist ev-hist-me">${evals.map(e=>{
+        const d = e.date_eval ? new Date(e.date_eval+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}) : "";
         const vmeta = VERDICT_META[e.verdict]||{color:"#fff",icon:""};
         const evaluateurRole = roleMap[e.evaluateur] ? ` (${roleMap[e.evaluateur]})` : "";
-        return `<div class="card" style="max-width:520px;">
-          <div class="card-body">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-              <div>${starsHTML(e.pourcentage)}<div style="font-size:11px;color:var(--text3);margin-top:4px;">${d} · évalué par ${esc(e.evaluateur||"—")}${esc(evaluateurRole)}</div></div>
-              <div style="font-weight:800;color:${vmeta.color};white-space:nowrap;">${vmeta.icon} ${esc(e.verdict||"")} <span style="font-weight:600;color:var(--text2);">(${(e.pourcentage/20).toFixed(1)}/5)</span></div>
-            </div>
-            ${e.notes ? `<div style="font-size:12.5px;color:var(--text);line-height:1.6;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px;white-space:pre-line;">${esc(e.notes)}</div>` : `<div style="font-size:11.5px;color:var(--text3);font-style:italic;">Aucun commentaire laissé par l'évaluateur.</div>`}
-          </div>
-        </div>`;
-      }).join("")}
+        return `<article class="ev-card" style="--vc:${vmeta.color}">
+          <div class="ev-card-top">${evRing(e.pourcentage, 72, vmeta.color)}<div class="ev-card-id"><div class="ev-card-n">${(e.pourcentage/20).toFixed(1)} / 5</div><div class="ev-card-d">${d}</div><div class="ev-card-d">par ${esc(e.evaluateur||"—")}${esc(evaluateurRole)}</div></div></div>
+          <div class="ev-badge" style="--vc:${vmeta.color}">${vmeta.icon} ${esc(e.verdict||"")}</div>
+          ${evBars(e.criteres)}
+          ${e.notes ? `<div class="ev-quote">« ${esc(e.notes)} »</div>` : ""}
+        </article>`;
+      }).join("")}</div>
     `;
     markMesEvalsSeen(evals);
   } catch(e) { el.innerHTML = '<div class="empty"><p>Erreur de chargement.</p></div>'; }
@@ -11809,7 +12249,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v5.6 — sécurité 4B";
+const SITE_VERSION = "v6.4 — évaluations";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
@@ -11852,6 +12292,50 @@ if(_sharedCarteToken) {
   loadLandingContent();
 }
 
+
+
+
+/* ═══ v6 — Pouls de la filiale (accueil) : tout est calculé à partir de ce qui existe déjà ═══ */
+const _ago = ts => { const m = Math.max(0, Math.round((Date.now()-new Date(ts).getTime())/60000)); return m<1 ? "à l'instant" : m<60 ? `il y a ${m} min` : m<1440 ? `il y a ${Math.floor(m/60)} h` : `il y a ${Math.floor(m/1440)} j`; };
+async function renderHomePulse() {
+  const host = document.getElementById("accueil-content"); if(!host || !host.querySelector(".hm-head")) return;
+  const old = document.getElementById("hm-pulse"); if(old) old.remove();
+  const svc = myService(); const safe = p => p.catch(()=>[]);
+  const since = new Date(Date.now()-36*3600*1000).toISOString();
+  const [duty, recent, units, evals] = await Promise.all([
+    safe(sb("services_logs?fin=is.null&select=agent_nom,debut&order=debut")),
+    safe(sb(`services_logs?debut=gte.${encodeURIComponent(since)}&select=agent_nom,debut,fin,duree_minutes&order=debut.desc&limit=60`)),
+    safe(sb("patrouilles_live?select=patrol_id,statut,conducteur,updated_at,updated_by&order=patrol_id")),
+    safe(sb(`evaluations?select=agent_nom,pourcentage,date_eval&order=date_eval.desc&limit=8`)),
+  ]);
+  const isTest = n => TEST_ACCOUNT_NAMES.includes(n);
+  const onDuty = (duty||[]).filter(d=>!isTest(d.agent_nom));
+  const feed = [];
+  (recent||[]).filter(r=>!isTest(r.agent_nom)).forEach(r=>{
+    feed.push({t:r.debut, ic:"🟢", txt:`<b>${esc(r.agent_nom)}</b> a pris son service`});
+    if(r.fin) feed.push({t:r.fin, ic:"🏁", txt:`<b>${esc(r.agent_nom)}</b> a terminé un service de ${fmtHeuresMin(r.duree_minutes||0)}`});
+  });
+  (units||[]).filter(u=>u.updated_at && Date.now()-new Date(u.updated_at)<36*3600*1000).forEach(u=>{
+    const defs = {centrale:"Centrale",cmd:"Commandement"}; const nm = defs[(u.patrol_id||"").split("-").pop()] || ("Dog "+(u.patrol_id||"").split("-").pop());
+    feed.push({t:u.updated_at, ic:"📻", txt:`<b>${esc(nm)}</b> est passé en <b>${esc(u.statut||"—")}</b>`});
+  });
+  (evals||[]).filter(e=>(e.pourcentage||0)>=90 && !isTest(e.agent_nom) && e.date_eval && Date.now()-new Date(e.date_eval+"T12:00:00")<7*86400000).forEach(e=>{
+    feed.push({t:e.date_eval+"T12:00:00", ic:"⭐", txt:`<b>${esc(e.agent_nom)}</b> a décroché ${(e.pourcentage/20).toFixed(1)}/5 à son évaluation`});
+  });
+  feed.sort((a,b)=>new Date(b.t)-new Date(a.t));
+  const ST = {"Disponible":"#52D98B","Indisponible":"#F08080","Intervention":"#FF6B4A","Convoi":"#F0A840","Transfert CH":"#F0A840","Formation":"#5DADE2","Hors service":"#5C6E82"};
+  const uid = {centrale:"Centrale","01":"01","02":"02","03":"03","04":"04",cmd:"Cmd"};
+  const leds = (units||[]).map(u=>{ const k=(u.patrol_id||"").split("-").pop(); return `<span class="hp-unit" title="${esc(u.statut||"")}" style="--c:${ST[u.statut]||"#5C6E82"}"><i></i>${uid[k]||k}</span>`; }).join("");
+  const ini = n => n.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+  const html = `<section id="hm-pulse" class="hp"><div class="hp-live">
+      <div class="hp-t"><span class="hp-pulse"></span>Sur le terrain</div>
+      <div class="hp-big"><b>${onDuty.length}</b><span>${onDuty.length>1?"en service":"en service"}</span></div>
+      <div class="hp-faces">${onDuty.length ? onDuty.slice(0,10).map(d=>`<div class="hp-face" title="${esc(d.agent_nom)} · ${_ago(d.debut).replace("il y a ","depuis ")}"><span>${esc(ini(d.agent_nom))}</span></div>`).join("")+(onDuty.length>10?`<div class="hp-face more">+${onDuty.length-10}</div>`:"") : '<div class="hp-none">Personne en service pour le moment.</div>'}</div>
+      ${leds?`<div class="hp-units">${leds}</div>`:""}
+      <button class="hm-chip" onclick="goPage('patrouilles')">Ouvrir la salle de régulation</button></div>
+    <div class="hp-feed"><div class="hp-t">Fil d'activité</div>${feed.length ? feed.slice(0,9).map(f=>`<div class="hp-it"><span class="hp-ic">${f.ic}</span><span class="hp-tx">${f.txt}</span><time>${_ago(f.t)}</time></div>`).join("") : '<div class="hp-none">Rien à signaler depuis hier.</div>'}</div></section>`;
+  host.querySelector(".hm-head").insertAdjacentHTML("afterend", html);
+}
 </script>
 </body>
 </html>
