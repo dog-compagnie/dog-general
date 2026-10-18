@@ -1008,6 +1008,12 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
 .hier-section{grid-template-columns:200px 1fr;align-items:center;}
 .hier-section-hdr{flex-direction:row;flex-wrap:wrap;align-items:center;}
 .hier-section-hdr .label{flex:1 1 90px;}
+
+/* ═══ v5.5 — retire les derniers plafonds de largeur ═══ */
+.cal-grid{max-width:none !important;}
+.cal-cell{min-height:110px;}
+.page [style*="max-width:9"],.page [style*="max-width: 9"],.page [style*="max-width:8"],.page [style*="max-width:7"]{max-width:none !important;}
+#calendrier-content > *{max-width:none !important;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -2640,6 +2646,13 @@ const sb = async (path, opts={}) => {
   return r.json().catch(()=>[]);
 };
 
+// Appel d'une fonction serveur Supabase (PIN, comptes…) — les codes PIN ne transitent plus en lecture
+const rpc = async (name, args={}) => {
+  const r = await fetch(SB_URL+"/rest/v1/rpc/"+name, {method:"POST", headers:H, mode:"cors", body:JSON.stringify(args)});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json().catch(()=>null);
+};
+
 // ─── STATE ─────────────────────────────────────────────────────────
 let role = null;
 let currentCompte = null; // compte individuel connecté
@@ -2919,7 +2932,7 @@ async function ouvrirLecteursNote(noteId) {
   try {
     if(!allPersonnes.length) {
       const [personnes, grades] = await Promise.all([
-        sb("agents_comptes?select=*&order=nom"),
+        sb("agents_comptes_v?select=*&order=nom"),
         sb("agents_grades?select=*"),
       ]);
       allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
@@ -5474,7 +5487,7 @@ function syncBadge(msg, color="#4A7F5E") {
 }
 
 // ─── PINS & COMPTES ────────────────────────────────────────────────
-const PINS = { agent:"0156", responsable:"1569", admin:"8476", candidat:null };
+const PINS = {}; // les codes ne sont plus dans le site : vérifiés côté serveur (login_pin / login_role)
 let currentAgent = null; // { id, nom, prenom, role } for individual login
 let serviceEnCours = null; // { id, debut } current service
 let serviceTimer = null;
@@ -6543,7 +6556,7 @@ function genTestToken() {
 }
 async function ouvrirLienTest(nomTest) {
   try {
-    const comptes = await sb(`agents_comptes?select=*&prenom=eq.${encodeURIComponent(nomTest.split(" ")[0])}&nom=eq.${encodeURIComponent(nomTest.split(" ")[1])}`);
+    const comptes = await sb(`agents_comptes_v?select=*&prenom=eq.${encodeURIComponent(nomTest.split(" ")[0])}&nom=eq.${encodeURIComponent(nomTest.split(" ")[1])}`);
     const compte = comptes && comptes[0];
     if(!compte) { toast("Compte de test introuvable.","#E74C3C"); return; }
     // Un seul clic : on se connecte sur sa première filiale, le changement de service se fait
@@ -6573,7 +6586,7 @@ async function refreshTestAccountsToggleUI() {
   const labels = {"Test TEST1":"Agent", "Test TEST2":"Responsable", "Test TEST3":"PDG"};
   let bloques = {};
   try {
-    const rows = await sb("agents_comptes?select=prenom,nom,bloque&prenom=eq.Test");
+    const rows = await sb("agents_comptes_v?select=prenom,nom,bloque&prenom=eq.Test");
     (rows||[]).forEach(r=>{ bloques[`${r.prenom} ${r.nom}`] = !!r.bloque; });
   } catch(e) {}
   box.innerHTML = TEST_ACCOUNT_NAMES.map(nom=>{
@@ -6599,7 +6612,7 @@ async function tryTestTokenLogin(token) {
       return false;
     }
     await sb(`test_login_tokens?id=eq.${t.id}`, {method:"PATCH", body:JSON.stringify({used:true})});
-    const comptes = await sb(`agents_comptes?select=*&id=eq.${t.compte_id}`);
+    const comptes = await sb(`agents_comptes_v?select=*&id=eq.${t.compte_id}`);
     const compte = comptes && comptes[0];
     // Tous les grades du même rôle (pas juste la filiale initiale) : indispensable pour que
     // le sélecteur de filiale de la barre du haut propose bien les 4 services ensuite.
@@ -6801,7 +6814,7 @@ function finishLaunch() {
 async function checkAccountStillExists() {
   if(!currentCompte || !currentCompte.compte_id || role==="admin" || role==="candidat") return;
   try {
-    const rows = await sb(`agents_comptes?id=eq.${currentCompte.compte_id}&select=id,bloque`);
+    const rows = await sb(`agents_comptes_v?id=eq.${currentCompte.compte_id}&select=id,bloque`);
     if(!rows || !rows.length) {
       toast("Votre compte a été supprimé — déconnexion…", "#E74C3C");
       setTimeout(()=>logoutToLanding(), 1200);
@@ -7455,11 +7468,15 @@ async function confirmLogin() {
   if(role==="agent" || role==="responsable" || role==="pdg") {
     // PIN individuel — la personne existe une seule fois, on cherche son grade pour le rôle choisi
     try {
-      const r = await fetch(SB_URL+"/rest/v1/agents_comptes?pin=eq."+encodeURIComponent(pin)+"&select=*", {
-        headers:H, mode:"cors"
-      });
-      const comptes = await r.json();
-      if(!comptes||!comptes.length) {
+      const res = await rpc("login_pin", {p_pin:pin, p_table:"agents"});
+      if(res && res.error==="locked") {
+        err.textContent="Trop de tentatives échouées. Réessayez dans quelques minutes.";
+        err.style.display="block";
+        document.getElementById("pin-input").value="";
+        return;
+      }
+      const comptes = (res && !res.error) ? [res] : [];
+      if(!comptes.length) {
         err.textContent="Code PIN incorrect. Réessayez.";
         err.style.display="block";
         document.getElementById("pin-input").value="";
@@ -7508,9 +7525,14 @@ async function confirmLogin() {
       return;
     }
     try {
-      const r = await fetch(SB_URL+"/rest/v1/candidats_comptes?pin=eq."+encodeURIComponent(pin)+"&select=*", {headers:H, mode:"cors"});
-      const data = await r.json();
-      if(data && data.length) {
+      const resC = await rpc("login_pin", {p_pin:pin, p_table:"candidats"});
+      if(resC && resC.error==="locked") {
+        err.textContent="Trop de tentatives échouées. Réessayez dans quelques minutes.";
+        err.style.display="block";
+        return;
+      }
+      const data = (resC && !resC.error) ? [resC] : [];
+      if(data.length) {
         if(data[0].promu) {
           err.textContent="Votre candidature a été retenue en tant que "+agentLabel(data[0].service)+" ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.";
           err.style.display="block";
@@ -7520,22 +7542,15 @@ async function confirmLogin() {
       } else {
         // Vérifie que ce PIN n'est pas déjà utilisé par un compte agent existant,
         // sans quoi deux personnes différentes pourraient partager le même code.
-        const agentCheck = await fetch(SB_URL+"/rest/v1/agents_comptes?pin=eq."+encodeURIComponent(pin)+"&select=id", {headers:H, mode:"cors"});
-        const agentMatch = await agentCheck.json();
-        if(agentMatch && agentMatch.length) {
+        const pinPris = await rpc("pin_est_pris", {p_pin:pin});
+        if(pinPris === true) {
           err.textContent="Ce code PIN est déjà utilisé. Choisissez-en un autre.";
           err.style.display="block";
           document.getElementById("pin-input").value="";
           document.getElementById("pin-input").focus();
           return;
         }
-        const cr = await fetch(SB_URL+"/rest/v1/candidats_comptes", {
-          method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-          body: JSON.stringify({pin})
-        });
-        if(!cr.ok) throw new Error(await cr.text());
-        const created = await cr.json();
-        currentCompte = created[0];
+        currentCompte = await rpc("creer_compte_candidat", {p_pin:pin});
       }
       currentAgent = null;
       launchApp();
@@ -7545,12 +7560,17 @@ async function confirmLogin() {
     }
   } else {
     // Admin — PIN fixe
-    if(PINS[role] && pin !== PINS[role]) {
-      err.textContent="Code PIN incorrect. Réessayez.";
-      err.style.display="block";
-      document.getElementById("pin-input").value="";
-      document.getElementById("pin-input").focus();
-      return;
+    if(role==="admin") {
+      let okAdmin = false, locked = false;
+      try { const ra = await rpc("login_role", {p_role:"admin", p_pin:pin}); okAdmin = !!(ra && ra.ok); locked = !!(ra && ra.error==="locked"); }
+      catch(e) { err.textContent="Erreur de connexion : "+e.message; err.style.display="block"; return; }
+      if(!okAdmin) {
+        err.textContent = locked ? "Trop de tentatives échouées. Réessayez dans quelques minutes." : "Code PIN incorrect. Réessayez.";
+        err.style.display="block";
+        document.getElementById("pin-input").value="";
+        document.getElementById("pin-input").focus();
+        return;
+      }
     }
     currentCompte = null;
     currentAgent = null;
@@ -8619,27 +8639,11 @@ async function updateCand(id, statut) {
 
 async function promouvoirCandidat(c) {
   try {
-    const rows = await sb(`candidats_comptes?candidature_id=eq.${c.id}&select=*`);
+    const rows = await sb(`candidats_comptes_v?candidature_id=eq.${c.id}&select=*`);
     const compte = rows && rows[0];
     if(!compte || compte.promu) return;
-    let personneId;
-    const existing = await sb(`agents_comptes?pin=eq.${encodeURIComponent(compte.pin)}&select=*`);
-    if(existing && existing.length) {
-      personneId = existing[0].id;
-      // Complète le téléphone/email si absents sur le compte existant, sans écraser une donnée déjà à jour
-      const maj = {};
-      if(!existing[0].telephone && c.telephone) maj.telephone = c.telephone;
-      if(!existing[0].email && c.email) maj.email = c.email;
-      if(Object.keys(maj).length) await sb(`agents_comptes?id=eq.${personneId}`,{method:"PATCH",body:JSON.stringify(maj)});
-    } else {
-      const r = await fetch(SB_URL+"/rest/v1/agents_comptes", {
-        method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-        body: JSON.stringify({prenom:compte.prenom||c.prenom, nom:compte.nom||c.nom, pin:compte.pin, telephone:c.telephone||null, email:c.email||null})
-      });
-      if(!r.ok) throw new Error(await r.text());
-      const created = await r.json();
-      personneId = created && created[0] && created[0].id;
-    }
+    const personneId = await rpc("promouvoir_candidat_compte", {p_cand_id:compte.id, p_prenom:c.prenom||null, p_nom:c.nom||null, p_telephone:c.telephone||null, p_email:c.email||null});
+    if(!personneId) throw new Error("Compte candidat introuvable");
     const gradeExisting = await sb(`agents_grades?compte_id=eq.${personneId}&service=eq.${c.service||"securite"}&select=id`);
     if(!gradeExisting || !gradeExisting.length) {
       await fetch(SB_URL+"/rest/v1/agents_grades", {
@@ -8962,7 +8966,7 @@ let effectifsComptesCache = [];
 async function syncStatutsAbsence() {
   try {
     const [personnes, grades, absencesRows] = await Promise.all([
-      sb("agents_comptes?select=id,prenom,nom"),
+      sb("agents_comptes_v?select=id,prenom,nom"),
       sb("agents_grades?select=*"),
       sb("absences?select=agent_nom,date_debut,date_fin,statut,service&statut=eq.Validée&service=in.(securite,depannage,rescue)"),
     ]);
@@ -9004,7 +9008,7 @@ async function loadEffectifsList() {
   const el = document.getElementById("effectifs-list");
   try {
     const [personnes, grades, logs, ajustements, evals] = await Promise.all([
-      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_comptes_v?select=*&order=nom"),
       sb("agents_grades?select=*"),
       sb("services_logs?select=agent_nom,debut,duree_minutes,service&order=debut.desc&limit=5000"),
       sb("ajustements_heures?select=*&limit=2000"),
@@ -9290,7 +9294,7 @@ async function creerEvenement() {
     const created = await r.json();
     const evtId = created && created[0] && created[0].id;
     const [comptes, grades] = await Promise.all([
-      sb("agents_comptes?select=id,prenom,nom"),
+      sb("agents_comptes_v?select=id,prenom,nom"),
       sb(`agents_grades?select=compte_id&service=eq.${svc}`),
     ]);
     const idsDuService = new Set((grades||[]).map(g=>String(g.compte_id)));
@@ -9844,7 +9848,7 @@ let allPersonnes = [];
 async function loadComptes() {
   try {
     const [personnes, grades] = await Promise.all([
-      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_comptes_v?select=*&order=nom"),
       sb("agents_grades?select=*"),
     ]);
     allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
@@ -9855,7 +9859,7 @@ function flatGrades() {
   // Une ligne par grade, avec l'identité de la personne rattachée — pratique pour Hiérarchie/Effectifs
   const out = [];
   allPersonnes.forEach(p=>{
-    (p.grades||[]).forEach(g=>out.push({...g, compte_id:p.id, prenom:p.prenom, nom:p.nom, pin:p.pin, telephone:p.telephone, email:p.email}));
+    (p.grades||[]).forEach(g=>out.push({...g, compte_id:p.id, prenom:p.prenom, nom:p.nom, telephone:p.telephone, email:p.email}));
   });
   return out;
 }
@@ -10218,7 +10222,7 @@ async function initCartesProGestion() {
   el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
   try {
     const [personnes, grades, cartes] = await Promise.all([
-      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_comptes_v?select=*&order=nom"),
       sb("agents_grades?select=*"),
       sb(`cartes_pro?service=eq.${myService()}&select=*`),
     ]);
@@ -10370,7 +10374,7 @@ async function buildRoleByNameMap() {
   // ACTUEL de la personne sur cette filiale (une évaluation ne mémorise que le nom).
   try {
     const [comptes, grades] = await Promise.all([
-      sb("agents_comptes?select=id,prenom,nom"),
+      sb("agents_comptes_v?select=id,prenom,nom"),
       sb("agents_grades?select=compte_id,role,formateur,general,adjoint"),
     ]);
     const map = {};
@@ -10440,7 +10444,7 @@ async function initTableauDeBord() {
     const [logs, ajust, comptes, grades, evals, cfg] = await Promise.all([
       safe(sb(`services_logs?select=agent_nom,debut,duree_minutes&fin=not.is.null&debut=gte.${encodeURIComponent(firstWeek.toISOString())}&limit=5000`)),
       safe(sb("ajustements_heures?select=*&limit=2000")),
-      safe(sb("agents_comptes?select=id,prenom,nom")),
+      safe(sb("agents_comptes_v?select=id,prenom,nom")),
       safe(sb(`agents_grades?select=compte_id,statut_effectif&service=eq.${svc}`)),
       safe(sb("evaluations?select=agent_nom,pourcentage,date_eval&limit=3000")),
       safe(sb(`site_config?select=id,valeur&cle=eq.${encodeURIComponent(cfgKey)}&limit=1`)),
@@ -10874,7 +10878,7 @@ async function renderDossier(el, compteId, isOwn) {
   el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
   window._dossierRerender = ()=>renderDossier(el, compteId, isOwn);
   try {
-    const comptes = await sb(`agents_comptes?id=eq.${compteId}&select=*`);
+    const comptes = await sb(`agents_comptes_v?id=eq.${compteId}&select=*`);
     const compte = comptes && comptes[0];
     if(!compte) { el.innerHTML = '<div class="empty"><p>Compte introuvable (peut-être supprimé).</p></div>'; return; }
     const nom = `${compte.prenom||""} ${compte.nom||""}`.trim();
@@ -11317,7 +11321,7 @@ async function loadHierarchie() {
   const el = document.getElementById("hierarchie-list");
   try {
     const [personnes, grades] = await Promise.all([
-      sb("agents_comptes?select=*&order=nom"),
+      sb("agents_comptes_v?select=*&order=nom"),
       sb("agents_grades?select=*"),
     ]);
     allPersonnes = (personnes||[]).map(p=>({...p, grades:(grades||[]).filter(g=>String(g.compte_id)===String(p.id))}));
@@ -11472,10 +11476,10 @@ function renderComptes() {
         <div class="ac-nom">${esc(p.prenom)} ${esc(p.nom)}</div>
         ${isAdmin ? `
           <div class="ac-pin" style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
-            PIN : <input type="text" inputmode="numeric" maxlength="4" value="${esc(p.pin||"")}" id="pin-edit-${p.id}" style="width:80px;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:3px 6px;">
-            <button class="btn btn-ghost btn-sm" onclick="modifierPin('${p.id}')" style="padding:2px 8px;">💾</button>
+            PIN : •••• <input type="text" inputmode="numeric" maxlength="4" placeholder="Nouveau" value="" id="pin-edit-${p.id}" style="width:80px;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:6px;color:#fff;font-size:12px;padding:3px 6px;">
+            <button class="btn btn-ghost btn-sm" onclick="modifierPin('${p.id}')" style="padding:2px 8px;" title="Définir le nouveau PIN">💾</button>
           </div>`
-        : `<div class="ac-pin">PIN : ${"•".repeat((p.pin||"").length)}</div>`}
+        : `<div class="ac-pin">PIN : ••••</div>`}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
         ${(p.grades||[]).length ? p.grades.map(g=>`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(${ACCENT_BY_SERVICE[g.service].rgb},0.2);color:${ACCENT_BY_SERVICE[g.service].light};border:1px solid rgba(${ACCENT_BY_SERVICE[g.service].rgb},0.4);">${SERVICE_ICONS[g.service]} ${esc(accountRoleLabel(g))}</span>`).join("")
@@ -11610,19 +11614,12 @@ async function ajouterGrade() {
     const telephone = document.getElementById("ac-telephone").value.replace(/\D/g,"")||null;
     if(!prenom||!nom||!pin){ toast("Remplissez prénom, nom et PIN.","#E74C3C"); return; }
     if(!/^\d{4}$/.test(pin)){ toast("Le PIN doit faire exactement 4 chiffres.","#E74C3C"); return; }
-    if(allPersonnes.some(p=>p.pin===pin)){ toast("Ce PIN est déjà utilisé par quelqu'un d'autre.","#E74C3C"); return; }
     try {
-      const candCheck = await sb(`candidats_comptes?pin=eq.${encodeURIComponent(pin)}&promu=eq.false&select=id`);
-      if(candCheck && candCheck.length) { toast("Ce PIN est déjà utilisé par un candidat en attente de réponse.","#E74C3C"); return; }
+      if(await rpc("pin_est_pris", {p_pin:pin}) === true) { toast("Ce PIN est déjà utilisé par quelqu'un d'autre.","#E74C3C"); return; }
     } catch(e) {}
     try {
-      const r = await fetch(SB_URL+"/rest/v1/agents_comptes",{
-        method:"POST", headers:{...H,"Prefer":"return=representation"}, mode:"cors",
-        body:JSON.stringify({prenom,nom,pin,telephone})
-      });
-      if(!r.ok) throw new Error(await r.text());
-      const created = await r.json();
-      personneId = created && created[0] && created[0].id;
+      const created = await rpc("creer_compte_agent", {p_prenom:prenom, p_nom:nom, p_telephone:telephone, p_pin:pin});
+      personneId = created && created.id;
       logActivity("compte_cree", `Compte créé : ${prenom} ${nom}`);
     } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); return; }
   }
@@ -11661,9 +11658,9 @@ async function modifierPin(id) {
   if(!inp) return;
   const newPin = inp.value.trim();
   if(!/^\d{4}$/.test(newPin)) { toast("Le PIN doit faire exactement 4 chiffres.","#E74C3C"); return; }
-  if(allPersonnes.some(p=>String(p.id)!==String(id) && p.pin===newPin)) { toast("Ce PIN est déjà utilisé par un autre compte.","#E74C3C"); return; }
   try {
-    await sb(`agents_comptes?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({pin:newPin})});
+    if(await rpc("pin_est_pris", {p_pin:newPin}) === true) { toast("Ce PIN est déjà utilisé par un autre compte.","#E74C3C"); return; }
+    await rpc("definir_pin", {p_table:"agents", p_id:Number(id), p_pin:newPin});
     const p = allPersonnes.find(x=>String(x.id)===String(id));
     logActivity("compte_pin_modifie", `PIN modifié pour ${p?p.prenom+" "+p.nom:"un compte"} (par Admin)`);
     toast("✓ PIN mis à jour");
@@ -11676,12 +11673,8 @@ async function supprimerCompte(id) {
   const saisie = prompt(`Cette action est IRRÉVERSIBLE (compte, grades et logs de service supprimés). Pour confirmer la suppression de ${p?p.prenom+" "+p.nom:"ce compte"}, tapez SUPPRIMER en majuscules :`);
   if(saisie !== "SUPPRIMER") { if(saisie!==null) toast("Suppression annulée — texte incorrect.","#E74C3C"); return; }
   try {
-    await sb("agents_comptes?id=eq."+id,{method:"DELETE"});
-    // Libère le PIN côté portail candidat : sans ça, un ancien dossier "déjà promu" avec
-    // le même code bloquerait silencieusement toute nouvelle candidature avec ce PIN.
-    if(p && p.pin) {
-      try { await sb(`candidats_comptes?pin=eq.${encodeURIComponent(p.pin)}`, {method:"DELETE"}); } catch(e2) {}
-    }
+    // Supprime le compte et libère son PIN côté portail candidat (fait côté serveur)
+    await rpc("supprimer_compte_agent", {p_id:Number(id)});
     if(p) logActivity("compte_supprime", `Compte supprimé : ${p.prenom} ${p.nom} (PIN libéré pour une nouvelle candidature)`);
     toast("✓ Compte supprimé — le PIN est de nouveau disponible");
     document.getElementById("ac-personne-card").style.display = "none";
