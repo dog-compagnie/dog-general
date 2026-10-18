@@ -986,6 +986,28 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
   .notif-panel{position:fixed;top:64px;left:8px;right:8px;width:auto;}
 }
 @media (max-width:360px){ .topbar-logo{display:none;} }
+
+/* ═══ v5.4 — boutons Retour, hiérarchie, dossiers ═══ */
+.page.active > .btn,.page.active > button{justify-self:start;align-self:start;width:auto;}
+.page > .btn-ghost.btn-sm{display:inline-flex;}
+.page.active > .btn-ghost.btn-sm[onclick*="goPage"]{padding:8px 16px;border-radius:999px;margin-bottom:0 !important;}
+/* Hiérarchie : bandes horizontales par niveau */
+.hier-connector{display:none;}
+#hierarchie-list{display:flex;flex-direction:column;gap:14px;}
+.hier-section{display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:start;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(120deg,rgba(var(--accent-rgb),.05),transparent 60%);margin:0;}
+.hier-section-hdr{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;margin:0;padding-top:4px;}
+.hier-section-hdr .label{font-size:14px;}
+.hier-grid{grid-template-columns:repeat(auto-fill,minmax(290px,1fr));justify-content:stretch;margin:0;gap:10px;}
+.hier-role-select{max-width:140px;}
+@media (max-width:860px){ .hier-section{grid-template-columns:1fr;} .hier-section-hdr{flex-direction:row;align-items:center;} }
+/* Dossier agent : pleine largeur sur 2 colonnes */
+#dossier-other-content,#dossier-own-content{display:block;column-count:2;column-gap:20px;}
+#dossier-other-content > *,#dossier-own-content > *{max-width:none !important;margin:0 0 16px !important;break-inside:avoid;}
+#dossier-other-content > :first-child,#dossier-own-content > :first-child,#dossier-other-content > .dos-stats,#dossier-own-content > .dos-stats,#dossier-other-content > .empty,#dossier-own-content > .empty{column-span:all;}
+@media (max-width:1000px){#dossier-other-content,#dossier-own-content{column-count:1;}}
+.hier-section{grid-template-columns:200px 1fr;align-items:center;}
+.hier-section-hdr{flex-direction:row;flex-wrap:wrap;align-items:center;}
+.hier-section-hdr .label{flex:1 1 90px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
