@@ -1416,6 +1416,14 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
   <div class="page" id="page-admin-comptes">
     <div class="page-title">Gestion des <span>comptes</span></div>
     <div class="page-sub">Une personne = un seul compte (un PIN). Chaque personne peut avoir un grade différent dans chacun des trois services.</div>
+    <div class="card" id="blocage-card" style="display:none;">
+      <div class="card-hdr"><div class="card-hdr-title">🔐 Blocage des connexions</div></div>
+      <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div id="blocage-etat" style="font-size:12.5px;color:var(--text2);flex:1;min-width:220px;">Chargement…</div>
+        <button class="btn btn-ghost btn-sm" onclick="debloquerConnexions()">🔓 Lever le blocage</button>
+        <button class="btn btn-ghost btn-sm" onclick="chargerEtatBlocage()">🔄 Actualiser</button>
+      </div>
+    </div>
     <div class="admin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px;">
       <div>
         <div class="card">
@@ -2658,18 +2666,21 @@ const sb = async (path, opts={}) => {
 function setAuthToken(tok) {
   H.Authorization = "Bearer " + (tok || SB_KEY);
   window._authTok = tok || null;
+  if(!tok) window._tokState = window._tokState || null;
 }
 // Active le jeton, après avoir vérifié que Supabase l'accepte ; sinon on reste sur la clé publique (rien ne casse).
 async function activateToken(tok) {
-  if(!tok) { setAuthToken(null); return false; }
+  window._tokState = null;
+  if(!tok) { setAuthToken(null); window._tokState = "absent"; return false; }
   setAuthToken(tok);
   try {
     const r = await fetch(SB_URL+"/rest/v1/rpc/jeton_info", {method:"POST", headers:H, mode:"cors", body:"{}"});
     const info = r.ok ? await r.json().catch(()=>null) : null;
-    if(info && info.app_kind) return true;
+    if(info && info.app_kind) { window._tokState = "ok"; return true; }
   } catch(e) {}
   console.warn("Jeton non accepté par Supabase — mode clé publique conservé");
   setAuthToken(null);
+  window._tokState = "refuse";
   return false;
 }
 
@@ -5510,7 +5521,9 @@ function toast(msg, color="#52D98B") {
 }
 function syncBadge(msg, color="#4A7F5E") {
   const b = document.getElementById("sync-badge");
-  if(b){ b.textContent = msg + ((window._authTok && msg.startsWith("✓")) ? " 🔒" : ""); b.style.color=color; b.title = window._authTok ? "Connexion sécurisée (jeton actif)" : ""; }
+  if(b){ const _adm = (role==="admin"||role==="pdg"); const _st = window._tokState;
+    b.textContent = msg + ((msg.startsWith("✓") && _adm) ? (_st==="ok" ? " 🔒" : _st==="refuse" ? " ⚠ jeton refusé" : _st==="absent" ? " ⚠ pas de jeton" : "") : "");
+    b.style.color=color; b.title = _st==="ok" ? "Connexion sécurisée (jeton actif)" : (_st==="refuse" ? "Supabase a refusé le jeton (vérifier le JWT Secret)" : (_st==="absent" ? "Le serveur n'a pas émis de jeton (secret non collé ?)" : "")); }
 }
 
 // ─── PINS & COMPTES ────────────────────────────────────────────────
@@ -6038,7 +6051,7 @@ function goPage(pageId) {
   if(pageId==="patrouilles")       renderPatrols();
   if(pageId==="absences-gestion")  renderAbsences();
   if(pageId==="logs-service")      loadLogs();
-  if(pageId==="admin-comptes")     { loadComptes(); const svcSel=document.getElementById("ac-service"); if(svcSel) svcSel.value = myService(); }
+  if(pageId==="admin-comptes")     { loadComptes(); chargerEtatBlocage(); const svcSel=document.getElementById("ac-service"); if(svcSel) svcSel.value = myService(); }
   if(pageId==="hierarchie")        loadHierarchie();
   if(pageId==="landing-editor")    initLandingEditor();
   if(pageId==="journal")           { loadJournal(); refreshMaintStatusBadge(); loadDiscordWebhook(); refreshTestAccountsToggleUI(); }
@@ -7524,18 +7537,19 @@ async function confirmLogin() {
         document.getElementById("pin-input").value="";
         return;
       }
+      await activateToken(_tokAgent);
       const gr = await fetch(SB_URL+"/rest/v1/agents_grades?compte_id=eq."+compte.id+"&role=eq."+role+"&select=*", {
         headers:H, mode:"cors"
       });
       const grades = await gr.json();
       if(!grades||!grades.length) {
+        setAuthToken(null);
         err.textContent="Code PIN incorrect pour ce rôle. Réessayez.";
         err.style.display="block";
         document.getElementById("pin-input").value="";
         document.getElementById("pin-input").focus();
         return;
       }
-      await activateToken(_tokAgent);
       if(grades.length>1) { showProfilePicker(compte, grades); return; }
       // Le sélecteur de filiale ne doit proposer que les services où la personne
       // possède CE MÊME rôle — pour changer de rôle, il faut se reconnecter avec
@@ -11685,6 +11699,22 @@ async function supprimerGrade(gradeId) {
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 
+async function chargerEtatBlocage() {
+  const card = document.getElementById("blocage-card"), el = document.getElementById("blocage-etat");
+  if(!card || !el) return;
+  if(role!=="admin") { card.style.display="none"; return; }
+  card.style.display="";
+  try {
+    const e = await rpc("etat_blocage");
+    el.innerHTML = e && e.bloque
+      ? `<b style="color:#F0A840;">Connexions bloquées</b> — ${e.echecs} PIN erronés ces 10 dernières minutes. Les agents voient « Trop de tentatives ».`
+      : `Aucun blocage — ${e ? e.echecs : 0} PIN erroné(s) ces 10 dernières minutes (blocage à 15).`;
+  } catch(err) { el.textContent = "Indisponible (le SQL 4C est-il installé ?)"; }
+}
+async function debloquerConnexions() {
+  try { await rpc("reinitialiser_blocage"); toast("✓ Blocage levé"); chargerEtatBlocage(); }
+  catch(err) { toast("Erreur : "+err.message,"#E74C3C"); }
+}
 async function modifierPin(id) {
   const inp = document.getElementById("pin-edit-"+id);
   if(!inp) return;
@@ -11779,7 +11809,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v4 — icônes logo-dc";
+const SITE_VERSION = "v5.6 — sécurité 4B";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
