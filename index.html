@@ -1499,6 +1499,10 @@ tbody tr:hover{box-shadow:none;}
 .dash-hero-name{font-size:22px;}
 .dash-hero-meta span{font-size:11px;padding:4px 10px;}
 .dash-grid{gap:14px;}
+
+.dash-chart-card svg{max-width:860px;max-height:240px;}
+.dash-pod-card .dash-podium{max-width:520px;margin:0 auto;}
+@media (min-width:1500px){.kpi-row{grid-template-columns:repeat(5,minmax(0,1fr));}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -10951,7 +10955,7 @@ function dbWeekStart(d) {
   return x;
 }
 function dbChartSVG(vals, labels) {
-  const W=1000, H=210, pl=40, pr=10, pt=22, pb=30, n=vals.length;
+  const W=760, H=200, pl=40, pr=10, pt=22, pb=30, n=vals.length;
   const max = Math.max(1, ...vals);
   const step = max<=10 ? 2 : max<=40 ? 10 : max<=100 ? 20 : 50;
   const yMax = Math.ceil(max/step)*step || step;
@@ -12306,7 +12310,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v7.1 — refonte pages + archives";
+const SITE_VERSION = "v7.2 — tableau de bord compact";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
