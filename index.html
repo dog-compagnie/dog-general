@@ -305,6 +305,58 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 /* ═══ MAIN ═══ */
 .main{margin-left:212px;padding-top:58px;min-height:100vh;position:relative;z-index:1;}
 .page{display:none;padding:28px;position:relative;}
+/* ═══ NAVIGATION : barre d'icônes + volet (ordinateur) ; accordéon (mobile) ═══ */
+.rail,.rail-btn{font-family:var(--font-body);}
+@media (min-width:861px){
+  .sidenav{width:72px;overflow:visible;align-items:center;padding:10px 0 12px;}
+  .main{margin-left:72px;}
+  #maintenance-screen.service-scope,#sanction-screen{left:72px;}
+  .rail{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;}
+  .rail::-webkit-scrollbar{display:none;}
+  .rail-sep{width:34px;height:1px;background:var(--border);margin:4px 0;}
+  .rail-btn{position:relative;width:54px;min-height:52px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--text2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all .18s;}
+  .rail-btn .rb-ic{font-size:20px;line-height:1;}
+  .rail-btn small{font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+  .rail-btn:hover{background:rgba(93,173,226,.1);color:#fff;}
+  .rail-btn.on{background:linear-gradient(135deg,rgba(var(--accent-rgb),.32),rgba(var(--accent-rgb),.08));color:#fff;border-color:rgba(var(--accent-rgb),.55);}
+  .rail-btn.sel{background:rgba(93,173,226,.16);color:#fff;}
+  .rb-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#E74C3C;color:#fff;font-size:9.5px;font-weight:700;align-items:center;justify-content:center;font-style:normal;display:none;}
+  .rail-foot{margin-top:8px;}
+  .drawer{position:fixed;left:72px;top:58px;bottom:0;width:250px;background:linear-gradient(165deg,#0d131d,#070a0f);border-right:1px solid var(--border);box-shadow:14px 0 34px -14px rgba(0,0,0,.7);padding:16px 10px;overflow-y:auto;z-index:89;opacity:0;transform:translateX(-14px);pointer-events:none;transition:opacity .16s,transform .16s;}
+  .sidenav.drawer-open .drawer{opacity:1;transform:none;pointer-events:auto;}
+  .drawer .sidenav-profile,.drawer .nav-sec-hd{display:none;}
+  .drawer .nav-group,.drawer .nav-group.closed{display:none;}
+  .drawer .nav-group.shown{display:block;}
+  .drawer-title{font-family:var(--font-display);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);padding:2px 10px 12px;}
+  .drawer .nav-item{padding:11px 12px;}
+  .drawer .nav-label{font-size:13px;color:#d6e2f0;}
+}
+@media (max-width:860px){ .rail,.drawer-title{display:none;} .sidenav{background:#07090d !important;} }
+.no-nav .sidenav{display:none !important;}
+.no-nav .main{margin-left:0 !important;}
+.no-nav .hamburger-btn,.no-nav .cmdk-btn{display:none !important;}
+/* Accueil en tuiles */
+.home-hello{font-family:var(--font-display);font-size:26px;font-weight:800;color:#fff;margin-bottom:4px;}
+.home-sub{font-size:12.5px;color:var(--text3);margin-bottom:18px;}
+.home-search{width:100%;max-width:420px;padding:11px 16px;border-radius:12px;background:rgba(9,13,20,.75);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:13px;outline:none;margin-bottom:6px;}
+.home-search:focus{border-color:rgba(93,173,226,.6);}
+.home-sec{font-family:var(--font-display);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin:22px 0 10px;}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
+.home-tile{position:relative;display:flex;align-items:center;gap:13px;text-align:left;padding:15px 16px;border-radius:14px;border:1px solid var(--border);background:linear-gradient(135deg,rgba(24,34,50,.85),rgba(12,17,26,.92));color:#fff;cursor:pointer;font-family:inherit;transition:transform .18s,border-color .18s,box-shadow .18s;}
+.home-tile:hover{transform:translateY(-2px);border-color:rgba(var(--accent-rgb),.6);box-shadow:0 12px 26px -14px rgba(var(--accent-rgb),.8);}
+.home-tile .ht-ic{flex:0 0 44px;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(150deg,rgba(var(--accent-rgb),.42),rgba(var(--accent-rgb),.1));}
+.home-tile b{display:block;font-size:13.5px;font-weight:700;}
+.home-tile span.ht-d{display:block;font-size:11px;color:var(--text3);margin-top:2px;}
+.tile-badge{position:absolute;top:10px;right:12px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#E74C3C;color:#fff;font-size:10.5px;font-weight:700;display:none;align-items:center;justify-content:center;font-style:normal;}
+/* Recherche rapide (Ctrl+K) */
+#cmdk{position:fixed;inset:0;z-index:400;background:rgba(3,5,9,.7);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;}
+#cmdk.show{display:flex;}
+.cmdk-box{width:min(520px,92vw);background:linear-gradient(165deg,#111a28,#080c13);border:1px solid rgba(93,173,226,.3);border-radius:16px;box-shadow:0 30px 70px -20px #000;overflow:hidden;}
+.cmdk-box input{width:100%;padding:16px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);color:#fff;font-size:14px;font-family:inherit;outline:none;}
+.cmdk-list{max-height:320px;overflow-y:auto;padding:8px;}
+.cmdk-it{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:10px;border:none;background:transparent;color:#d6e2f0;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;}
+.cmdk-it.sel,.cmdk-it:hover{background:rgba(93,173,226,.16);color:#fff;}
+.cmdk-it small{margin-left:auto;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;}
 .page-maint-overlay{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:radial-gradient(ellipse at top, rgba(20,26,36,0.98) 0%, rgba(8,11,16,0.99) 100%);z-index:50;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:min(9vh,70px);text-align:center;padding-left:30px;padding-right:30px;padding-bottom:30px;backdrop-filter:blur(6px);overflow-y:auto;}
 .page-maint-overlay.show{display:flex;}
 .page-maint-card{position:relative;background:linear-gradient(165deg,rgba(30,40,55,0.92),rgba(16,22,32,0.97));border:1px solid rgba(93,173,226,0.18);border-radius:22px;padding:36px 0 34px;max-width:400px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55);overflow:hidden;backdrop-filter:blur(6px);}
@@ -957,7 +1009,8 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
         <div id="notif-panel-list"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="logoutToLanding()" title="Retour à la page d'accueil">🏠<span> Accueil</span></button>
+    <button class="logout-btn cmdk-btn" onclick="openCmdk()" title="Rechercher une page (Ctrl+K)">🔍<span> Rechercher</span></button>
+    <button class="logout-btn" onclick="logoutToLanding()" title="Retour au site public (page d'accueil du site)">🌐<span> Site</span></button>
     <button class="logout-btn" onclick="logout()">🔄<span> Changer</span></button>
   </div>
 </div>
@@ -966,6 +1019,9 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 <div class="sidenav" id="sidenav"></div>
 
 <div class="main">
+
+  <!-- PAGE ACCUEIL (tuiles) -->
+  <div class="page" id="page-accueil"><div id="accueil-content"></div></div>
 
   <!-- PAGE PATROUILLES -->
   <div class="page" id="page-patrouilles">
@@ -5358,7 +5414,7 @@ async function refreshCurrentPage() {
   if(pid && getNavConfig().some(it=>it.page===pid && it.roles.includes(role))) {
     goPage(pid); // goPage sait déclencher le bon chargement pour CHAQUE page (pas juste les historiques)
   } else {
-    goPage("patrouilles");
+    goPage(role==="candidat" ? "candidature-form" : "accueil");
   }
   loadAll();
   if(!isMaintenanceExempt()) {
@@ -5475,9 +5531,124 @@ function renderSidenav() {
     </button>`;
   });
   if(open) html += `</div>`;
-  nav.innerHTML = html;
+  // Barre d'icônes (ordinateur) : Accueil + une icône par rubrique
+  const secs = []; items.forEach(it=>{ if(it.section && !secs.includes(it.section)) secs.push(it.section); });
+  const railHtml = `<div class="rail">
+    <button class="rail-btn" id="rail-home" onclick="goPage('accueil')" title="Accueil"><span class="rb-ic">🏠</span><small>Accueil</small></button>
+    <div class="rail-sep"></div>
+    ${secs.map(sc=>`<button class="rail-btn" data-sec="${esc(sc)}" onclick="openRail(this.dataset.sec)" title="${esc(sc)}"><span class="rb-ic">${NAV_SECTION_ICON[sc]||"📁"}</span><small>${esc(NAV_SECTION_SHORT[sc]||sc)}</small><i class="rb-badge"></i></button>`).join("")}
+    <div class="rail-foot"><div class="sidenav-avatar" title="${esc(who)}" style="background:linear-gradient(150deg,var(--accent),var(--accent-deep));">${initials}</div></div>
+  </div>`;
+  document.body.classList.toggle("no-nav", role==="candidat");
+  nav.dataset.sec = "";
+  nav.classList.remove("drawer-open");
+  nav.innerHTML = (role==="candidat" ? "" : railHtml) + `<div class="drawer" id="nav-drawer"><div class="drawer-title" id="drawer-title"></div>${html}</div>`;
   updateNotifBadges();
 }
+const NAV_SECTION_ICON = {"Mon espace":"👤","Opérations":"🛠️","Ma filiale":"🏢","Équipe":"👥","Documents":"📄","Administration":"⚙️"};
+const NAV_SECTION_SHORT = {"Mon espace":"Moi","Opérations":"Opérat.","Ma filiale":"Filiale","Équipe":"Équipe","Documents":"Docs","Administration":"Admin"};
+const NAV_DESC = {
+  "patrouilles":"Statut en direct des équipes","incident":"Déclarer et suivre les incidents","calendrier":"Évènements et présences",
+  "mon-service":"Prise et fin de service","absence-form":"Prévenir d'une absence","ma-carte-pro":"Télécharger et partager ma carte","mes-evaluations":"Mes notes sur 5 et commentaires",
+  "mes-notes":"Notes personnelles privées","mon-dossier":"Mon plan de carrière et mes heures","hierarchie":"Organigramme et rôles","tableau-de-bord":"Heures, classement et évaluations",
+  "notes-service":"Informations officielles de la filiale","bilans":"Bilans d'intervention","dossiers-patients":"Dossiers des patients",
+  "candidatures":"Recrutement et entretiens","effectifs":"Grades, statuts, recrutement","absences-gestion":"Valider les absences","evaluations":"Évaluer les agents",
+  "cartes-pro-gestion":"Créer les cartes professionnelles","logs-service":"Heures de service et corrections",
+  "doc-rh":"Convocations, courriers, sanctions","devis":"Établir un devis","facturation":"Factures et fidélité","dossiers-clients":"Fiches clients",
+  "admin-comptes":"Comptes, accès et sécurité","landing-editor":"Contenu du site public","journal":"Journal, maintenance, réglages"
+};
+function _navItemsForRole() {
+  return getNavConfig().filter(it=>it.roles.includes(role)).map(it=>({...it, section: NAV_SECTION_OF[it.page] || it.section}));
+}
+function openRail(sec) {
+  const sn = document.getElementById("sidenav"); if(!sn) return;
+  const isOpen = sn.classList.contains("drawer-open") && sn.dataset.sec===sec;
+  if(isOpen) { closeDrawer(); return; }
+  sn.dataset.sec = sec;
+  sn.querySelectorAll(".nav-group").forEach(g=>g.classList.toggle("shown", g.dataset.sec===sec));
+  const t = document.getElementById("drawer-title"); if(t) t.textContent = sec;
+  sn.querySelectorAll(".rail-btn[data-sec]").forEach(b=>b.classList.toggle("sel", b.dataset.sec===sec));
+  sn.classList.add("drawer-open");
+}
+function closeDrawer() {
+  const sn = document.getElementById("sidenav"); if(!sn) return;
+  sn.classList.remove("drawer-open");
+  sn.querySelectorAll(".rail-btn.sel").forEach(b=>b.classList.remove("sel"));
+}
+function setRailActive(pageId) {
+  const sn = document.getElementById("sidenav"); if(!sn) return;
+  const btn = document.getElementById("nav-"+pageId);
+  const sec = btn && btn.closest(".nav-group") ? btn.closest(".nav-group").dataset.sec : null;
+  sn.querySelectorAll(".rail-btn").forEach(b=>b.classList.remove("on"));
+  if(pageId==="accueil") document.getElementById("rail-home")?.classList.add("on");
+  else if(sec) sn.querySelector(`.rail-btn[data-sec="${CSS.escape(sec)}"]`)?.classList.add("on");
+}
+document.addEventListener("click", e=>{
+  const sn = document.getElementById("sidenav");
+  if(sn && sn.classList.contains("drawer-open") && !e.target.closest("#sidenav")) closeDrawer();
+});
+
+// ─── ACCUEIL EN TUILES ─────────────────────────────────────────────
+function renderAccueil() {
+  const el = document.getElementById("accueil-content"); if(!el) return;
+  const items = _navItemsForRole();
+  const hr = new Date().getHours();
+  const hello = (hr>=18 || hr<5) ? "Bonsoir" : "Bonjour";
+  const prenom = currentCompte && currentCompte.prenom ? " "+esc(currentCompte.prenom) : "";
+  const bySec = {};
+  items.forEach(it=>{ (bySec[it.section||""] = bySec[it.section||""]||[]).push(it); });
+  const secs = NAV_SECTION_ORDER.filter(sc=>bySec[sc]);
+  el.innerHTML = `<div class="home-hello">${hello}${prenom} 👋</div>
+    <div class="home-sub">${role==="admin" ? "Espace administrateur" : esc(svcLabel(myService()))} — que souhaitez-vous faire ?</div>
+    <input class="home-search" id="home-search" placeholder="🔍 Rechercher une page…" oninput="filterHomeTiles(this.value)" autocomplete="off">
+    ${secs.map(sc=>`<div class="home-block" data-hs="${esc(sc)}"><div class="home-sec">${esc(sc)}</div><div class="home-grid">${bySec[sc].map(it=>`<button class="home-tile" data-q="${esc((it.label+" "+(NAV_DESC[it.page]||"")).toLowerCase())}" onclick="goPage('${it.page}')">
+        <div class="ht-ic">${it.icon}</div><div><b>${it.label}</b><span class="ht-d">${esc(NAV_DESC[it.page]||"")}</span></div>
+        ${it.badgeId?`<i class="tile-badge" data-b="${it.badgeId}"></i>`:""}</button>`).join("")}</div></div>`).join("")}`;
+  updateNavSectionBadges();
+}
+function filterHomeTiles(q) {
+  q = (q||"").trim().toLowerCase();
+  document.querySelectorAll("#accueil-content .home-tile").forEach(t=>{ t.style.display = (!q || t.dataset.q.includes(q)) ? "" : "none"; });
+  document.querySelectorAll("#accueil-content .home-block").forEach(b=>{
+    b.style.display = [...b.querySelectorAll(".home-tile")].some(t=>t.style.display!=="none") ? "" : "none";
+  });
+}
+
+// ─── RECHERCHE RAPIDE (Ctrl+K) ─────────────────────────────────────
+let _cmdkSel = 0;
+function openCmdk() {
+  if(document.getElementById("app")?.style.display==="none" || role==="candidat" || !role) return;
+  let m = document.getElementById("cmdk");
+  if(!m) {
+    m = document.createElement("div"); m.id = "cmdk";
+    m.innerHTML = `<div class="cmdk-box"><input id="cmdk-in" placeholder="Aller à une page…" autocomplete="off"><div class="cmdk-list" id="cmdk-list"></div></div>`;
+    m.addEventListener("click", e=>{ if(e.target===m) closeCmdk(); });
+    document.body.appendChild(m);
+    const inp = m.querySelector("#cmdk-in");
+    inp.addEventListener("input", ()=>{ _cmdkSel = 0; renderCmdk(); });
+    inp.addEventListener("keydown", e=>{
+      const btns = [...document.querySelectorAll("#cmdk-list .cmdk-it")];
+      if(e.key==="ArrowDown") { e.preventDefault(); _cmdkSel = Math.min(btns.length-1, _cmdkSel+1); renderCmdk(true); }
+      else if(e.key==="ArrowUp") { e.preventDefault(); _cmdkSel = Math.max(0, _cmdkSel-1); renderCmdk(true); }
+      else if(e.key==="Enter") { e.preventDefault(); btns[_cmdkSel]?.click(); }
+      else if(e.key==="Escape") closeCmdk();
+    });
+  }
+  m.classList.add("show");
+  const inp = m.querySelector("#cmdk-in"); inp.value = ""; _cmdkSel = 0; renderCmdk(); setTimeout(()=>inp.focus(), 30);
+}
+function closeCmdk() { document.getElementById("cmdk")?.classList.remove("show"); }
+function renderCmdk(keepScroll) {
+  const q = (document.getElementById("cmdk-in")?.value||"").trim().toLowerCase();
+  const list = _navItemsForRole().filter(it=>!q || (it.label+" "+(NAV_DESC[it.page]||"")+" "+(it.section||"")).toLowerCase().includes(q));
+  const box = document.getElementById("cmdk-list");
+  box.innerHTML = list.length ? list.map((it,i)=>`<button class="cmdk-it${i===_cmdkSel?" sel":""}" onclick="closeCmdk();goPage('${it.page}')"><span style="font-size:18px;">${it.icon}</span>${it.label}<small>${esc(it.section||"")}</small></button>`).join("") : `<div style="padding:16px;font-size:12px;color:var(--text3);">Aucune page trouvée.</div>`;
+  if(keepScroll) box.querySelector(".sel")?.scrollIntoView({block:"nearest"});
+}
+document.addEventListener("keydown", e=>{
+  if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")) { e.preventDefault(); openCmdk(); }
+  else if(e.key==="Escape") { closeCmdk(); closeDrawer(); }
+});
 
 // Rubriques du menu de gauche : plus fines que « Opérations / Gestion », repliables (état mémorisé)
 const NAV_SECTION_ORDER = ["Mon espace","Opérations","Ma filiale","Équipe","Documents","Administration"];
@@ -5513,9 +5684,14 @@ function updateNavSectionBadges() {
     g.querySelectorAll(".nav-badge").forEach(b=>{ if(b.style.display!=="none") tot += parseInt(b.textContent,10)||0; });
     const hd = g.previousElementSibling;
     const bd = hd && hd.querySelector(".nav-sec-badge");
-    if(!bd) return;
-    const show = tot>0 && g.classList.contains("closed");
-    bd.textContent = tot; bd.style.display = show ? "inline-flex" : "none";
+    if(bd) { const show = tot>0 && g.classList.contains("closed"); bd.textContent = tot; bd.style.display = show ? "inline-flex" : "none"; }
+    const rb = document.querySelector(`.rail-btn[data-sec="${CSS.escape(g.dataset.sec)}"] .rb-badge`);
+    if(rb) { rb.textContent = tot; rb.style.display = tot>0 ? "flex" : "none"; }
+  });
+  document.querySelectorAll(".tile-badge").forEach(t=>{
+    const src = document.getElementById(t.dataset.b);
+    const n = src && src.style.display!=="none" ? (parseInt(src.textContent,10)||0) : 0;
+    t.textContent = n; t.style.display = n>0 ? "inline-flex" : "none";
   });
 }
 // Ouvre la rubrique qui contient la page affichée
@@ -5534,6 +5710,7 @@ function toggleSidenav() {
   document.getElementById("sidenav-backdrop")?.classList.toggle("show");
 }
 function closeSidenav() {
+  closeDrawer();
   document.getElementById("sidenav")?.classList.remove("open");
   document.getElementById("sidenav-backdrop")?.classList.remove("show");
 }
@@ -5549,6 +5726,8 @@ function goPage(pageId) {
   const navBtn = document.getElementById("nav-"+pageId);
   if(navBtn) navBtn.classList.add("active");
   revealNavSection(pageId);
+  setRailActive(pageId);
+  if(pageId==="accueil") renderAccueil();
   closeSidenav();
 
   if(pageId==="patrouilles")       renderPatrols();
@@ -6334,7 +6513,7 @@ async function refreshMaintStatusBadge() {
 function finishLaunch() {
   document.getElementById("app").style.display="block";
   renderSidenav();
-  const defaultPage = role==="candidat" ? "candidature-form" : "patrouilles";
+  const defaultPage = role==="candidat" ? "candidature-form" : "accueil";
   goPage(defaultPage);
 
   clearInterval(_refreshInterval); _refreshInterval=null;
