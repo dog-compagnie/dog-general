@@ -2658,18 +2658,21 @@ const sb = async (path, opts={}) => {
 function setAuthToken(tok) {
   H.Authorization = "Bearer " + (tok || SB_KEY);
   window._authTok = tok || null;
+  if(!tok) window._tokState = window._tokState || null;
 }
 // Active le jeton, après avoir vérifié que Supabase l'accepte ; sinon on reste sur la clé publique (rien ne casse).
 async function activateToken(tok) {
-  if(!tok) { setAuthToken(null); return false; }
+  window._tokState = null;
+  if(!tok) { setAuthToken(null); window._tokState = "absent"; return false; }
   setAuthToken(tok);
   try {
     const r = await fetch(SB_URL+"/rest/v1/rpc/jeton_info", {method:"POST", headers:H, mode:"cors", body:"{}"});
     const info = r.ok ? await r.json().catch(()=>null) : null;
-    if(info && info.app_kind) return true;
+    if(info && info.app_kind) { window._tokState = "ok"; return true; }
   } catch(e) {}
   console.warn("Jeton non accepté par Supabase — mode clé publique conservé");
   setAuthToken(null);
+  window._tokState = "refuse";
   return false;
 }
 
@@ -5510,7 +5513,9 @@ function toast(msg, color="#52D98B") {
 }
 function syncBadge(msg, color="#4A7F5E") {
   const b = document.getElementById("sync-badge");
-  if(b){ b.textContent=msg; b.style.color=color; }
+  if(b){ const _adm = (role==="admin"||role==="pdg"); const _st = window._tokState;
+    b.textContent = msg + ((msg.startsWith("✓") && _adm) ? (_st==="ok" ? " 🔒" : _st==="refuse" ? " ⚠ jeton refusé" : _st==="absent" ? " ⚠ pas de jeton" : "") : "");
+    b.style.color=color; b.title = _st==="ok" ? "Connexion sécurisée (jeton actif)" : (_st==="refuse" ? "Supabase a refusé le jeton (vérifier le JWT Secret)" : (_st==="absent" ? "Le serveur n'a pas émis de jeton (secret non collé ?)" : "")); }
 }
 
 // ─── PINS & COMPTES ────────────────────────────────────────────────
@@ -6631,25 +6636,21 @@ async function refreshTestAccountsToggleUI() {
 // directement, sans passer par l'écran de PIN.
 async function tryTestTokenLogin(token) {
   try {
-    const rows = await sb(`test_login_tokens?select=*&token=eq.${encodeURIComponent(token)}&used=eq.false`);
-    const t = rows && rows[0];
-    if(!t || new Date(t.expires_at) < new Date()) {
+    const sess = await rpc("ouvrir_session_test", {p_token:token});
+    if(!sess || sess.error) {
       alert("Ce lien de test est invalide, déjà utilisé, ou expiré. Redemandez-en un depuis l'espace Admin.");
       setupPageMaintOverlays(); loadLandingContent();
       return false;
     }
-    await sb(`test_login_tokens?id=eq.${t.id}`, {method:"PATCH", body:JSON.stringify({used:true})});
-    const comptes = await sb(`agents_comptes_v?select=*&id=eq.${t.compte_id}`);
-    const compte = comptes && comptes[0];
-    // Tous les grades du même rôle (pas juste la filiale initiale) : indispensable pour que
-    // le sélecteur de filiale de la barre du haut propose bien les 4 services ensuite.
-    const grades = await sb(`agents_grades?select=*&compte_id=eq.${t.compte_id}&role=eq.${t.role}`);
-    const grade = grades && grades.find(g=>g.service===t.service);
+    const compte = sess.compte;
+    const grades = sess.grades || [];
+    const grade = grades.find(g=>g.service===sess.service);
     if(!compte || !grade) {
       alert("Compte de test introuvable (a peut-être été supprimé).");
       setupPageMaintOverlays(); loadLandingContent();
       return false;
     }
+    await activateToken(sess.token);
     role = grade.role;
     // #screen-landing est affiché par défaut (z-index au-dessus de tout) tant qu'on ne le
     // masque pas explicitement — oublié initialement, d'où l'accueil vide par-dessus l'appli.
@@ -11766,8 +11767,7 @@ async function initPublicCarteView(token) {
     </div>`;
   document.oncontextmenu = () => false;
   try {
-    const rows = await sb(`cartes_pro?share_token=eq.${encodeURIComponent(token)}&select=*`);
-    const carte = rows && rows[0];
+    const carte = await rpc("carte_partagee", {p_token:token});
     const el = document.getElementById("pcv-content");
     if(!carte) { el.innerHTML = `<div style="color:#F08080;">Ce lien n'est plus valide.</div>`; return; }
     const accent = ACCENT_BY_SERVICE[carte.service] || ACCENT_BY_SERVICE.securite;
@@ -11784,7 +11784,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v4 — icônes logo-dc";
+const SITE_VERSION = "v5.6 — sécurité 4B";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
