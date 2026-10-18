@@ -1085,6 +1085,7 @@ input[type=file]::file-selector-button:hover{background:rgba(var(--accent-rgb),.
 .hp-unit{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
 .hp-unit i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);}
 .hp-feed{padding:18px 22px;min-width:0;}
+.hp:not(:has(.hp-feed)){grid-template-columns:1fr;}.hp:not(:has(.hp-feed)) .hp-live{border-right:0;}
 .hp-it{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;color:var(--text2);}
 .hp-it:last-child{border:0;}
 .hp-ic{width:26px;text-align:center;flex-shrink:0;}
@@ -1483,6 +1484,21 @@ tbody tr:hover{box-shadow:none;}
 .stat-pill:nth-child(1)::before{display:block;}
 #page-candidatures .stat-pill,#page-absences-gestion .stat-pill{border-top:3px solid rgba(var(--accent-rgb),.6);}
 .page.active > .card:has(.field) .card-hdr-title::before{content:"";display:inline-block;width:4px;height:14px;border-radius:3px;background:var(--accent-light);margin-right:9px;vertical-align:-2px;}
+
+.arch-bar{display:flex;gap:6px;margin-bottom:12px;}
+/* Tableau de bord : tailles plus sobres */
+.kpi-row{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px;}
+.kpi{padding:14px 16px 13px;border-radius:16px;}
+.kpi-ico{width:30px;height:30px;font-size:15px;border-radius:10px;margin-bottom:10px;}
+.kpi-val{font-size:24px;}
+.kpi-val small{font-size:12px;}
+.kpi-lbl{font-size:10px;margin-top:6px;}
+.dash-hero{padding:18px 22px;border-radius:18px;}
+.dash-hero-body{gap:16px;padding:12px 0 4px;}
+.dash-hero-trophy{font-size:42px;}
+.dash-hero-name{font-size:22px;}
+.dash-hero-meta span{font-size:11px;padding:4px 10px;}
+.dash-grid{gap:14px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -1992,7 +2008,7 @@ tbody tr:hover{box-shadow:none;}
             </div>
             <div class="field-row-2">
               <div class="field"><label>Téléphone</label><input id="devis-em-tel" value="06.21.17.15.53"></div>
-              <div class="field"><label>Email</label><input id="devis-em-email" value="dog-depannage237@a4l.pro"></div>
+              <div class="field"><label>Email</label><input id="devis-em-email" value="dog-compagnie237@a4l.pro"></div>
             </div>
           </div>
         </div>
@@ -4592,18 +4608,54 @@ async function apercuDevis() {
   } catch(e) { toast("Erreur lors de la génération : "+e.message,"#E74C3C"); }
 }
 
+
+// ─── ARCHIVES (documents RH, incidents, devis) ─────────────────────
+// Stockées dans site_config (une clé par filiale) : aucune migration SQL nécessaire.
+let _archSet = null, _archRowId = null, _archFor = null;
+const _showArch = {rh:false, incident:false, devis:false};
+const archKey = () => "archives_"+myService();
+async function loadArchSet() {
+  try {
+    const r = await sb(`site_config?select=id,valeur&cle=eq.${encodeURIComponent(archKey())}&limit=1`);
+    _archFor = archKey(); _archRowId = r && r[0] ? r[0].id : null;
+    let arr = []; try { arr = JSON.parse((r && r[0] && r[0].valeur) || "[]"); } catch(e) {}
+    _archSet = new Set(Array.isArray(arr) ? arr : []);
+  } catch(e) { _archSet = _archSet || new Set(); }
+  return _archSet;
+}
+const isArch = (kind,id) => !!(_archSet && _archSet.has(kind+":"+id));
+async function toggleArchive(kind, id, scope) {
+  if(!_archSet||_archFor!==archKey()) await loadArchSet();
+  const k = kind+":"+id;
+  if(_archSet.has(k)) _archSet.delete(k); else _archSet.add(k);
+  const valeur = JSON.stringify([..._archSet]);
+  try {
+    if(_archRowId) await sb(`site_config?id=eq.${_archRowId}`, {method:"PATCH", body:JSON.stringify({valeur})});
+    else { await sb("site_config", {method:"POST", body:JSON.stringify({cle:archKey(), valeur})}); await loadArchSet(); }
+    toast(_archSet.has(k) ? "📦 Archivé" : "♻️ Restauré");
+  } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+  if(scope==="devis") loadDevisHistory(); else loadDocHistory(scope);
+}
+function archBar(scope, nbArch) {
+  return `<div class="arch-bar"><button class="btn btn-sm ${_showArch[scope]?"btn-ghost":"btn-primary"}" onclick="setShowArch('${scope}',false)">Actifs</button><button class="btn btn-sm ${_showArch[scope]?"btn-primary":"btn-ghost"}" onclick="setShowArch('${scope}',true)">📦 Archives (${nbArch})</button></div>`;
+}
+function setShowArch(scope, v) { _showArch[scope] = v; if(scope==="devis") loadDevisHistory(); else loadDocHistory(scope); }
 async function loadDevisHistory() {
   const el = document.getElementById("devis-history");
   try {
-    const rows = await sb("devis?select=*&order=created_at.desc&limit=50");
+    const all = await sb("devis?select=*&order=created_at.desc&limit=50");
     if(!el) return;
-    if(!rows.length) { el.innerHTML = '<div class="empty"><p>Aucun devis pour le moment.</p></div>'; return; }
-    el.innerHTML = rows.map(r=>`
+    if(!_archSet||_archFor!==archKey()) await loadArchSet();
+    const nbA = all.filter(r=>isArch("devis",r.id)).length;
+    const rows = all.filter(r=>isArch("devis",r.id)===_showArch.devis);
+    if(!rows.length) { el.innerHTML = archBar("devis",nbA)+`<div class="empty"><p>${_showArch.devis?"Aucun devis archivé.":"Aucun devis pour le moment."}</p></div>`; return; }
+    el.innerHTML = archBar("devis",nbA)+rows.map(r=>`
       <div class="log-item">
         <div><div class="log-agent">${esc(r.numero)} — ${esc(r.client_nom)}</div><div class="log-dates">${fmtEuro(r.total_ttc)} · par ${esc(r.auteur||"—")}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="chargerDevis('${r.id}')">📂 Charger</button>
           <button class="btn btn-primary btn-sm" onclick="reprintDevis('${r.id}')">👁 Revoir</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleArchive('devis','${r.id}','devis')" title="${_showArch.devis?"Restaurer":"Archiver"}">${_showArch.devis?"♻️":"📦"}</button>
           <button class="btn btn-danger btn-sm" onclick="supprimerDevis('${r.id}')">🗑</button>
         </div>
       </div>`).join("");
@@ -5726,6 +5778,7 @@ async function editPatientInfo(id) {
 async function loadDocHistory(scope) {
   try {
     const rows = await sb("documents?select=*&order=created_at.desc&limit=100");
+    if(!_archSet||_archFor!==archKey()) await loadArchSet();
     if(scope==="rh") {
       const rhTypes = ["convocation","avertissement","licenciement","courrier"];
       if(isComiteDirection()) rhTypes.push("courrier_dg");
@@ -5740,11 +5793,14 @@ const INCIDENT_STATUTS = ["À traiter","En cours","Clôturé","Annulé"];
 const INCIDENT_STATUT_COLOR = {"À traiter":"#F0A840","En cours":"#5DADE2","Clôturé":"#52D98B","Annulé":"#F08080"};
 
 function renderDocHistory(elId, rows) {
+  rows = rows||[];
   const el = document.getElementById(elId);
   if(!el) return;
   const scope = elId==="doc-incident-history" ? "incident" : "rh";
-  if(!rows.length) { el.innerHTML = '<div class="empty"><p>Aucun document pour le moment.</p></div>'; return; }
-  el.innerHTML = rows.map(r=>{
+  const nbA = rows.filter(r=>isArch("doc",r.id)).length;
+  rows = rows.filter(r=>isArch("doc",r.id)===_showArch[scope]);
+  if(!rows.length) { el.innerHTML = archBar(scope,nbA)+`<div class="empty"><p>${_showArch[scope]?"Aucun document archivé.":"Aucun document pour le moment."}</p></div>`; return; }
+  el.innerHTML = archBar(scope,nbA)+rows.map(r=>{
     const d = new Date(r.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
     const isIncident = r.type==="incident";
     const statut = r.statut||"À traiter";
@@ -5758,6 +5814,7 @@ function renderDocHistory(elId, rows) {
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         ${isIncident?`<button class="btn btn-primary btn-sm" onclick="openIncidentDetail('${r.id}')">🔍 Détail / Suivi</button>`:""}
         <button class="btn btn-ghost btn-sm" onclick="reprintDoc('${r.id}')">👁 Revoir</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleArchive('doc','${r.id}','${scope}')" title="${_showArch[scope]?"Restaurer":"Archiver"}">${_showArch[scope]?"♻️":"📦"}</button>
         ${(!isIncident || role==="responsable" || role==="pdg" || role==="admin") ? `<button class="btn btn-danger btn-sm" onclick="deleteDocument('${r.id}','${scope}')">🗑</button>` : ""}
       </div>
     </div>`;
@@ -10894,7 +10951,7 @@ function dbWeekStart(d) {
   return x;
 }
 function dbChartSVG(vals, labels) {
-  const W=520, H=190, pl=36, pr=8, pt=20, pb=30, n=vals.length;
+  const W=1000, H=210, pl=40, pr=10, pt=22, pb=30, n=vals.length;
   const max = Math.max(1, ...vals);
   const step = max<=10 ? 2 : max<=40 ? 10 : max<=100 ? 20 : 50;
   const yMax = Math.ceil(max/step)*step || step;
@@ -12333,7 +12390,7 @@ async function renderHomePulse() {
       <div class="hp-faces">${onDuty.length ? onDuty.slice(0,10).map(d=>`<div class="hp-face" title="${esc(d.agent_nom)} · ${_ago(d.debut).replace("il y a ","depuis ")}"><span>${esc(ini(d.agent_nom))}</span></div>`).join("")+(onDuty.length>10?`<div class="hp-face more">+${onDuty.length-10}</div>`:"") : '<div class="hp-none">Personne en service pour le moment.</div>'}</div>
       ${leds?`<div class="hp-units">${leds}</div>`:""}
       <button class="hm-chip" onclick="goPage('patrouilles')">Ouvrir la salle de régulation</button></div>
-    <div class="hp-feed"><div class="hp-t">Fil d'activité</div>${feed.length ? feed.slice(0,9).map(f=>`<div class="hp-it"><span class="hp-ic">${f.ic}</span><span class="hp-tx">${f.txt}</span><time>${_ago(f.t)}</time></div>`).join("") : '<div class="hp-none">Rien à signaler depuis hier.</div>'}</div></section>`;
+    ${(role==="responsable"||role==="pdg"||role==="admin") ? `<div class="hp-feed"><div class="hp-t">Fil d'activité</div>${feed.length ? feed.slice(0,9).map(f=>`<div class="hp-it"><span class="hp-ic">${f.ic}</span><span class="hp-tx">${f.txt}</span><time>${_ago(f.t)}</time></div>`).join("") : '<div class="hp-none">Rien à signaler depuis hier.</div>'}</div>` : ""}</section>`;
   host.querySelector(".hm-head").insertAdjacentHTML("afterend", html);
 }
 </script>
