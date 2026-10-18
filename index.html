@@ -2658,21 +2658,18 @@ const sb = async (path, opts={}) => {
 function setAuthToken(tok) {
   H.Authorization = "Bearer " + (tok || SB_KEY);
   window._authTok = tok || null;
-  if(!tok) window._tokState = window._tokState || null;
 }
 // Active le jeton, après avoir vérifié que Supabase l'accepte ; sinon on reste sur la clé publique (rien ne casse).
 async function activateToken(tok) {
-  window._tokState = null;
-  if(!tok) { setAuthToken(null); window._tokState = "absent"; return false; }
+  if(!tok) { setAuthToken(null); return false; }
   setAuthToken(tok);
   try {
     const r = await fetch(SB_URL+"/rest/v1/rpc/jeton_info", {method:"POST", headers:H, mode:"cors", body:"{}"});
     const info = r.ok ? await r.json().catch(()=>null) : null;
-    if(info && info.app_kind) { window._tokState = "ok"; return true; }
+    if(info && info.app_kind) return true;
   } catch(e) {}
   console.warn("Jeton non accepté par Supabase — mode clé publique conservé");
   setAuthToken(null);
-  window._tokState = "refuse";
   return false;
 }
 
@@ -5513,9 +5510,7 @@ function toast(msg, color="#52D98B") {
 }
 function syncBadge(msg, color="#4A7F5E") {
   const b = document.getElementById("sync-badge");
-  if(b){ const _adm = (role==="admin"||role==="pdg"); const _st = window._tokState;
-    b.textContent = msg + ((msg.startsWith("✓") && _adm) ? (_st==="ok" ? " 🔒" : _st==="refuse" ? " ⚠ jeton refusé" : _st==="absent" ? " ⚠ pas de jeton" : "") : "");
-    b.style.color=color; b.title = _st==="ok" ? "Connexion sécurisée (jeton actif)" : (_st==="refuse" ? "Supabase a refusé le jeton (vérifier le JWT Secret)" : (_st==="absent" ? "Le serveur n'a pas émis de jeton (secret non collé ?)" : "")); }
+  if(b){ b.textContent = msg + ((window._authTok && msg.startsWith("✓")) ? " 🔒" : ""); b.style.color=color; b.title = window._authTok ? "Connexion sécurisée (jeton actif)" : ""; }
 }
 
 // ─── PINS & COMPTES ────────────────────────────────────────────────
@@ -11784,7 +11779,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v5.6 — sécurité 4B";
+const SITE_VERSION = "v4 — icônes logo-dc";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
