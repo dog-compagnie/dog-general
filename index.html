@@ -2642,9 +2642,36 @@ const sb = async (path, opts={}) => {
     } catch(e) {}
   }
   const r = await fetch(SB_URL+"/rest/v1/"+finalPath, {headers:H, mode:"cors", ...finalOpts});
-  if(!r.ok) throw new Error(await r.text());
+  if(!r.ok) {
+    const txt = await r.text();
+    if(r.status===401 && /JWT/i.test(txt) && window._authTok) {
+      window._authTok = null; H.Authorization = "Bearer "+SB_KEY;
+      try { toast("Session expirée — reconnectez-vous.","#E74C3C"); } catch(e) {}
+      try { logout(); } catch(e) {}
+    }
+    throw new Error(txt);
+  }
   return r.json().catch(()=>[]);
 };
+
+// Jeton de connexion signé (remis par le serveur après un bon PIN). En mémoire uniquement.
+function setAuthToken(tok) {
+  H.Authorization = "Bearer " + (tok || SB_KEY);
+  window._authTok = tok || null;
+}
+// Active le jeton, après avoir vérifié que Supabase l'accepte ; sinon on reste sur la clé publique (rien ne casse).
+async function activateToken(tok) {
+  if(!tok) { setAuthToken(null); return false; }
+  setAuthToken(tok);
+  try {
+    const r = await fetch(SB_URL+"/rest/v1/rpc/jeton_info", {method:"POST", headers:H, mode:"cors", body:"{}"});
+    const info = r.ok ? await r.json().catch(()=>null) : null;
+    if(info && info.app_kind) return true;
+  } catch(e) {}
+  console.warn("Jeton non accepté par Supabase — mode clé publique conservé");
+  setAuthToken(null);
+  return false;
+}
 
 // Appel d'une fonction serveur Supabase (PIN, comptes…) — les codes PIN ne transitent plus en lecture
 const rpc = async (name, args={}) => {
@@ -7435,6 +7462,7 @@ function updateTopbarBranding() {
 }
 
 function logout() {
+  setAuthToken(null);
   clearInterval(_refreshInterval); _refreshInterval=null;
   clearInterval(serviceTimer); serviceTimer=null;
   role=null; currentCompte=null; currentAgent=null; serviceEnCours=null;
@@ -7446,6 +7474,7 @@ function logout() {
   document.getElementById("pin-input").value="";
 }
 function logoutToLanding() {
+  setAuthToken(null);
   clearInterval(_refreshInterval); _refreshInterval=null;
   clearInterval(serviceTimer); serviceTimer=null;
   clearInterval(_maintenancePoll); _maintenancePoll=null;
@@ -7476,6 +7505,8 @@ async function confirmLogin() {
         return;
       }
       const comptes = (res && !res.error) ? [res] : [];
+      const _tokAgent = comptes.length ? comptes[0].token : null;
+      if(comptes.length) delete comptes[0].token;
       if(!comptes.length) {
         err.textContent="Code PIN incorrect. Réessayez.";
         err.style.display="block";
@@ -7508,6 +7539,7 @@ async function confirmLogin() {
         document.getElementById("pin-input").focus();
         return;
       }
+      await activateToken(_tokAgent);
       if(grades.length>1) { showProfilePicker(compte, grades); return; }
       // Le sélecteur de filiale ne doit proposer que les services où la personne
       // possède CE MÊME rôle — pour changer de rôle, il faut se reconnecter avec
@@ -7532,6 +7564,8 @@ async function confirmLogin() {
         return;
       }
       const data = (resC && !resC.error) ? [resC] : [];
+      let _tokCand = data.length ? data[0].token : null;
+      if(data.length) delete data[0].token;
       if(data.length) {
         if(data[0].promu) {
           err.textContent="Votre candidature a été retenue en tant que "+agentLabel(data[0].service)+" ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.";
@@ -7551,8 +7585,10 @@ async function confirmLogin() {
           return;
         }
         currentCompte = await rpc("creer_compte_candidat", {p_pin:pin});
+        _tokCand = currentCompte && currentCompte.token; if(currentCompte) delete currentCompte.token;
       }
       currentAgent = null;
+      await activateToken(_tokCand);
       launchApp();
     } catch(e) {
       err.textContent="Erreur de connexion : "+e.message;
@@ -7562,7 +7598,7 @@ async function confirmLogin() {
     // Admin — PIN fixe
     if(role==="admin") {
       let okAdmin = false, locked = false;
-      try { const ra = await rpc("login_role", {p_role:"admin", p_pin:pin}); okAdmin = !!(ra && ra.ok); locked = !!(ra && ra.error==="locked"); }
+      try { const ra = await rpc("login_role", {p_role:"admin", p_pin:pin}); okAdmin = !!(ra && ra.ok); locked = !!(ra && ra.error==="locked"); if(okAdmin) await activateToken(ra.token); }
       catch(e) { err.textContent="Erreur de connexion : "+e.message; err.style.display="block"; return; }
       if(!okAdmin) {
         err.textContent = locked ? "Trop de tentatives échouées. Réessayez dans quelques minutes." : "Code PIN incorrect. Réessayez.";
