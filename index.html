@@ -348,6 +348,38 @@ h1,h2,h3,.page-title,.login-title,.topbar-logo{font-family:var(--font-display);}
 .home-tile b{display:block;font-size:13.5px;font-weight:700;}
 .home-tile span.ht-d{display:block;font-size:11px;color:var(--text3);margin-top:2px;}
 .tile-badge{position:absolute;top:10px;right:12px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#E74C3C;color:#fff;font-size:10.5px;font-weight:700;display:none;align-items:center;justify-content:center;font-style:normal;}
+/* Accueil — performances */
+.hm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+.hm-hello{font-family:var(--font-display);font-size:27px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.hm-sub{font-size:12.5px;color:var(--text3);margin-top:3px;}
+.hm-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.hm-chip{padding:8px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.hm-chip:hover{background:rgba(var(--accent-rgb),.16);border-color:rgba(var(--accent-rgb),.5);color:#fff;}
+.hm-chip.hot{border-color:rgba(231,76,60,.5);color:#ffb4aa;background:rgba(231,76,60,.1);}
+.hm-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px;}
+.hm-kpi{padding:16px 18px;border-radius:16px;border:1px solid var(--border);background:linear-gradient(160deg,rgba(24,34,50,.8),rgba(11,16,24,.92));}
+.hm-kpi-l{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;}
+.hm-kpi-v{font-family:var(--font-display);font-size:30px;font-weight:700;color:#fff;margin:6px 0 4px;line-height:1.05;}
+.hm-kpi-u{font-size:14px;color:var(--text3);margin-left:2px;}
+.hm-kpi-s{font-size:11.5px;color:var(--text2);min-height:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.hm-delta{font-size:11.5px;font-weight:700;color:var(--text2);}
+.hm-delta.up{color:#52D98B;}.hm-delta.down{color:#F08080;}
+.hm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;}
+.hm-card{padding:18px 20px;border-radius:16px;border:1px solid var(--border);background:linear-gradient(160deg,rgba(22,31,46,.75),rgba(10,15,22,.9));}
+.hm-card.wide{grid-column:1/-1;}
+@media (min-width:1100px){.hm-card.wide{grid-column:span 2;}}
+.hm-card-t{font-size:12.5px;font-weight:700;color:#cfe3f5;margin-bottom:14px;letter-spacing:.01em;}
+.hm-bars{display:flex;align-items:flex-end;gap:10px;height:170px;}
+.hm-bar{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0;}
+.hm-bar-f{width:100%;max-width:46px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,rgba(var(--accent-rgb),.55),rgba(var(--accent-rgb),.18));}
+.hm-bar.cur .hm-bar-f{background:linear-gradient(180deg,var(--accent-light),var(--accent));box-shadow:0 0 16px -2px rgba(var(--accent-rgb),.6);}
+.hm-bar-v{font-size:10px;color:var(--text2);font-weight:700;min-height:12px;}
+.hm-bar-l{font-size:9.5px;color:var(--text3);}
+.hm-row{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12.5px;color:var(--text2);}
+.hm-row:first-of-type{border-top:none;}.hm-row b{color:#fff;}
+.hm-muted{font-size:12px;color:var(--text3);}
+.hm-quote{margin-top:10px;padding:10px 12px;border-left:3px solid rgba(var(--accent-rgb),.6);background:rgba(255,255,255,.03);border-radius:0 10px 10px 0;font-size:12px;color:var(--text2);font-style:italic;line-height:1.5;}
+.hm-empty,.hm-load{font-size:12.5px;color:var(--text3);padding:6px 0;}
 /* Recherche rapide (Ctrl+K) */
 #cmdk{position:fixed;inset:0;z-index:400;background:rgba(3,5,9,.7);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;}
 #cmdk.show{display:flex;}
@@ -820,6 +852,78 @@ tbody tr:hover{background:rgba(var(--accent-rgb),0.055);box-shadow:inset 3px 0 0
 #welcome-eyebrow{font-family:'DM Mono',monospace,var(--font-body);font-size:11px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
 #welcome-text{font-family:var(--font-serif);font-size:clamp(32px,5vw,52px);font-weight:700;color:#F3EFE6;letter-spacing:.005em;}
 #welcome-text em{font-style:italic;color:var(--accent-light);}
+
+/* ═══ REFONTE v5 — fenêtres au même style que le menu : sobre, froid, arrondi ═══ */
+:root{
+  --border:rgba(150,180,215,0.13);
+  --gold-rgb:120,160,205;
+  --text:#E8EDF4;--text2:#A6B4C6;--text3:#6C7C90;
+  --radius:16px;
+}
+.page{padding:28px 34px;}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.012em;margin-bottom:4px;}
+.page-title::before{display:none;}
+.page-title span{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--accent-light);}
+.page-sub{border-bottom:none;padding-bottom:0;margin:0 0 22px 0;color:var(--text3);font-size:12.5px;}
+.card{background:linear-gradient(160deg,rgba(22,31,46,0.72),rgba(10,15,22,0.9));backdrop-filter:none;border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 30px -22px rgba(0,0,0,.9);}
+.card::before{display:none;}
+.card:hover{border-color:rgba(150,180,215,0.22);}
+.card-hdr{background:transparent;border-bottom:1px solid rgba(255,255,255,0.06);padding:15px 20px;}
+.card-hdr-title{color:#E6EEFA;font-size:13.5px;font-weight:600;}
+.card-body{padding:20px;}
+.field label{font-size:10.5px;letter-spacing:0.1em;color:var(--text3);}
+.field input,.field select,.field textarea{background:rgba(7,11,17,0.7);border:1px solid var(--border);border-radius:12px;padding:11px 14px;}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:rgba(150,180,215,0.3);}
+.field input:focus,.field select:focus,.field textarea:focus{background:rgba(7,11,17,0.9);border-color:rgba(var(--accent-rgb),0.8);box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.18);}
+.btn{border-radius:12px;padding:10px 17px;font-weight:600;}
+.btn-sm{border-radius:10px;padding:7px 13px;}
+.btn-primary{background:linear-gradient(180deg,rgba(var(--accent-rgb),1),rgba(var(--accent-rgb),0.78));border:1px solid rgba(255,255,255,0.14);box-shadow:0 8px 18px -10px rgba(var(--accent-rgb),0.9);}
+.btn-ghost{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);}
+.btn-ghost:hover{background:rgba(var(--accent-rgb),0.14);border-color:rgba(var(--accent-rgb),0.45);}
+.btn-success{background:linear-gradient(180deg,#27AE60,#1E8449);border:1px solid rgba(255,255,255,0.12);}
+.btn-danger{background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.35);}
+thead tr{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);}
+thead th{color:var(--text3);font-size:10px;letter-spacing:0.12em;}
+tbody tr{transition:background .15s;}
+tbody tr:hover{background:rgba(var(--accent-rgb),0.06);}
+.stat-pill{border-radius:16px;backdrop-filter:none;background:linear-gradient(160deg,rgba(24,34,50,.8),rgba(11,16,24,.92));}
+.stat-pill::before{display:none;}
+.eff-card,.hier-row{border-radius:16px;}
+.alert-popup{background:rgba(4,7,12,0.78);backdrop-filter:blur(6px);}
+.alert-popup-box{background:linear-gradient(165deg,#121b2a,#080c13);border:1px solid rgba(150,180,215,0.2);border-radius:22px;box-shadow:0 40px 90px -30px #000;}
+.alert-popup-title{font-family:var(--font-display);font-size:17px;font-weight:700;}
+.empty{color:var(--text3);}
+.page-maint-card{border-radius:22px;}
+.topbar{border-bottom:1px solid var(--border);}
+
+/* ═══ v5.1 — mise en page pleine largeur ═══ */
+@media (min-width:861px){
+  .page.active{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:18px 22px;align-content:start;padding:30px 40px 50px;}
+  .page.active > *{grid-column:1/-1;min-width:0;}
+  .page.active > .card{grid-column:auto;margin:0 !important;max-width:none !important;}
+  .page.active > .card > .card-body > .field:only-of-type,.page.active > .card > .card-body > .field:has(input[type=text]:only-child){grid-column:1/-1;}
+  .page.active > .card:has(table,.table-wrap,.eff-card,textarea,.cal-grid,.hier-row,#hierarchie-list){grid-column:1/-1;}
+  .page.active > [style*="max-width"]{max-width:none !important;}
+  .page.active > .page-title{margin-bottom:0;}
+  .page.active > .page-sub{margin-bottom:6px;}
+  .page.active > .card > .card-body:has(> .field){display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0 20px;align-items:start;}
+  .page.active > .card > .card-body:has(> .field) > :not(.field){grid-column:1/-1;}
+  .page.active > .card > .card-body:has(> .field) > .field:has(textarea){grid-column:1/-1;}
+  .page#page-accueil.active{display:block;}
+}
+/* Finitions */
+.card{transition:border-color .2s,transform .2s,box-shadow .2s;}
+.card:hover{transform:translateY(-1px);box-shadow:0 18px 38px -24px rgba(0,0,0,.95);}
+.page-title{gap:10px;}
+.page.active > .page-title::after{content:"";flex:1;height:1px;margin-left:14px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.45),transparent 70%);}
+.card-hdr-title{letter-spacing:.005em;}
+.main::before{content:"";position:fixed;top:58px;left:72px;right:0;height:320px;pointer-events:none;background:radial-gradient(ellipse at 20% 0%,rgba(var(--accent-rgb),.13),transparent 65%);z-index:0;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:rgba(150,180,215,.18);border-radius:8px;border:2px solid transparent;background-clip:padding-box;}
+::-webkit-scrollbar-thumb:hover{background:rgba(150,180,215,.32);background-clip:padding-box;border:2px solid transparent;}
+::-webkit-scrollbar-track{background:transparent;}
+.nav-item.active{box-shadow:none;}
+.btn-primary:hover{transform:translateY(-1px);}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -5589,22 +5693,99 @@ document.addEventListener("click", e=>{
 });
 
 // ─── ACCUEIL EN TUILES ─────────────────────────────────────────────
-function renderAccueil() {
+async function renderAccueil() {
   const el = document.getElementById("accueil-content"); if(!el) return;
-  const items = _navItemsForRole();
-  const hr = new Date().getHours();
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const hr = now.getHours();
   const hello = (hr>=18 || hr<5) ? "Bonsoir" : "Bonjour";
   const prenom = currentCompte && currentCompte.prenom ? " "+esc(currentCompte.prenom) : "";
-  const bySec = {};
-  items.forEach(it=>{ (bySec[it.section||""] = bySec[it.section||""]||[]).push(it); });
-  const secs = NAV_SECTION_ORDER.filter(sc=>bySec[sc]);
-  el.innerHTML = `<div class="home-hello">${hello}${prenom} 👋</div>
-    <div class="home-sub">${role==="admin" ? "Espace administrateur" : esc(svcLabel(myService()))} — que souhaitez-vous faire ?</div>
-    <input class="home-search" id="home-search" placeholder="🔍 Rechercher une page…" oninput="filterHomeTiles(this.value)" autocomplete="off">
-    ${secs.map(sc=>`<div class="home-block" data-hs="${esc(sc)}"><div class="home-sec">${esc(sc)}</div><div class="home-grid">${bySec[sc].map(it=>`<button class="home-tile" data-q="${esc((it.label+" "+(NAV_DESC[it.page]||"")).toLowerCase())}" onclick="goPage('${it.page}')">
-        <div class="ht-ic">${it.icon}</div><div><b>${it.label}</b><span class="ht-d">${esc(NAV_DESC[it.page]||"")}</span></div>
-        ${it.badgeId?`<i class="tile-badge" data-b="${it.badgeId}"></i>`:""}</button>`).join("")}</div></div>`).join("")}`;
-  updateNavSectionBadges();
+  const dateLong = now.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  const notifTotal = computeNotifCounts().total;
+  const head = `<div class="hm-head">
+    <div><div class="hm-hello">${hello}${prenom} 👋</div>
+      <div class="hm-sub">${esc(specialRoleLabel())}${role==="admin"?"":` · ${esc(svcLabel(myService()))}`} · ${esc(dateLong)}</div></div>
+    <div class="hm-actions">
+      <button class="hm-chip${notifTotal?" hot":""}" onclick="toggleNotifPanel()">🔔 ${notifTotal ? notifTotal+" notification"+(notifTotal>1?"s":"") : "Aucune notification"}</button>
+      ${role==="admin"?"":`<button class="hm-chip" onclick="goPage('mon-service')">🟢 Mon service</button><button class="hm-chip" onclick="goPage('mon-dossier')">📁 Mon dossier</button>`}
+    </div></div>`;
+  if(role==="admin" || !(currentCompte && currentCompte.prenom)) {
+    el.innerHTML = head + `<div class="hm-grid"><div class="hm-card"><div class="hm-card-t">Raccourcis</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="hm-chip" onclick="goPage('journal')">📜 Journal</button><button class="hm-chip" onclick="goPage('admin-comptes')">👥 Comptes</button><button class="hm-chip" onclick="goPage('candidatures')">📨 Candidatures</button></div></div></div>`;
+    return;
+  }
+  el.innerHTML = head + `<div class="hm-load">Chargement de vos performances…</div>`;
+  try {
+    const svc = myService();
+    const nom = `${currentCompte.prenom||""} ${currentCompte.nom||""}`.trim();
+    const q = encodeURIComponent(nom);
+    const monthStart = new Date(y, m, 1);
+    const safe = p => p.catch(()=>[]);
+    const [mine, monthAll, ajust, evals, evs] = await Promise.all([
+      safe(sb(`services_logs?agent_nom=eq.${q}&fin=not.is.null&select=debut,duree_minutes&order=debut.desc&limit=800`)),
+      safe(sb(`services_logs?fin=not.is.null&debut=gte.${encodeURIComponent(monthStart.toISOString())}&select=agent_nom,duree_minutes&limit=5000`)),
+      safe(sb("ajustements_heures?select=*&limit=2000")),
+      safe(sb(`evaluations?agent_nom=eq.${q}&select=*&order=date_eval.desc`)),
+      safe(sb(`evenements?select=*&date_evenement=gte.${calTodayStr()}&order=date_evenement&limit=10`)),
+    ]);
+    const isTest = n => TEST_ACCOUNT_NAMES.includes(n);
+    const adjOf = (agent, mo, yr) => (ajust||[]).filter(a=>a.service===svc && a.agent_nom===agent && a.mois===mo+1 && a.annee===yr).reduce((t,a)=>t+(a.minutes||0),0);
+    const inMonth = (iso, mo, yr) => { const d = new Date(iso); return d.getMonth()===mo && d.getFullYear()===yr; };
+    const pm = new Date(y, m-1, 1);
+    const thisMonthLogs = (mine||[]).filter(l=>inMonth(l.debut, m, y));
+    const thisM = thisMonthLogs.reduce((t,l)=>t+(l.duree_minutes||0),0) + adjOf(nom, m, y);
+    const prevM = (mine||[]).filter(l=>inMonth(l.debut, pm.getMonth(), pm.getFullYear())).reduce((t,l)=>t+(l.duree_minutes||0),0) + adjOf(nom, pm.getMonth(), pm.getFullYear());
+    const sessions = thisMonthLogs.length;
+    const avgSess = sessions ? thisMonthLogs.reduce((t,l)=>t+(l.duree_minutes||0),0)/sessions : 0;
+    // Classement du mois dans la filiale
+    const byAgent = {};
+    (monthAll||[]).forEach(l=>{ if(!isTest(l.agent_nom)) byAgent[l.agent_nom] = (byAgent[l.agent_nom]||0)+(l.duree_minutes||0); });
+    (ajust||[]).filter(a=>a.service===svc && a.mois===m+1 && a.annee===y && !isTest(a.agent_nom)).forEach(a=>{ byAgent[a.agent_nom] = (byAgent[a.agent_nom]||0)+(a.minutes||0); });
+    const ranking = Object.entries(byAgent).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const myRankIdx = ranking.findIndex(([n])=>n===nom);
+    // 8 dernières semaines
+    const WEEKS = 8;
+    const firstWeek = dbWeekStart(new Date(now.getTime() - (WEEKS-1)*7*86400000));
+    const weekMins = new Array(WEEKS).fill(0);
+    (mine||[]).forEach(l=>{ const wi = Math.round((dbWeekStart(new Date(l.debut))-firstWeek)/(7*86400000)); if(wi>=0 && wi<WEEKS) weekMins[wi] += (l.duree_minutes||0); });
+    const maxW = Math.max(60, ...weekMins);
+    const bars = weekMins.map((v,i)=>{ const d = new Date(firstWeek.getTime()+i*7*86400000);
+      return `<div class="hm-bar${i===WEEKS-1?" cur":""}" title="Semaine du ${d.toLocaleDateString("fr-FR")} : ${fmtHeuresMin(v)}"><div class="hm-bar-v">${v?fmtHeuresMin(v):""}</div><div class="hm-bar-f" style="height:${Math.max(3, Math.round(v/maxW*100))}%"></div><div class="hm-bar-l">${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}</div></div>`; }).join("");
+    // Évaluations
+    const ev0 = (evals||[])[0], ev1 = (evals||[])[1];
+    const evAvg = (evals||[]).length ? evals.reduce((t,e)=>t+(e.pourcentage||0),0)/evals.length : null;
+    let evTrend = "";
+    if(ev0 && ev1) { const d = (ev0.pourcentage-ev1.pourcentage)/20; evTrend = Math.abs(d)<0.05 ? `<span class="hm-delta">= stable</span>` : `<span class="hm-delta ${d>0?"up":"down"}">${d>0?"▲":"▼"} ${Math.abs(d).toFixed(1)}</span>`; }
+    const dH = thisM - prevM;
+    const hDelta = prevM>0 || thisM>0 ? `<span class="hm-delta ${dH>0?"up":dH<0?"down":""}">${dH>0?"▲":dH<0?"▼":"="} ${fmtHeuresMin(Math.abs(dH))} vs mois dernier</span>` : "";
+    const lastSvc = (mine||[]).slice(0,5).map(l=>`<div class="hm-row"><span>${new Date(l.debut).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"})} · ${new Date(l.debut).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</span><b>${fmtHeuresMin(l.duree_minutes||0)}</b></div>`).join("") || `<div class="hm-empty">Aucun service enregistré pour le moment.</div>`;
+    const nextEv = (evs||[]).filter(e=>!e.service || e.service===svc)[0];
+    const evBlock = nextEv ? `<div class="hm-card"><div class="hm-card-t">📅 Prochain évènement</div>
+        <div style="font-weight:700;color:#fff;font-size:14px;">${esc(nextEv.nom)}</div>
+        <div class="hm-muted" style="margin:3px 0 12px;">${new Date(nextEv.date_evenement+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}${nextEv.heure_debut?` · ${esc(fmtH(nextEv.heure_debut))}${nextEv.heure_fin?" – "+esc(fmtH(nextEv.heure_fin)):""}`:""}</div>
+        <button class="hm-chip" onclick="goPage('calendrier')">Voir le calendrier →</button></div>` : "";
+    const evBox = ev0 ? `<div class="hm-card"><div class="hm-card-t">⭐ Dernière évaluation</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">${starsHTML(ev0.pourcentage,20)}<b style="font-size:18px;color:#fff;">${(ev0.pourcentage/20).toFixed(1)}<span style="font-size:12px;color:var(--text3);">/5</span></b>${evTrend}</div>
+        <div class="hm-muted" style="margin-top:6px;">${esc(ev0.verdict||"")} · ${new Date((ev0.date_eval||"")+"T12:00:00").toLocaleDateString("fr-FR")}${ev0.evaluateur?` · par ${esc(ev0.evaluateur)}`:""}</div>
+        ${ev0.notes?`<div class="hm-quote">« ${esc(String(ev0.notes).slice(0,180))}${String(ev0.notes).length>180?"…":""} »</div>`:""}
+        <button class="hm-chip" style="margin-top:12px;" onclick="goPage('mes-evaluations')">Toutes mes évaluations →</button></div>`
+      : `<div class="hm-card"><div class="hm-card-t">⭐ Évaluations</div><div class="hm-empty">Aucune évaluation pour le moment.</div></div>`;
+    el.innerHTML = head + `
+      <div class="hm-kpis">
+        <div class="hm-kpi"><div class="hm-kpi-l">Heures ce mois</div><div class="hm-kpi-v">${fmtHeuresMin(thisM)}</div><div class="hm-kpi-s">${hDelta||"&nbsp;"}</div></div>
+        <div class="hm-kpi"><div class="hm-kpi-l">Classement du mois</div><div class="hm-kpi-v">${myRankIdx>=0 ? (myRankIdx===0?"🥇 ":myRankIdx===1?"🥈 ":myRankIdx===2?"🥉 ":"")+"n° "+(myRankIdx+1) : "—"}</div><div class="hm-kpi-s">${ranking.length ? "sur "+ranking.length+" agent"+(ranking.length>1?"s":"") : "Pas encore d'heures ce mois"}</div></div>
+        <div class="hm-kpi"><div class="hm-kpi-l">Note moyenne</div><div class="hm-kpi-v">${evAvg!==null ? (evAvg/20).toFixed(1)+'<span class="hm-kpi-u">/5</span>' : "—"}</div><div class="hm-kpi-s">${evAvg!==null ? starsHTML(evAvg,13)+" "+evTrend : "Aucune évaluation"}</div></div>
+        <div class="hm-kpi"><div class="hm-kpi-l">Services ce mois</div><div class="hm-kpi-v">${sessions}</div><div class="hm-kpi-s">${sessions ? "≈ "+fmtHeuresMin(avgSess)+" en moyenne" : "&nbsp;"}</div></div>
+      </div>
+      <div class="hm-grid">
+        <div class="hm-card wide"><div class="hm-card-t">📈 Mes heures — 8 dernières semaines</div><div class="hm-bars">${bars}</div></div>
+        ${evBox}
+        <div class="hm-card"><div class="hm-card-t">🕐 Mes derniers services</div>${lastSvc}</div>
+        ${evBlock}
+      </div>`;
+  } catch(e) {
+    console.warn("renderAccueil:", e);
+    el.innerHTML = head + `<div class="hm-load">Impossible de charger vos performances pour le moment.</div>`;
+  }
 }
 function filterHomeTiles(q) {
   q = (q||"").trim().toLowerCase();
