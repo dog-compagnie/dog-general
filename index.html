@@ -7378,45 +7378,108 @@ async function checkAccountStillExists() {
   } catch(e) { /* en cas d'erreur réseau, on ne déconnecte pas abusivement */ }
 }
 
-// ─── SON & MESSAGE DE BIENVENUE (à la connexion) ────────────────────────
-function playChime(notes, opts) {
+// ─── SON : moteur commun ────────────────────────────────────────────────
+// Une seule gamme (mi mineur pentatonique : mi, sol, la, si, ré) pour tous les sons du site,
+// comme la mélodie d'accueil. Chaque note = un timbre de « cloche douce » (sinus + deux
+// harmoniques discrètes), un peu d'écho filtré pour l'ambiance « salle de contrôle »,
+// et un compresseur pour que rien ne claque.
+let _sfxCtx = null, _sfxBus = null;
+function _sfxInit() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  if(!_sfxCtx || _sfxCtx.state==="closed") {
+    const c = new AC();
+    const master = c.createGain();
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 6500; lp.Q.value = 0.4;
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -20; comp.ratio.value = 3.5; comp.attack.value = 0.003; comp.release.value = 0.2;
+    const dl = c.createDelay(0.6); dl.delayTime.value = 0.17;
+    const fb = c.createGain(); fb.gain.value = 0.3;
+    const dlp = c.createBiquadFilter(); dlp.type = "lowpass"; dlp.frequency.value = 2400;
+    const wet = c.createGain(); wet.gain.value = 0.26;
+    master.connect(lp); lp.connect(comp); comp.connect(c.destination);
+    master.connect(dl); dl.connect(dlp); dlp.connect(fb); fb.connect(dl); dlp.connect(wet); wet.connect(comp);
+    _sfxCtx = c; _sfxBus = master;
+  }
+  if(_sfxCtx.state==="suspended") { try { const p = _sfxCtx.resume(); if(p && p.catch) p.catch(()=>{}); } catch(e) {} }
+  return _sfxCtx;
+}
+function _sfxVoice(c, bus, freq, t, o) {
+  const vol = o.vol!==undefined ? o.vol : 0.08, dur = o.dur||0.6, att = o.att||0.01;
+  const bright = o.bright!==undefined ? o.bright : 0.18, type = o.wave||"sine";
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t+att);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  g.connect(bus);
+  [[1,1],[2,bright],[3,bright*0.35]].forEach(([m,a])=>{
+    if(a<=0) return;
+    const osc = c.createOscillator(); osc.type = type; osc.frequency.value = freq*m;
+    const og = c.createGain(); og.gain.value = a;
+    osc.connect(og); og.connect(g);
+    osc.start(t); osc.stop(t+dur+0.05);
+  });
+}
+// notes : liste de fréquences (espacées de opts.gap) ou d'objets {f, at, vol, dur, wave}
+function sfx(notes, opts) {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-    const ctx = new AC();
-    const now = ctx.currentTime;
-    const gap = (opts&&opts.gap) || 0.15;
-    const vol = (opts&&opts.vol) || 0.10;
-    const dur = (opts&&opts.dur) || 1.1;
-    (notes||[523.25, 659.25, 783.99]).forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = (opts&&opts.wave) || "sine";
-      osc.frequency.value = freq;
-      const start = now + i*gap;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(vol, start+0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start+dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start); osc.stop(start+dur+0.1);
+    const c = _sfxInit(); if(!c) return;
+    const base = c.currentTime + 0.01, gap = (opts&&opts.gap)||0;
+    notes.forEach((n,i)=>{
+      const nn = (typeof n==="number") ? {f:n} : n;
+      _sfxVoice(c, _sfxBus, nn.f, base + (nn.at!==undefined ? nn.at : i*gap), Object.assign({}, opts, nn));
     });
-    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, (dur+notes.length*gap)*1000+400);
   } catch(e) { /* audio indisponible : on continue sans bloquer */ }
 }
-// Ces fonctions marchent depuis n'importe quelle page de l'appli : le son n'est pas lié
-// à une page en particulier, seulement à l'onglet du navigateur qui doit être ouvert (et
-// non muet). On peut donc entendre une notification en étant sur une tout autre page.
+function playChime(notes, opts) { sfx(notes, Object.assign({vol:0.1, dur:1}, opts||{})); }
+// Gamme : E3 164.81 · E5 659.25 · G5 783.99 · A5 880 · B5 987.77 · D6 1174.66 · E6 1318.51
 function soundWelcome()      { playWelcomeMelody(); }
-function soundServiceStart() { playChime([659.25, 987.77], {gap:0.12, vol:0.09, dur:0.7}); }
-function soundServiceEnd()   { playChime([783.99, 587.33], {gap:0.12, vol:0.09, dur:0.7}); }
-function soundDocCreated()   { playChime([880], {vol:0.08, dur:0.5}); }
-function soundNotif()        { playChime([740, 932.33], {gap:0.09, vol:0.07, dur:0.45}); }
-function soundAdminAlert()   { playChime([880, 659.25, 880], {gap:0.14, vol:0.10, dur:0.55}); }
-// Simple et sobre : deux notes descendantes, propre, sans effet théâtral
-// Bip carré franc, bien audible — texture volontairement "buzzy", différente du carillon
-// doux des notifications (onde sinusoïdale).
-function soundMaintenance() { playChime([220, 220], {gap:0.26, vol:0.18, dur:0.32, wave:"square"}); }
-function soundClick()        { playChime([1400], {vol:0.035, dur:0.08}); }
+function soundServiceStart() {
+  // « Pouls » : deux notes graves et rondes qui montent (mi → si), registre chaud
+  sfx([{f:164.81*2,at:0},{f:246.94*2,at:0.17}], {vol:0.1, dur:0.75, att:0.02, bright:0.1});
+}
+function soundServiceEnd() {
+  // Le miroir : les mêmes deux notes, qui redescendent (si → mi)
+  sfx([{f:246.94*2,at:0},{f:164.81*2,at:0.17}], {vol:0.1, dur:0.75, att:0.02, bright:0.1});
+}
+function soundDocCreated() {
+  // « Coussin » : une quinte ronde et chaude, attaque douce, sans brillance
+  sfx([{f:493.88,at:0},{f:659.25,at:0.03}], {vol:0.06, dur:0.8, att:0.035, bright:0.04});
+}
+function soundNotif() {
+  // « Glissé » : une note qui monte d'un souffle puis se pose, avec son écho
+  try {
+    const c = _sfxInit(); if(!c) return;
+    const t = c.currentTime + 0.01;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(587.33, t);
+    o.frequency.exponentialRampToValueAtTime(1174.66, t+0.11);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.11, t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.9);
+    o.connect(g); g.connect(_sfxBus);
+    o.start(t); o.stop(t+1);
+  } catch(e) {}
+}
+function soundAdminAlert()   { sfx([{f:164.81,at:0,vol:0.09,dur:1.0}, {f:659.25,at:0}, {f:659.25,at:0.17}, {f:987.77,at:0.34}], {vol:0.09, dur:0.55, wave:"triangle"}); }
+// Maintenance : deux impulsions graves et filtrées — franches, mais plus de « buzz » carré agressif
+function soundMaintenance()  { sfx([{f:164.81,at:0},{f:164.81,at:0.3}], {vol:0.16, dur:0.34, wave:"triangle", bright:0.5}); }
+function soundClick() {
+  // « Pop » feutré : une courte goutte de grave qui retombe (pas de bip), sans écho
+  try {
+    const c = _sfxInit(); if(!c) return;
+    const t = c.currentTime + 0.005;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(190, t+0.07);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.07, t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.09);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+0.12);
+  } catch(e) {}
+}
 
 // Sting d'accueil court et fluide (~2.8s) : une nappe chaude qui monte en fondu, une ligne
 // mélodique qui glisse d'une note à l'autre (portamento, pas de coups secs), un léger souffle
@@ -12321,7 +12384,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v7.3 — heures par semaine";
+const SITE_VERSION = "v7.7 — sons de service";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
