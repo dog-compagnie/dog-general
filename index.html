@@ -8635,7 +8635,7 @@ async function soumettreCandidat() {
     ynState={};
     document.querySelectorAll(".yn-btn").forEach(b=>b.classList.remove("active"));
     logActivity("candidature_nouvelle", `Nouvelle candidature de ${prenom} ${nom} (${svcLabel(serviceChoisi)})`, `${prenom} ${nom} (candidat)`);
-    sendDiscordWebhook("📨 Nouvelle candidature", `**${prenom} ${nom}**\nService : ${svcLabel(serviceChoisi)}\nDiscord : ${discord}${payload.age?"\nÂge : "+payload.age+" ans":""}`, 0x5DADE2, serviceChoisi);
+    // Le message Discord « Nouvelle candidature » est envoyé par la base (webhook_candidatures_serveur.sql) : un candidat ne peut pas lire l'adresse du webhook.
     syncBadge("✓ Envoyé","#4A7F5E");
     if(role==="candidat" && currentCompte && newId) {
       await sb(`candidats_comptes?id=eq.${currentCompte.id}`, {method:"PATCH", body:JSON.stringify({prenom, nom, service:serviceChoisi, candidature_id:newId})});
@@ -8772,7 +8772,7 @@ async function sendCandidatMessage() {
     } catch(e2) { console.warn("msg_count increment failed:", e2.message); }
     inp.value=""; inp.style.height="auto";
     loadCandidatMessages(currentCompte.candidature_id);
-    sendDiscordWebhook("💬 Nouveau message de candidature", `**${((currentCompte.prenom||"")+" "+(currentCompte.nom||"")).trim()||"Candidat"}** a écrit :\n"${texte}"`, 0x7289DA, currentCompte.service||myService());
+    // Idem : notification Discord envoyée par la base.
   } catch(e) { toast("Erreur lors de l'envoi du message : "+e.message,"#E74C3C"); }
 }
 
@@ -12384,7 +12384,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v7.7 — sons de service";
+const SITE_VERSION = "v7.8 — webhook candidatures";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
