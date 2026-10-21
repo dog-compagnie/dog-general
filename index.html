@@ -3130,6 +3130,11 @@ const sb = async (path, opts={}) => {
       finalOpts.body = JSON.stringify(parsed);
     } catch(e) {}
   }
+  // Les comptes (agents/candidats) ont des colonnes protégées (PIN) : on ne demande pas de « retour »
+  // de la ligne modifiée, sinon la base refuse (« permission denied for table … »).
+  if((table==="agents_comptes"||table==="candidats_comptes") && (method==="PATCH"||method==="DELETE") && !finalOpts.headers) {
+    finalOpts.headers = {...H, "Prefer":"return=minimal"};
+  }
   const r = await fetch(SB_URL+"/rest/v1/"+finalPath, {headers:H, mode:"cors", ...finalOpts});
   if(!r.ok) {
     const txt = await r.text();
@@ -12384,7 +12389,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v7.8 — webhook candidatures";
+const SITE_VERSION = "v7.9 — correctif candidatures";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
