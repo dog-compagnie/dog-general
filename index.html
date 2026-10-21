@@ -1521,6 +1521,257 @@ tbody tr:hover{box-shadow:none;}
 .wk-row.cur .wk-track i{background:linear-gradient(90deg,var(--accent),var(--accent-light));box-shadow:0 0 14px rgba(var(--accent-rgb),.5);}
 .wk-row.zero .wk-lbl,.wk-row.zero .wk-val{opacity:.45;}
 @media (max-width:560px){.wk-row{grid-template-columns:92px minmax(0,1fr) 44px;gap:8px;}.wk-sum{gap:20px;}}
+
+/* ═══ v8 — page d'accueil publique + candidature ═══ */
+#screen-landing{background:#060910;}
+.lp-hero{min-height:100vh;background-color:#070a10;}
+.lp-hero-overlay{background:
+  radial-gradient(ellipse 60% 55% at 12% 15%, rgba(41,128,185,.38) 0%, transparent 62%),
+  radial-gradient(ellipse 45% 45% at 92% 8%, rgba(211,84,0,.22) 0%, transparent 58%),
+  radial-gradient(ellipse 50% 45% at 85% 95%, rgba(142,68,173,.22) 0%, transparent 58%),
+  linear-gradient(95deg,rgba(6,9,14,.88) 0%,rgba(6,9,14,.62) 45%,rgba(6,9,14,.35) 100%),
+  linear-gradient(180deg,rgba(6,9,14,.35) 0%,rgba(6,9,14,.1) 45%,rgba(6,9,14,.95) 100%);}
+.lp-hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(70% 70% at 30% 40%,#000,transparent);mask-image:radial-gradient(70% 70% at 30% 40%,#000,transparent);}
+.lp-nav{position:sticky;top:0;z-index:20;padding:14px 40px;background:linear-gradient(180deg,rgba(6,9,14,.85),rgba(6,9,14,.35));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.06);}
+.lp-hero .lp-nav{position:relative;}
+.lp-nav-brand{font-size:20px;letter-spacing:-.01em;}
+.lp-links{display:flex;gap:6px;margin:0 auto;}
+.lp-links a{cursor:pointer;font-size:13px;font-weight:600;color:var(--text2,#9AB0C4);padding:8px 14px;border-radius:999px;transition:.2s;}
+.lp-links a:hover{color:#fff;background:rgba(255,255,255,.07);}
+.lp-nav-act{display:flex;gap:8px;align-items:center;}
+.lp-nav-login{cursor:pointer;border:1px solid rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.16);color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:999px;transition:.2s;}
+.lp-nav-login:hover{background:rgba(var(--accent-rgb),.3);}
+.lp-admin-link{border-radius:999px;}
+.lp-hero-content{align-items:flex-start;text-align:left;justify-content:center;padding:30px 40px 120px;max-width:1240px;width:100%;margin:0 auto;box-sizing:border-box;}
+.lp-hero-badges{order:5;margin:34px 0 0;gap:10px;}
+.lp-hero-badges img{width:46px;height:46px;}
+.lp-hero-title{font-family:var(--font-display);font-size:clamp(46px,8.4vw,104px);font-weight:800;letter-spacing:-.035em;line-height:.98;margin-bottom:22px;background:none;color:#fff;-webkit-background-clip:initial;background-clip:initial;animation:lp-fade-up .8s cubic-bezier(.16,.9,.3,1) .18s forwards;filter:drop-shadow(0 6px 30px rgba(0,0,0,.45));max-width:900px;}
+.lp-hero-title .lp-acc{background:linear-gradient(100deg,var(--accent-light),#f0a840 85%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.lp-hero-sub{font-size:clamp(15px,1.6vw,19px);max-width:600px;color:#c3d3e0;margin-bottom:34px;}
+.lp-cta-row{justify-content:flex-start;}
+.lp-cta{border-radius:999px;padding:15px 34px;background:linear-gradient(135deg,var(--accent-light),var(--accent));}
+.lp-cta-secondary{border-radius:999px;padding:14px 30px;}
+.lp-stats{max-width:1120px;margin-top:-64px;gap:14px;background:none;border:none;overflow:visible;box-shadow:none;padding:0 24px;}
+.lp-stat{border-radius:20px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(165deg,rgba(24,34,50,.9),rgba(9,13,20,.95));backdrop-filter:blur(10px);position:relative;overflow:hidden;padding:26px 16px;}
+.lp-stat::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent-light),transparent);}
+.lp-stat-num{font-weight:800;letter-spacing:-.02em;}
+.lp-stat-lbl{text-transform:uppercase;letter-spacing:.09em;font-size:10.5px;}
+.lp-section{padding:100px 24px;}
+.lp-section-alt{background:linear-gradient(180deg,#0a0e15,#080b11);}
+.lp-section h2{font-family:var(--font-display);font-weight:800;letter-spacing:-.025em;font-size:clamp(26px,3.6vw,40px);}
+.lp-eyebrow{display:inline-flex;align-items:center;gap:8px;}
+.lp-eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--accent-light);}
+.lp-section-alt .lp-eyebrow{display:flex;justify-content:center;}
+.lp-about-frame{position:relative;}
+.lp-about-frame::before{content:"";position:absolute;inset:-14px -14px 14px 14px;border-radius:26px;border:1px solid rgba(var(--accent-rgb),.35);background:linear-gradient(135deg,rgba(var(--accent-rgb),.14),transparent 60%);}
+.lp-about-frame .lp-about-img{position:relative;border-radius:22px;}
+.lp-svc-card{border-radius:22px;padding:26px 22px 22px;background:linear-gradient(165deg,color-mix(in srgb,var(--svc-color) 12%,#141c29),#0a0e15 70%);border-color:color-mix(in srgb,var(--svc-color) 28%,rgba(255,255,255,.06));}
+.lp-svc-card::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--svc-color),transparent);}
+.lp-svc-icon{width:56px;height:56px;border-radius:16px;}
+.lp-svc-card p{min-height:78px;}
+.lp-svc-link{position:relative;z-index:2;display:inline-block;margin-top:14px;font-size:12.5px;font-weight:700;color:var(--svc-color);cursor:pointer;}
+.lp-svc-link:hover{text-decoration:underline;}
+.lp-join{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center;padding:44px;border-radius:30px;border:1px solid rgba(255,255,255,.08);background:radial-gradient(80% 120% at 0% 0%,rgba(var(--accent-rgb),.22),transparent 60%),linear-gradient(165deg,#141d2b,#080b11);}
+.lp-join p{color:#b8c8d8;font-size:14.5px;line-height:1.8;margin-bottom:24px;}
+.lp-join-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;}
+.lp-join-steps li{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);}
+.lp-join-steps b{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-family:var(--font-display);color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-light));}
+.lp-join-steps strong{display:block;color:#fff;font-size:14px;}
+.lp-join-steps span{font-size:12.5px;color:var(--text2,#9AB0C4);}
+@media (max-width:900px){.lp-links{display:none;}.lp-nav{padding:12px 18px;}.lp-hero-content{padding:20px 22px 110px;}.lp-join{grid-template-columns:1fr;padding:28px 22px;}.lp-stats{margin-top:-50px;}.lp-about-frame::before{display:none;}}
+
+/* Candidature */
+.cf-hero{position:relative;border-radius:28px;padding:34px 38px;border:1px solid rgba(255,255,255,.08);overflow:hidden;background:radial-gradient(90% 140% at 0% 0%,rgba(var(--accent-rgb),.3),transparent 60%),radial-gradient(60% 100% at 100% 100%,rgba(142,68,173,.18),transparent 60%),linear-gradient(165deg,#141d2b,#080b11);}
+.cf-hero .page-title{font-size:34px;margin-bottom:8px;}
+.cf-hero .page-sub{margin:0 0 22px;max-width:620px;font-size:13.5px;color:var(--text2);}
+.cf-tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-light);background:rgba(var(--accent-rgb),.16);border:1px solid rgba(var(--accent-rgb),.35);padding:5px 12px;border-radius:999px;margin-bottom:14px;}
+.cf-steps{display:flex;gap:8px;flex-wrap:wrap;}
+.cf-steps div{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:var(--text3);padding:7px 14px 7px 8px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);}
+.cf-steps b{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(255,255,255,.08);color:var(--text2);}
+.cf-steps .on{color:#fff;border-color:rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.16);}
+.cf-steps .on b{background:var(--accent);color:#fff;}
+.cf-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start;}
+.page.active > .cf-layout{grid-column:1/-1;}
+.cf-main{display:flex;flex-direction:column;gap:16px;max-width:none !important;}
+.cf-sec{border-radius:22px;padding:22px 24px 14px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(165deg,#141d2b,#0a0e15);}
+.cf-sec h3{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-size:16px;font-weight:700;color:#fff;margin:0 0 16px;}
+.cf-sec h3 i{font-style:normal;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:linear-gradient(135deg,var(--accent),var(--accent-light));}
+.cf-svcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:8px;}
+.cf-svc{cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:3px;padding:16px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(165deg,color-mix(in srgb,var(--c) 10%,#141c29),#0a0e15);color:#fff;font-family:inherit;transition:.2s;}
+.cf-svc span{font-size:24px;}.cf-svc b{font-family:var(--font-display);font-size:14px;margin-top:6px;}.cf-svc small{font-size:11.5px;color:var(--text2);}
+.cf-svc:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--c) 55%,transparent);}
+.cf-svc.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 18px 36px -20px var(--c);background:linear-gradient(165deg,color-mix(in srgb,var(--c) 26%,#141c29),#0a0e15);}
+.cf-yn{border-radius:16px;padding:14px 16px;margin-bottom:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);}
+.cf-send{margin:4px 0 12px !important;padding:15px !important;font-size:15px !important;border-radius:999px !important;}
+.cf-side{position:sticky;top:76px;display:flex;flex-direction:column;gap:14px;}
+.cf-card{border-radius:22px;padding:20px 22px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(165deg,#141d2b,#0a0e15);}
+.cf-card h4{margin:0 0 14px;font-family:var(--font-display);font-size:15px;color:#fff;}
+.cf-card ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;}
+.cf-card li{display:flex;gap:12px;font-size:12.5px;line-height:1.55;color:#b8c8d8;}
+.cf-card li b{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(var(--accent-rgb),.22);color:#fff;}
+.cf-tip{display:flex;flex-direction:column;gap:6px;border-color:rgba(240,168,64,.3);background:linear-gradient(165deg,rgba(240,168,64,.1),#0a0e15);}
+.cf-tip b{color:#F5B454;font-size:13px;}.cf-tip span{font-size:12.5px;line-height:1.6;color:#d3deea;}
+@media (max-width:1000px){.cf-layout{grid-template-columns:1fr;}.cf-side{position:static;}.cf-hero{padding:26px 22px;}.cf-hero .page-title{font-size:26px;}}
+.cs-steps{display:flex;gap:8px;justify-content:center;margin:4px 0 14px;}
+.cs-steps div{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text3);padding:6px 14px 6px 6px;border-radius:999px;background:rgba(255,255,255,.04);}
+.cs-steps b{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(255,255,255,.08);}
+.cs-steps .done{color:#52D98B;}.cs-steps .done b{background:rgba(82,217,139,.2);}
+.cs-steps .now{color:#fff;background:rgba(var(--accent-rgb),.2);}.cs-steps .now b{background:var(--accent);}
+.cs-steps .bad.now{background:rgba(240,128,128,.18);}.cs-steps .bad.now b{background:#C0392B;}
+
+/* ═══ v8.1 — hero showcase, bento, statut vivant ═══ */
+.lp-hero-content{flex-direction:row !important;align-items:center !important;gap:48px;max-width:1280px !important;}
+.lp-hero-main{flex:1 1 55%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;}
+.lp-hero-overlay{background:
+  radial-gradient(ellipse 55% 55% at 10% 15%, rgba(41,128,185,.32) 0%, transparent 62%),
+  radial-gradient(ellipse 40% 45% at 95% 10%, rgba(211,84,0,.18) 0%, transparent 58%),
+  linear-gradient(95deg,rgba(6,9,14,.9) 0%,rgba(6,9,14,.6) 42%,rgba(6,9,14,.18) 78%,rgba(6,9,14,.1) 100%),
+  linear-gradient(180deg,rgba(6,9,14,.3) 0%,rgba(6,9,14,.05) 50%,rgba(6,9,14,.92) 100%) !important;}
+.lp-kicker{display:inline-flex;align-items:center;gap:10px;font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#cfe0ee;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);backdrop-filter:blur(8px);margin-bottom:22px;}
+.lp-kicker i{width:8px;height:8px;border-radius:50%;background:#52D98B;box-shadow:0 0 0 4px rgba(82,217,139,.2);animation:lp-pulse 2s infinite;}
+@keyframes lp-pulse{50%{box-shadow:0 0 0 8px rgba(82,217,139,0);}}
+.lp-board{flex:0 0 430px;position:relative;height:470px;}
+.lp-bcard{position:absolute;border-radius:20px;padding:16px 18px;background:linear-gradient(165deg,rgba(26,38,56,.82),rgba(10,14,22,.9));border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(16px);box-shadow:0 30px 60px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.07);animation:lp-float 7s ease-in-out infinite;color:#fff;}
+.lp-bcard::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:3px;background:var(--sc);}
+.lp-b1{left:0;top:0;width:290px;}
+.lp-b2{right:0;top:96px;width:250px;display:flex;align-items:center;gap:14px;animation-delay:-2s;}
+.lp-b3{left:34px;top:218px;width:270px;animation-delay:-4s;}
+.lp-b4{right:6px;top:316px;width:200px;animation-delay:-1s;}
+@keyframes lp-float{50%{transform:translateY(-10px);}}
+.lp-b-top{display:flex;align-items:center;gap:9px;font-size:14px;}
+.lp-b-top em{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sc);background:rgba(255,255,255,.06);padding:3px 9px;border-radius:999px;}
+.lp-b-led{width:9px;height:9px;border-radius:50%;background:var(--sc);box-shadow:0 0 10px var(--sc);}
+.lp-b-seats{display:flex;gap:10px;margin-top:14px;}
+.lp-b-seats span{flex:1;display:flex;flex-direction:column;gap:2px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#8fa4b8;background:rgba(255,255,255,.04);padding:9px 11px;border-radius:12px;}
+.lp-b-seats strong{font-size:13px;color:#fff;text-transform:none;letter-spacing:0;}
+.lp-b-ring{width:54px;height:54px;flex:none;}
+.lp-b-arc{animation:lp-arc 8s linear infinite;}
+@keyframes lp-arc{from{stroke-dashoffset:113}to{stroke-dashoffset:0}}
+.lp-b2 small,.lp-b4 small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#8fa4b8;}
+.lp-b2 b{font-family:var(--font-display);font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.lp-b-bar{margin-top:14px;height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+.lp-b-bar i{display:block;height:100%;width:68%;border-radius:6px;background:linear-gradient(90deg,var(--sc),#ffd48a);}
+.lp-b-note{font-family:var(--font-display);font-size:38px;font-weight:800;line-height:1.1;margin-top:4px;}
+.lp-b-note span{font-size:15px;color:#8fa4b8;font-weight:600;}
+.lp-b-stars{color:#F0A840;letter-spacing:3px;font-size:13px;}
+.lp-b-cap{position:absolute;left:0;bottom:0;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6f869b;}
+.lp-hero-badges,.lp-hero-title,.lp-hero-sub,.lp-cta-row,.lp-kicker{opacity:1;}
+
+.lp-eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-light);margin-bottom:10px;}
+#lp-life-sec h2{font-family:var(--font-display);font-size:clamp(28px,4vw,44px);letter-spacing:-.025em;color:#fff;}
+.lp-bento{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1120px;margin:0 auto;}
+.lp-tile{grid-column:span 1;position:relative;overflow:hidden;border-radius:24px;padding:24px;border:1px solid rgba(255,255,255,.08);background:radial-gradient(ellipse 80% 70% at 100% 0%,color-mix(in srgb,var(--tc) 22%,transparent),transparent 60%),linear-gradient(165deg,#131c2a,#0a0e15);transition:transform .3s,border-color .3s;}
+.lp-tile:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--tc) 55%,transparent);}
+.lp-t-wide{grid-column:span 2;}
+.lp-tile h3{font-family:var(--font-display);font-size:17px;color:#fff;margin:18px 0 6px;letter-spacing:-.01em;}
+.lp-tile p{font-size:13px;line-height:1.6;color:#9db1c4;margin:0;}
+.lp-t-vis{min-height:104px;display:flex;align-items:center;}
+.lp-t-wide:first-child .lp-t-vis{flex-wrap:wrap;gap:8px;align-content:center;}
+.lp-t-vis>span{font-size:12px;font-weight:600;color:#fff;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;gap:8px;}
+.lp-t-vis>span::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);}
+.lp-t-big{font-family:var(--font-display);font-size:68px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--tc);}
+.lp-t-big small{font-size:24px;margin-left:4px;color:#9db1c4;}
+.lp-t-bars{display:flex;align-items:flex-end;gap:9px;height:96px;width:100%;}
+.lp-t-bars i{flex:1;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--tc),color-mix(in srgb,var(--tc) 25%,transparent));}
+.lp-t-path{display:flex;align-items:center;gap:6px;width:100%;}
+.lp-t-path span{font-size:12px;font-weight:700;padding:8px 12px;border-radius:12px;background:rgba(179,136,235,.14);color:#e5d6fa;border:1px solid rgba(179,136,235,.3);white-space:nowrap;}
+.lp-t-path i{flex:1;height:2px;background:linear-gradient(90deg,rgba(179,136,235,.6),rgba(179,136,235,.15));min-width:8px;}
+@media (max-width:980px){
+  .lp-hero-content{flex-direction:column !important;padding:20px 22px 110px !important;}
+  .lp-board{flex:none;width:100%;max-width:430px;height:420px;margin:30px auto 0;}
+  .lp-bento{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:560px){.lp-bento{grid-template-columns:1fr;}.lp-t-wide{grid-column:span 1;}.lp-board{transform:scale(.92);transform-origin:top center;}}
+
+/* statut candidature */
+.cs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;max-width:1120px;margin:0 auto;align-items:start;}
+.cs-main{display:flex;flex-direction:column;gap:20px;min-width:0;}
+.cs-side{display:flex;flex-direction:column;gap:16px;position:sticky;top:20px;}
+.cs-hero{--sc:#F0A840;position:relative;overflow:hidden;text-align:center;padding:44px 32px 34px;border-radius:28px;border:1px solid color-mix(in srgb,var(--sc) 35%,transparent);background:radial-gradient(ellipse 70% 80% at 50% -10%,color-mix(in srgb,var(--sc) 30%,transparent),transparent 65%),linear-gradient(170deg,#141d2b,#090d14);}
+.cs-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 15% 80%,color-mix(in srgb,var(--sc) 18%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--sc) 18%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 70% 85%,rgba(255,255,255,.1) 0 1.5px,transparent 2.5px);background-size:120px 120px;opacity:.7;pointer-events:none;}
+.cs-ic{position:relative;width:104px;height:104px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;background:color-mix(in srgb,var(--sc) 16%,#0b1018);border:2px solid color-mix(in srgb,var(--sc) 60%,transparent);box-shadow:0 0 0 10px color-mix(in srgb,var(--sc) 10%,transparent),0 0 50px -6px var(--sc);animation:cs-bob 4s ease-in-out infinite;}
+.cs-ic::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--sc) 45%,transparent);animation:cs-spin 24s linear infinite;}
+@keyframes cs-bob{50%{transform:translateY(-6px);}}
+@keyframes cs-spin{to{transform:rotate(360deg);}}
+.cs-badge{position:relative;display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sc);padding:6px 14px;border-radius:999px;background:color-mix(in srgb,var(--sc) 14%,transparent);border:1px solid color-mix(in srgb,var(--sc) 40%,transparent);margin-bottom:14px;}
+.cs-hero h2{position:relative;font-family:var(--font-display);font-size:clamp(26px,3.4vw,38px);letter-spacing:-.025em;color:#fff;margin:0 0 10px;}
+.cs-hero p{position:relative;max-width:520px;margin:0 auto;font-size:14.5px;line-height:1.7;color:#b8c8d8;}
+.cs-track{position:relative;display:flex;align-items:flex-start;justify-content:center;margin:30px auto 6px;max-width:520px;}
+.cs-node{display:flex;flex-direction:column;align-items:center;gap:8px;width:80px;font-size:11.5px;font-weight:600;color:#7d92a6;}
+.cs-node b{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:#0d131c;border:2px solid #263447;color:#7d92a6;}
+.cs-node.done b{background:var(--sc);border-color:var(--sc);color:#0b1018;}
+.cs-node.done{color:#cfe0ee;}
+.cs-node.now b{background:color-mix(in srgb,var(--sc) 20%,#0b1018);border-color:var(--sc);color:#fff;box-shadow:0 0 0 6px color-mix(in srgb,var(--sc) 18%,transparent);animation:lp-pulse 2.2s infinite;}
+.cs-node.now{color:#fff;}
+.cs-node.bad b{border-color:#F08080;}
+.cs-line{flex:1;height:2px;margin-top:19px;background:#263447;border-radius:2px;}
+.cs-node.done + .cs-line{background:var(--sc);}
+.cs-note{position:relative;margin:22px auto 0;max-width:500px;font-size:12.5px;line-height:1.65;color:#a9bccd;padding:12px 16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);}
+.cs-cta{position:relative;margin-top:22px;padding:13px 28px !important;border-radius:999px !important;}
+.cs-row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12.5px;}
+.cs-row:last-child{border:none;}
+.cs-row span{color:#7d92a6;}.cs-row b{color:#fff;text-align:right;font-weight:600;}
+.cs-chat{border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:linear-gradient(170deg,#101823,#090d14);}
+.cs-chat-hdr{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);}
+.cs-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;background:rgba(var(--accent-rgb),.2);}
+.cs-chat-hdr b{display:block;font-size:14px;color:#fff;}.cs-chat-hdr small{font-size:11.5px;color:#7d92a6;}
+.cs-thread{min-height:150px;max-height:340px;overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+.cs-input{display:flex;gap:10px;padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);align-items:flex-end;}
+.cs-input textarea{flex:1;resize:none;border-radius:16px !important;min-height:42px;}
+.cm{display:flex;}.cm-me{justify-content:flex-end;}
+.cm-b{max-width:78%;padding:10px 14px;border-radius:18px;}
+.cm-st .cm-b{background:#18283b;border:1px solid rgba(93,173,226,.25);border-bottom-left-radius:5px;}
+.cm-me .cm-b{background:linear-gradient(135deg,rgba(82,217,139,.28),rgba(82,217,139,.14));border:1px solid rgba(82,217,139,.3);border-bottom-right-radius:5px;}
+.cm-meta{font-size:10.5px;color:#8fa4b8;margin-bottom:3px;}.cm-txt{font-size:13.5px;line-height:1.55;color:#fff;white-space:pre-wrap;word-break:break-word;}
+@media (max-width:900px){.cs-wrap{grid-template-columns:1fr;}.cs-side{position:static;}}
+.lp-tile.lp-t-wide:last-child{grid-column:span 4;}
+.cs-input textarea{background:#0b1119 !important;color:#fff !important;border:1px solid rgba(255,255,255,.12) !important;padding:11px 14px !important;}
+.lp-board{height:440px;}
+.lp-bcard{display:flex;align-items:center;gap:14px;}
+.lp-b-ico{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:color-mix(in srgb,var(--sc) 18%,#0b1018);border:1px solid color-mix(in srgb,var(--sc) 45%,transparent);}
+.lp-bcard b{display:block;font-family:var(--font-display);font-size:15px;}
+.lp-bcard small{display:block;font-size:11.5px;color:#9db1c4;margin-top:2px;text-transform:none;letter-spacing:0;}
+.lp-b1{left:0;top:10px;width:300px;}.lp-b2{right:0;top:108px;width:310px;}.lp-b3{left:20px;top:218px;width:310px;}.lp-b4{right:10px;top:322px;width:290px;}
+.lp-t-big{font-size:64px;}
+.lp-hero-title::after{content:"";}
+.lp-hero-main .lp-hero-sub{max-width:560px;}
+.lp-tile::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),color-mix(in srgb,var(--tc) 22%,transparent),transparent 70%);}
+.lp-tile:hover::after{opacity:1;}
+.lp-board{transform:translate(var(--px,0),var(--py,0));transition:transform .5s cubic-bezier(.16,.9,.3,1);}
+.lp-bcard{transition:border-color .3s;}.lp-bcard:hover{border-color:var(--sc);}
+.cs-conf{position:absolute;top:-10px;width:8px;height:14px;border-radius:2px;pointer-events:none;animation:cs-fall linear forwards;z-index:3;}
+@keyframes cs-fall{to{transform:translate(var(--dx),520px) rotate(var(--rot));opacity:0;}}
+.cs-hero h2,.cs-hero p,.cs-track,.cs-note,.cs-cta{animation:lp-fade-up .7s cubic-bezier(.16,.9,.3,1) both;}
+.cs-hero p{animation-delay:.1s}.cs-track{animation-delay:.2s}.cs-note,.cs-cta{animation-delay:.3s}
+@media (prefers-reduced-motion:reduce){.lp-bcard,.cs-ic,.cs-conf{animation:none !important;}}
+/* messagerie v8.2 */
+.cs-chat-hdr small{display:flex;align-items:center;gap:6px;}
+.cs-dot{width:7px;height:7px;border-radius:50%;background:#52D98B;box-shadow:0 0 8px #52D98B;display:inline-block;}
+.cs-thread{min-height:220px;max-height:420px;gap:3px !important;scroll-behavior:smooth;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(var(--accent-rgb),.06),transparent 70%);}
+.cm{align-items:flex-end;gap:9px;margin-top:2px;}
+.cm-first{margin-top:12px;}
+.cm-av{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;background:#2a3a4e;}
+.cm-av.staff{background:linear-gradient(135deg,var(--accent-light),var(--accent));}
+.cm-av.ghost{background:none;}
+.cm-b{position:relative;padding:9px 13px 6px !important;animation:cm-in .35s cubic-bezier(.16,.9,.3,1) both;}
+@keyframes cm-in{from{opacity:0;transform:translateY(8px) scale(.97);}}
+.cm-meta{display:flex;align-items:center;gap:7px;font-size:11px;margin-bottom:3px !important;color:#8fa4b8;}
+.cm-meta b{color:#cfe0ee;font-weight:700;}
+.cm-meta em{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-light);background:rgba(var(--accent-rgb),.16);padding:2px 7px;border-radius:999px;}
+.cm-time{font-size:9.5px;color:rgba(255,255,255,.42);text-align:right;margin-top:3px;}
+.cm-day{display:flex;justify-content:center;margin:14px 0 6px;}
+.cm-day span{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:capitalize;color:#8fa4b8;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.05);}
+.cm-empty{margin:auto;text-align:center;padding:24px 18px;max-width:340px;}
+.cm-empty-ic{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;background:rgba(var(--accent-rgb),.16);border:1px solid rgba(var(--accent-rgb),.4);animation:cs-bob 4s ease-in-out infinite;}
+.cm-empty b{display:block;color:#fff;font-size:15px;margin-bottom:6px;}.cm-empty p{font-size:12.5px;line-height:1.6;color:#9db1c4;margin:0;}
+.cs-quick{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 4px;}
+.cs-quick:empty{display:none;}
+.cs-quick button{cursor:pointer;font:inherit;font-size:12px;color:#cfe0ee;padding:8px 13px;border-radius:999px;border:1px solid rgba(var(--accent-rgb),.4);background:rgba(var(--accent-rgb),.1);transition:.2s;}
+.cs-quick button:hover{background:rgba(var(--accent-rgb),.25);color:#fff;transform:translateY(-1px);}
+.cs-input{align-items:center !important;}
+.cs-input textarea{border-radius:22px !important;padding:12px 16px !important;max-height:120px;line-height:1.4;}
+.cs-send{flex:none;cursor:pointer;width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,var(--accent-light),var(--accent));box-shadow:0 8px 20px -6px rgba(var(--accent-rgb),.7);transition:transform .2s;}
+.cs-send:hover{transform:scale(1.08) rotate(-8deg);}.cs-send:active{transform:scale(.94);}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -1593,40 +1844,98 @@ tbody tr:hover{box-shadow:none;}
     <div class="lp-particles" id="lp-particles"></div>
     <div class="lp-nav">
       <div class="lp-nav-brand">Dog <span>Compagnie</span></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <nav class="lp-links">
+        <a onclick="lpGo('lp-about-sec')">Qui sommes-nous</a>
+        <a onclick="lpGo('lp-svc-sec')">Nos filières</a>
+        <a onclick="lpGo('lp-join-sec')">Nous rejoindre</a>
+      </nav>
+      <div class="lp-nav-act">
         <button class="lp-admin-link" id="install-btn-landing" style="display:none;" onclick="installApp()">📲 Installer l'appli</button>
-        <button class="lp-admin-link" onclick="goToLoginAs('admin')">⚙️ Connexion Admin</button>
+        <button class="lp-nav-login" onclick="goToLoginScreen()">Mon espace</button>
+        <button class="lp-admin-link" onclick="goToLoginAs('admin')">⚙️</button>
       </div>
     </div>
     <div class="lp-hero-content">
-      <div class="lp-hero-badges" id="lp-hero-badges"></div>
-      <h1 class="lp-hero-title" id="lp-hero-title">Dog Compagnie</h1>
-      <p class="lp-hero-sub" id="lp-hero-sub">Sécurité, dépannage, secours et balisage — quatre métiers, une seule équipe.</p>
-      <div class="lp-cta-row">
-        <button class="lp-cta" onclick="goToLoginScreen()">Accéder à mon espace →</button>
-        <button class="lp-cta-secondary" onclick="goToLoginAs('candidat')">📝 Postuler chez nous</button>
+      <div class="lp-hero-main">
+        <div class="lp-kicker"><i></i>Sécurité · Dépannage · Secours · Balisage</div>
+        <h1 class="lp-hero-title" id="lp-hero-title">Dog Compagnie</h1>
+        <p class="lp-hero-sub" id="lp-hero-sub">Sécurité, dépannage, secours et balisage — quatre métiers, une seule équipe.</p>
+        <div class="lp-cta-row">
+          <button class="lp-cta" onclick="goToLoginScreen()">Accéder à mon espace →</button>
+          <button class="lp-cta-secondary" onclick="goToLoginAs('candidat')">📝 Postuler chez nous</button>
+        </div>
+        <div class="lp-hero-badges" id="lp-hero-badges"></div>
+      </div>
+      <div class="lp-board" aria-hidden="true">
+        <div class="lp-bcard lp-b1" style="--sc:#5DADE2"><div class="lp-b-ico">🛰️</div><div><b>Coordination</b><small>Une équipe, un même outil</small></div></div>
+        <div class="lp-bcard lp-b2" style="--sc:#52D98B"><div class="lp-b-ico">⏱️</div><div><b>Prise de service</b><small>Vos heures comptées pour vous</small></div></div>
+        <div class="lp-bcard lp-b3" style="--sc:#F0A840"><div class="lp-b-ico">⭐</div><div><b>Évaluations</b><small>Un suivi clair de votre progression</small></div></div>
+        <div class="lp-bcard lp-b4" style="--sc:#B388EB"><div class="lp-b-ico">🎖️</div><div><b>Grades & carrière</b><small>Un parcours reconnu</small></div></div>
+        <div class="lp-b-cap">Votre futur espace de travail</div>
       </div>
     </div>
   </div>
 
   <div class="lp-stats" id="lp-stats"></div>
 
-  <div class="lp-section">
+  <div class="lp-section" id="lp-about-sec">
     <div class="lp-section-inner lp-about lp-reveal">
       <div class="lp-about-text">
         <div class="lp-eyebrow">Qui sommes-nous</div>
         <h2 id="lp-about-title">Notre entreprise</h2>
         <p id="lp-about-text"></p>
       </div>
-      <img class="lp-about-img" id="lp-about-img" alt="Dog Compagnie">
+      <div class="lp-about-frame"><img class="lp-about-img" id="lp-about-img" alt="Dog Compagnie"></div>
     </div>
   </div>
 
-  <div class="lp-section lp-section-alt">
+  <div class="lp-section lp-section-alt" id="lp-svc-sec">
     <div class="lp-section-inner lp-reveal">
-      <div class="lp-eyebrow" style="text-align:center;">Nos services</div>
+      <div class="lp-eyebrow" style="text-align:center;">Nos filières</div>
       <h2 style="text-align:center;margin-bottom:36px;">Cinq filières, une même exigence</h2>
       <div class="lp-services-grid" id="lp-services-grid"></div>
+    </div>
+  </div>
+
+  <div class="lp-section" id="lp-life-sec">
+    <div class="lp-section-inner lp-reveal">
+      <div class="lp-eyebrow" style="justify-content:center;display:flex;">Votre quotidien</div>
+      <h2 style="text-align:center;margin-bottom:36px;">Des outils pensés pour l'équipe</h2>
+      <div class="lp-bento">
+        <div class="lp-tile lp-t-wide" style="--tc:#5DADE2">
+          <div class="lp-t-vis"><span style="--c:#52D98B">Patrouilles</span><span style="--c:#FF6B4A">Interventions</span><span style="--c:#F0A840">Convois</span><span style="--c:#5DADE2">Formations</span></div>
+          <h3>Une coordination simple et claire</h3><p>Chaque équipe dispose d'un espace commun pour s'organiser au quotidien.</p>
+        </div>
+        <div class="lp-tile" style="--tc:#52D98B">
+          <div class="lp-t-vis"><div class="lp-t-big">⏱️</div></div>
+          <h3>Vos heures comptées pour vous</h3><p>Prise et fin de service en un clic, sans rien noter à la main.</p>
+        </div>
+        <div class="lp-tile" style="--tc:#F0A840">
+          <div class="lp-t-vis"><div class="lp-t-bars"><i style="height:38%"></i><i style="height:62%"></i><i style="height:50%"></i><i style="height:84%"></i><i style="height:70%"></i></div></div>
+          <h3>Des évaluations qui font progresser</h3><p>Une grille claire, un verdict, un suivi de votre évolution.</p>
+        </div>
+        <div class="lp-tile lp-t-wide" style="--tc:#B388EB">
+          <div class="lp-t-vis"><div class="lp-t-path"><span>Recrue</span><i></i><span>Agent</span><i></i><span>Confirmé</span><i></i><span>Formateur</span></div></div>
+          <h3>Une vraie progression de carrière</h3><p>Grades, ancienneté, carte professionnelle : votre parcours est suivi et reconnu.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-section" id="lp-join-sec">
+    <div class="lp-section-inner lp-join lp-reveal">
+      <div class="lp-join-txt">
+        <div class="lp-eyebrow">Nous rejoindre</div>
+        <h2>Envie de faire partie de l'équipe ?</h2>
+        <p>Choisissez la filière qui vous ressemble, remplissez votre candidature en quelques minutes et suivez son avancement depuis votre espace. Notre équipe vous répond directement.</p>
+        <button class="lp-cta" onclick="goToLoginAs('candidat')">📝 Déposer ma candidature →</button>
+      </div>
+      <ol class="lp-join-steps">
+        <li><b>1</b><div><strong>Je candidate</strong><span>Un formulaire court, ouvert à tous.</span></div></li>
+        <li><b>2</b><div><strong>Mon dossier est étudié</strong><span>Un responsable le lit et vous répond.</span></div></li>
+        <li><b>3</b><div><strong>On échange</strong><span>Messagerie et entretien si besoin.</span></div></li>
+        <li><b>4</b><div><strong>J'intègre l'équipe</strong><span>Vous recevez votre accès agent.</span></div></li>
+      </ol>
     </div>
   </div>
 
@@ -1790,68 +2099,96 @@ tbody tr:hover{box-shadow:none;}
 
   <!-- PAGE CANDIDATURES (formulaire) -->
   <div class="page" id="page-candidature-form">
-    <div class="page-title">Candidater au <span>service</span></div>
-    <div class="page-sub" id="cand-space-sub">Remplissez ce formulaire pour soumettre votre candidature à l'un des services de la Dog Compagnie.</div>
-    <div class="card candidature-form" id="cand-space-form">
-      <div class="card-hdr"><div class="card-hdr-title">📝 Formulaire de candidature</div></div>
-      <div class="card-body">
-        <div class="field">
-          <label>Pour quel service candidatez-vous ? *</label>
-          <select id="cand-service" onchange="updateCandLicenceLabel()">
+    <div class="cf-hero">
+      <div class="cf-tag">Recrutement</div>
+      <div class="page-title" style="display:block;">Rejoignez <span>la Dog Compagnie</span></div>
+      <div class="page-sub" id="cand-space-sub">Remplissez ce formulaire pour soumettre votre candidature à l'un des services de la Dog Compagnie.</div>
+      <div class="cf-steps"><div class="on"><b>1</b>Candidature</div><div><b>2</b>Étude du dossier</div><div><b>3</b>Échange</div><div><b>4</b>Intégration</div></div>
+    </div>
+    <div class="cf-layout" id="cand-space-form">
+      <div class="cf-main candidature-form">
+        <section class="cf-sec">
+          <h3><i>1</i>Choisissez votre filière</h3>
+          <select id="cand-service" onchange="updateCandLicenceLabel()" style="display:none;">
             <option value="securite">🛡 Dog Sécurité</option>
             <option value="depannage">🔧 Dog Dépannage</option>
             <option value="rescue">🚑 Dog Rescue</option>
             <option value="balisage">🚧 Dog Balisage</option>
           </select>
-        </div>
-        <div class="field-row-2">
-          <div class="field"><label>Prénom *</label><input id="cand-prenom" placeholder="Prénom" onchange="this.value=formatPrenom(this.value)"></div>
-          <div class="field"><label>Nom *</label><input id="cand-nom" placeholder="NOM" onchange="this.value=formatNom(this.value)"></div>
-        </div>
-        <div class="field-row-2">
-          <div class="field"><label>Âge</label><input id="cand-age" type="number" placeholder="ans" min="18" max="80"></div>
-        </div>
-        <div class="field-row-2">
-          <div class="field"><label>Téléphone (RP)</label><input id="cand-tel" placeholder="Ex : 06…"></div>
-          <div class="field"><label>Email (RP)</label><input id="cand-email" placeholder="votre@email.com"></div>
-        </div>
-        <div class="field"><label>Pseudo Discord *</label><input id="cand-discord" placeholder="Ex : pseudo#0000 ou @pseudo"></div>
-
-        <div style="background:rgba(13,21,32,0.4);border-radius:9px;padding:12px 14px;margin-bottom:14px;">
-          <div class="yn-row" style="padding-top:0;">
-            <div class="yn-label" id="cand-licence-label">Possédez-vous une licence de dépanneur ?</div>
-            <div class="yn-btns">
-              <button class="yn-btn yes" data-field="licence" data-val="O" onclick="toggleYN(this)">Oui</button>
-              <button class="yn-btn no"  data-field="licence" data-val="N" onclick="toggleYN(this)">Non</button>
+          <div class="cf-svcs">
+            <button type="button" class="cf-svc" data-svc="securite" style="--c:#5D7A6B" onclick="cfPickSvc('securite')"><span>🛡</span><b>Dog Sécurité</b><small>Protection, patrouilles, accès</small></button>
+            <button type="button" class="cf-svc" data-svc="depannage" style="--c:#F0A840" onclick="cfPickSvc('depannage')"><span>🔧</span><b>Dog Dépannage</b><small>Remorquage, assistance route</small></button>
+            <button type="button" class="cf-svc" data-svc="rescue" style="--c:#E8604C" onclick="cfPickSvc('rescue')"><span>🚑</span><b>Dog Rescue</b><small>Secours et urgences médicales</small></button>
+            <button type="button" class="cf-svc" data-svc="balisage" style="--c:#FF8A3D" onclick="cfPickSvc('balisage')"><span>🚧</span><b>Dog Balisage</b><small>Chantiers et signalisation</small></button>
+          </div>
+        </section>
+        <section class="cf-sec">
+          <h3><i>2</i>Qui êtes-vous ?</h3>
+          <div class="field-row-2">
+            <div class="field"><label>Prénom *</label><input id="cand-prenom" placeholder="Prénom" onchange="this.value=formatPrenom(this.value)"></div>
+            <div class="field"><label>Nom *</label><input id="cand-nom" placeholder="NOM" onchange="this.value=formatNom(this.value)"></div>
+          </div>
+          <div class="field-row-2">
+            <div class="field"><label>Âge</label><input id="cand-age" type="number" placeholder="ans" min="18" max="80"></div>
+            <div class="field"><label>Pseudo Discord *</label><input id="cand-discord" placeholder="Ex : pseudo#0000 ou @pseudo"></div>
+          </div>
+          <div class="field-row-2">
+            <div class="field"><label>Téléphone (RP)</label><input id="cand-tel" placeholder="Ex : 06…"></div>
+            <div class="field"><label>Email (RP)</label><input id="cand-email" placeholder="votre@email.com"></div>
+          </div>
+        </section>
+        <section class="cf-sec">
+          <h3><i>3</i>Votre profil</h3>
+          <div class="cf-yn">
+            <div class="yn-row" style="padding-top:0;">
+              <div class="yn-label" id="cand-licence-label">Possédez-vous une licence de dépanneur ?</div>
+              <div class="yn-btns">
+                <button class="yn-btn yes" data-field="licence" data-val="O" onclick="toggleYN(this)">Oui</button>
+                <button class="yn-btn no"  data-field="licence" data-val="N" onclick="toggleYN(this)">Non</button>
+              </div>
             </div>
           </div>
-
-        </div>
-
-        <div class="field"><label>Disponibilités</label><input id="cand-dispo" placeholder="Ex : soirs et week-ends, immédiatement…"></div>
-        <div class="field"><label>Motivation *</label><textarea id="cand-motiv" placeholder="Expliquez pourquoi vous souhaitez rejoindre ce service de la Dog Compagnie…" rows="5"></textarea></div>
-        <button class="btn btn-primary btn-full" onclick="soumettreCandidat()" style="margin-top:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Envoyer ma candidature
-        </button>
+          <div class="field"><label>Disponibilités</label><input id="cand-dispo" placeholder="Ex : soirs et week-ends, immédiatement…"></div>
+        </section>
+        <section class="cf-sec">
+          <h3><i>4</i>Votre motivation</h3>
+          <div class="field"><textarea id="cand-motiv" placeholder="Pourquoi souhaitez-vous rejoindre ce service ? Votre expérience, vos envies, ce que vous pouvez apporter à l'équipe…" rows="6"></textarea></div>
+          <button class="btn btn-primary btn-full cf-send" onclick="soumettreCandidat()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Envoyer ma candidature
+          </button>
+        </section>
       </div>
+      <aside class="cf-side">
+        <div class="cf-card">
+          <h4>Et après l'envoi ?</h4>
+          <ol>
+            <li><b>1</b><span>Votre dossier arrive directement chez les responsables de la filière.</span></li>
+            <li><b>2</b><span>Vous suivez son avancement depuis cet espace, avec votre code PIN.</span></li>
+            <li><b>3</b><span>Une messagerie vous permet d'échanger avec le staff.</span></li>
+            <li><b>4</b><span>Si vous êtes retenu·e, vous recevez votre accès agent.</span></li>
+          </ol>
+        </div>
+        <div class="cf-card cf-tip"><b>💡 Un bon dossier</b><span>Soyez précis·e sur vos disponibilités et dites-nous ce qui vous motive dans cette filière : c'est ce que les responsables lisent en premier.</span></div>
+      </aside>
     </div>
 
-    <div id="cand-space-status" style="display:none;max-width:620px;">
-      <div class="card">
-        <div class="card-hdr"><div class="card-hdr-title">📋 Ma candidature</div></div>
-        <div class="card-body" id="cand-status-content"><div class="empty"><p>Chargement…</p></div></div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><div class="card-hdr-title">💬 Échanger avec le Responsable / PDG</div></div>
-        <div class="card-body">
-          <div id="cand-chat-thread" style="max-height:320px;overflow-y:auto;margin-bottom:12px;"></div>
-          <div id="cand-chat-input-row" style="display:flex;gap:8px;">
-            <textarea id="cand-chat-input" placeholder="Écrivez un message… (Ctrl+Entrée pour envoyer)" rows="1" style="flex:1;background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:8px;color:#fff;font-size:13px;padding:9px 12px;resize:none;max-height:120px;font-family:inherit;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();sendCandidatMessage();}"></textarea>
-            <button class="btn btn-primary" onclick="sendCandidatMessage()">Envoyer</button>
+    <div id="cand-space-status" style="display:none;">
+      <div class="cs-wrap">
+        <div class="cs-main">
+          <div class="cs-hero" id="cand-status-content"><div class="empty"><p>Chargement…</p></div></div>
+          <div class="cs-chat">
+            <div class="cs-chat-hdr"><span class="cs-av">💬</span><div><b>Équipe de recrutement</b><small><i class="cs-dot"></i>Réponse en général sous quelques heures</small></div></div>
+            <div id="cand-chat-thread" class="cs-thread"></div>
+            <div id="cand-chat-quick" class="cs-quick"></div>
+            <div id="cand-chat-input-row" class="cs-input">
+              <textarea id="cand-chat-input" placeholder="Écrivez votre message…" rows="1" maxlength="1500" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCandidatMessage();}"></textarea>
+              <button class="cs-send" onclick="sendCandidatMessage()" title="Envoyer" aria-label="Envoyer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
+            </div>
+            <div id="cand-chat-closed-notice" style="display:none;font-size:12px;color:var(--text3);font-style:italic;text-align:center;padding:12px;">La messagerie est fermée pour cette candidature.</div>
           </div>
-          <div id="cand-chat-closed-notice" style="display:none;font-size:12px;color:var(--text3);font-style:italic;text-align:center;">La messagerie est fermée pour cette candidature.</div>
         </div>
+        <aside class="cs-side" id="cand-status-side"></aside>
       </div>
     </div>
   </div>
@@ -3226,6 +3563,11 @@ function updateCandLicenceLabel() {
   const svc = document.getElementById("cand-service")?.value||"securite";
   const el = document.getElementById("cand-licence-label");
   if(el) el.textContent = LICENCE_QUESTION_BY_SERVICE[svc];
+  document.querySelectorAll(".cf-svc").forEach(b=>b.classList.toggle("on", b.dataset.svc===svc));
+}
+function cfPickSvc(svc) {
+  const sel = document.getElementById("cand-service"); if(sel) sel.value = svc;
+  updateCandLicenceLabel();
 }
 function accountRoleLabel(c) {
   if(!c) return "—";
@@ -7668,10 +8010,12 @@ async function loadLandingContent() {
   renderLanding();
 }
 
+function lpGo(id) { const e=document.getElementById(id); if(e) e.scrollIntoView({behavior:"smooth",block:"start"}); }
 function renderLanding() {
   const heroTitleEl = document.getElementById("lp-hero-title");
   if(!heroTitleEl) return;
-  heroTitleEl.textContent = landingContent.hero_title;
+  { const ws = String(landingContent.hero_title||"").trim().split(/\s+/); const last = ws.pop()||"";
+    heroTitleEl.innerHTML = (ws.length ? esc(ws.join(" "))+" " : "") + `<span class="lp-acc">${esc(last)}</span>`; }
   document.getElementById("lp-hero-sub").textContent = landingContent.hero_sub;
   document.getElementById("lp-hero-bg").style.backgroundImage = landingContent.hero_img ? `url(data:image/jpeg;base64,${landingContent.hero_img})` : "";
   document.getElementById("lp-about-title").textContent = landingContent.about_title;
@@ -7696,6 +8040,7 @@ function renderLanding() {
       <div class="lp-svc-icon"><img src="data:image/jpeg;base64,${LOGO_BY_SERVICE[s]}" alt="${svcLabel(s)}"></div>
       <h3>${svcLabel(s)}</h3>
       <p>${esc(landingContent.svc_blurbs[s]||"")}</p>
+      <a class="lp-svc-link" onclick="goToLoginAs('candidat')">Postuler →</a>
     </div>`;
   }).join("") + `<div class="lp-svc-card" style="--svc-color:${MINAGE_ACCENT.main};--svc-glow:rgba(${MINAGE_ACCENT.rgb},0.35);">
       <div class="lp-svc-icon"><img src="data:image/jpeg;base64,${LOGO_BY_SERVICE.minage}" alt="Dog Minage"></div>
@@ -8668,12 +9013,14 @@ async function initCandidatSpace() {
   const formEl = document.getElementById("cand-space-form");
   const statusEl = document.getElementById("cand-space-status");
   if(!currentCompte.candidature_id) {
-    if(formEl) formEl.style.display = "block";
+    if(formEl) formEl.style.display = "";
+    { const hh = document.querySelector(".cf-hero"); if(hh) hh.style.display = ""; }
     if(statusEl) statusEl.style.display = "none";
     if(subEl) subEl.textContent = "Remplissez ce formulaire pour soumettre votre candidature à l'un des services de la Dog Compagnie.";
     return;
   }
   if(formEl) formEl.style.display = "none";
+  { const hh = document.querySelector(".cf-hero"); if(hh) hh.style.display = "none"; }
   if(statusEl) statusEl.style.display = "block";
   if(subEl) subEl.textContent = "Suivez l'avancée de votre candidature et échangez avec le staff.";
   try {
@@ -8685,37 +9032,78 @@ async function initCandidatSpace() {
   } catch(e) { console.warn("initCandidatSpace error:", e.message); }
 }
 
+function csConfetti() {
+  const host = document.getElementById("cand-status-content"); if(!host) return;
+  const cols = ["#52D98B","#F0A840","#5DADE2","#B388EB","#FF6B4A"];
+  for(let i=0;i<46;i++){
+    const p=document.createElement("i"); p.className="cs-conf";
+    p.style.cssText=`left:${Math.random()*100}%;background:${cols[i%5]};animation-delay:${Math.random()*.6}s;animation-duration:${1.8+Math.random()*1.6}s;--dx:${(Math.random()-.5)*120}px;--rot:${Math.random()*720}deg`;
+    host.appendChild(p); setTimeout(()=>p.remove(),4200);
+  }
+}
+(function(){
+  document.addEventListener("pointermove",e=>{
+    const t=e.target.closest&&e.target.closest(".lp-tile,.lp-svc-card,.cf-svc");
+    if(t){const r=t.getBoundingClientRect();t.style.setProperty("--mx",(e.clientX-r.left)+"px");t.style.setProperty("--my",(e.clientY-r.top)+"px");}
+    const hero=document.querySelector(".lp-board");
+    if(hero&&hero.offsetParent){const x=(e.clientX/innerWidth-.5),y=(e.clientY/innerHeight-.5);hero.style.setProperty("--px",(x*18)+"px");hero.style.setProperty("--py",(y*12)+"px");}
+  },{passive:true});
+})();
 function renderCandStatus(c) {
-  const meta = CAND_STATUT_DISPLAY[c.statut] || CAND_STATUT_DISPLAY.Nouvelle;
-  const desc = c.statut==="Retenue"
-    ? `Félicitations, votre candidature a été retenue en tant que ${agentLabel(c.service)} ! Connectez-vous désormais avec le bouton « Agent », en utilisant ce même code PIN.`
-    : meta.desc;
   const el = document.getElementById("cand-status-content");
   if(!el) return;
+  const st = c.statut || "Nouvelle";
+  const meta = CAND_STATUT_DISPLAY[st] || CAND_STATUT_DISPLAY.Nouvelle;
+  const prenom = esc(c.prenom || (currentCompte && currentCompte.prenom) || "");
+  const svcName = svcLabel(c.service||"depannage");
+  const stIdx = st==="Nouvelle" ? 0 : st==="Vue" ? 1 : 2;
+  const refus = st==="Refusée";
+  const V = {
+    Nouvelle:{ic:"📨", t:"Candidature envoyée !", p:`Merci ${prenom}, votre dossier pour <b>${esc(svcName)}</b> est bien arrivé. Un responsable va le lire très bientôt.`},
+    Vue:{ic:"🔎", t:"On étudie votre dossier", p:`${prenom}, votre candidature pour <b>${esc(svcName)}</b> est entre les mains de l'équipe. Une réponse ou une question peut arriver ici à tout moment.`},
+    Retenue:{ic:"🎉", t:"Bienvenue dans l'équipe !", p:`Félicitations ${prenom}, vous êtes retenu·e en tant que <b>${esc(agentLabel(c.service))}</b> chez <b>${esc(svcName)}</b>. Connectez-vous désormais avec le bouton « Agent », avec ce même code PIN.`},
+    Refusée:{ic:"🕊", t:"Pas cette fois", p:`${prenom}, votre candidature n'a pas été retenue pour le moment. Merci pour l'intérêt porté à <b>${esc(svcName)}</b> : vous pourrez retenter votre chance.`},
+  }[st] || {ic:"📨", t:meta.label, p:meta.desc};
+  const nodes = ["Reçue","En étude", refus ? "Refusée" : "Retenue"];
+  const track = `<div class="cs-track">${nodes.map((t,i)=>`<div class="cs-node${i<stIdx?" done":""}${i===stIdx?" now":""}${i===2&&refus?" bad":""}"><b>${i<stIdx||(i===2&&stIdx===2&&!refus)?"✓":(i===2&&refus?"✕":i+1)}</b><span>${t}</span></div>`).join('<div class="cs-line"></div>')}</div>`;
   let extra = "";
-  const enAttente = (c.statut==="Nouvelle" || c.statut==="Vue" || !c.statut);
-  if(enAttente) {
-    extra = `<div style="margin-top:14px;font-size:12px;color:var(--text2);background:rgba(41,128,185,0.08);border-left:3px solid var(--blue);padding:8px 12px;border-radius:0 6px 6px 0;">🔔 Pensez à vous reconnecter régulièrement sur le site (avec ce même code PIN) pour suivre l'avancée de votre candidature et voir si le staff vous a répondu.</div>`;
-  }
-  if(c.statut==="Refusée") {
+  if(refus) {
     const refuseDate = c.refuse_le ? new Date(c.refuse_le) : null;
     const unlockDate = refuseDate ? new Date(refuseDate.getTime()+7*24*3600*1000) : null;
-    if(unlockDate && new Date() < unlockDate) {
-      extra = `<div style="margin-top:14px;font-size:12px;color:var(--text2);text-align:center;">Vous pourrez soumettre une nouvelle candidature à partir du <strong>${unlockDate.toLocaleDateString("fr-FR")}</strong>.</div>`;
-    } else {
-      extra = `<button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="refaireCandidature()">🔄 Refaire une candidature</button>`;
-    }
+    extra = (unlockDate && new Date() < unlockDate)
+      ? `<div class="cs-note">Vous pourrez soumettre une nouvelle candidature à partir du <strong>${unlockDate.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}</strong>.</div>`
+      : `<button class="btn btn-primary cs-cta" onclick="refaireCandidature()">🔄 Refaire une candidature</button>`;
+  } else if(st==="Retenue") {
+    extra = `<button class="btn btn-primary cs-cta" onclick="logoutToLanding();goToLoginAs('agent')">🪪 Me connecter en tant qu'agent</button>`;
+  } else {
+    extra = `<div class="cs-note">🔔 Revenez régulièrement sur le site avec le même code PIN pour suivre l'avancée et voir si le staff vous a répondu.</div>`;
   }
-  el.innerHTML = `
-    <div style="text-align:center;padding:10px 0;">
-      <div style="font-size:16px;font-weight:800;color:${meta.color};margin-bottom:8px;">${meta.label}</div>
-      <div style="font-size:12px;color:var(--text2);max-width:420px;margin:0 auto;">${desc}</div>
-    </div>
-    ${extra}`;
+  el.style.setProperty("--sc", meta.color);
+  el.innerHTML = `<div class="cs-ic"><span>${V.ic}</span></div>
+    <div class="cs-badge">${meta.label}</div>
+    <h2>${V.t}</h2><p>${V.p}</p>${track}${extra}`;
 
+  const side = document.getElementById("cand-status-side");
+  if(side) {
+    const sent = c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}) : "—";
+    const row = (k,v)=> v ? `<div class="cs-row"><span>${k}</span><b>${v}</b></div>` : "";
+    side.innerHTML = `<div class="cf-card"><h4>Récapitulatif</h4>
+        ${row("Filière", `${SERVICE_ICONS[c.service]||""} ${esc(svcName)}`)}
+        ${row("Envoyée le", esc(sent))}
+        ${row("Discord", c.discord ? esc(c.discord) : "")}
+        ${row("Disponibilités", c.disponibilites ? esc(c.disponibilites) : "")}
+        ${row("Licence", c.a_licence ? "Oui"+(c.type_licence?" ("+esc(c.type_licence)+")":"") : "Non")}
+      </div>
+      ${stIdx<2?`<div class="cf-card"><h4>Et maintenant ?</h4><ol>
+        <li><b>1</b><span>Un responsable lit votre dossier.</span></li>
+        <li><b>2</b><span>Il peut vous écrire ici ou vous proposer un entretien.</span></li>
+        <li><b>3</b><span>Vous recevez la décision directement sur cette page.</span></li>
+      </ol></div>`:""}`;
+    if(st==="Retenue" && !window._csConfetti) { window._csConfetti=1; csConfetti(); }
+  }
   const inputRow = document.getElementById("cand-chat-input-row");
   const closedNotice = document.getElementById("cand-chat-closed-notice");
-  const isClosed = c.statut==="Refusée";
+  const isClosed = refus;
   if(inputRow) inputRow.style.display = isClosed ? "none" : "flex";
   if(closedNotice) closedNotice.style.display = isClosed ? "block" : "none";
 }
@@ -8732,24 +9120,50 @@ async function refaireCandidature() {
 function renderChatThread(elId, msgs) {
   const el = document.getElementById(elId);
   if(!el) return;
-  if(!msgs.length) { el.innerHTML = '<div class="empty"><p>Aucun message pour le moment.</p></div>'; return; }
-  el.innerHTML = msgs.map(m=>{
-    const time = new Date(m.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-    const align = m.is_staff ? "flex-start" : "flex-end";
-    const bg = m.is_staff ? "rgba(41,128,185,0.15)" : "rgba(30,132,73,0.15)";
-    return `<div style="display:flex;justify-content:${align};margin-bottom:8px;">
-      <div style="max-width:80%;background:${bg};border-radius:10px;padding:8px 12px;">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px;">${esc(m.auteur)}${m.auteur_role?" · "+esc(m.auteur_role):""} · ${time}</div>
-        <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${esc(m.message)}</div>
+  const isCand = elId==="cand-chat-thread";
+  const quick = document.getElementById("cand-chat-quick");
+  if(quick) {
+    const ok = isCand && !msgs.length && (document.getElementById("cand-chat-input-row")||{}).style?.display!=="none";
+    quick.innerHTML = ok ? ["Bonjour, j'ai une question sur ma candidature.","Je suis disponible pour un entretien.","Merci, j'attends votre retour !"].map(t=>`<button type="button" onclick="cfQuick(this)">${esc(t)}</button>`).join("") : "";
+  }
+  if(!msgs.length) {
+    el.innerHTML = isCand
+      ? `<div class="cm-empty"><div class="cm-empty-ic">💬</div><b>La discussion est ouverte</b><p>Posez une question ou ajoutez une précision : l'équipe vous répond ici, directement.</p></div>`
+      : '<div class="empty"><p>Aucun message pour le moment.</p></div>';
+    return;
+  }
+  const ini = n => (String(n||"?").trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2)||"?").toUpperCase();
+  const dayKey = d => d.toDateString();
+  const today = new Date(), yest = new Date(Date.now()-864e5);
+  const dayLbl = d => dayKey(d)===dayKey(today) ? "Aujourd'hui" : dayKey(d)===dayKey(yest) ? "Hier" : d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  let lastDay="", lastAut="", out="";
+  msgs.forEach(m=>{
+    const d = new Date(m.created_at);
+    const mine = isCand ? !m.is_staff : !!m.is_staff;
+    if(dayKey(d)!==lastDay){ out += `<div class="cm-day"><span>${esc(dayLbl(d))}</span></div>`; lastDay=dayKey(d); lastAut=""; }
+    const k = (m.is_staff?"s":"c")+"|"+m.auteur;
+    const first = k!==lastAut; lastAut=k;
+    const time = d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    out += `<div class="cm ${mine?"cm-me":"cm-st"}${first?" cm-first":""}">
+      ${mine?"":`<span class="cm-av${first?"":" ghost"}${m.is_staff?" staff":""}">${first?esc(ini(m.auteur)):""}</span>`}
+      <div class="cm-b">
+        ${first&&!mine?`<div class="cm-meta"><b>${esc(m.auteur)}</b>${m.auteur_role?`<em>${esc(m.auteur_role)}</em>`:(m.is_staff?"<em>Équipe</em>":"")}</div>`:""}
+        <div class="cm-txt">${esc(m.message)}</div>
+        <div class="cm-time">${time}</div>
       </div>
     </div>`;
-  }).join("");
-  el.scrollTop = el.scrollHeight;
+  });
+  const prevCount = +el.dataset.n||0;
+  el.innerHTML = out; el.dataset.n = msgs.length;
+  if(msgs.length!==prevCount) el.scrollTop = el.scrollHeight;
 }
+function cfQuick(btn){ const i=document.getElementById("cand-chat-input"); if(i){ i.value=btn.textContent; i.focus(); } }
 
 async function loadCandidatMessages(candidatureId) {
   const el = document.getElementById("cand-chat-thread");
-  if(el) el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  if(el && !el.dataset.n && !el.querySelector(".cm-empty")) el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  clearInterval(window._candPoll);
+  window._candPoll = setInterval(()=>{ const t=document.getElementById("cand-chat-thread"); if(!t||!t.offsetParent||document.hidden) return; sb(`candidat_messages?candidature_id=eq.${candidatureId}&select=*&order=created_at.asc`).then(m=>{ if((m||[]).length!==(+t.dataset.n||0)) { renderChatThread("cand-chat-thread", m||[]); if((m||[]).length && m[m.length-1].is_staff) { try{ soundNotif(); }catch(_){} } } }).catch(()=>{}); }, 8000);
   try {
     const msgs = await sb(`candidat_messages?candidature_id=eq.${candidatureId}&select=*&order=created_at.asc`);
     renderChatThread("cand-chat-thread", msgs||[]);
@@ -8795,7 +9209,7 @@ async function openCandChat(candidatureId) {
 }
 async function loadStaffChat(candidatureId) {
   const el = document.getElementById("staff-chat-thread");
-  if(el) el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
+  if(el && !el.dataset.n) el.innerHTML = '<div class="empty"><p>Chargement…</p></div>';
   try {
     const msgs = await sb(`candidat_messages?candidature_id=eq.${candidatureId}&select=*&order=created_at.asc`);
     renderChatThread("staff-chat-thread", msgs||[]);
@@ -12389,7 +12803,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v7.9 — correctif candidatures";
+const SITE_VERSION = "v8.1 — messagerie candidat";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
