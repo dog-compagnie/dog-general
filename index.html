@@ -1857,9 +1857,9 @@ tbody tr:hover{box-shadow:none;}
     </div>
     <div class="lp-hero-content">
       <div class="lp-hero-main">
-        <div class="lp-kicker"><i></i>Sécurité · Dépannage · Secours · Balisage</div>
+        <div class="lp-kicker"><i></i>Sécurité · Dépannage · Secours · Balisage · Minage</div>
         <h1 class="lp-hero-title" id="lp-hero-title">Dog Compagnie</h1>
-        <p class="lp-hero-sub" id="lp-hero-sub">Sécurité, dépannage, secours et balisage — quatre métiers, une seule équipe.</p>
+        <p class="lp-hero-sub" id="lp-hero-sub">Sécurité, dépannage, secours, balisage et minage — cinq métiers, une seule équipe.</p>
         <div class="lp-cta-row">
           <button class="lp-cta" onclick="goToLoginScreen()">Accéder à mon espace →</button>
           <button class="lp-cta-secondary" onclick="goToLoginAs('candidat')">📝 Postuler chez nous</button>
@@ -1915,7 +1915,7 @@ tbody tr:hover{box-shadow:none;}
           <h3>Des évaluations qui font progresser</h3><p>Une grille claire, un verdict, un suivi de votre évolution.</p>
         </div>
         <div class="lp-tile lp-t-wide" style="--tc:#B388EB">
-          <div class="lp-t-vis"><div class="lp-t-path"><span>Recrue</span><i></i><span>Agent</span><i></i><span>Confirmé</span><i></i><span>Formateur</span></div></div>
+          <div class="lp-t-vis"><div class="lp-t-path"><span>Recrue</span><i></i><span>Agent</span><i></i><span>Formateur</span><i></i><span>Responsable</span></div></div>
           <h3>Une vraie progression de carrière</h3><p>Grades, ancienneté, carte professionnelle : votre parcours est suivi et reconnu.</p>
         </div>
       </div>
@@ -9062,7 +9062,7 @@ function renderCandStatus(c) {
     Nouvelle:{ic:"📨", t:"Candidature envoyée !", p:`Merci ${prenom}, votre dossier pour <b>${esc(svcName)}</b> est bien arrivé. Un responsable va le lire très bientôt.`},
     Vue:{ic:"🔎", t:"On étudie votre dossier", p:`${prenom}, votre candidature pour <b>${esc(svcName)}</b> est entre les mains de l'équipe. Une réponse ou une question peut arriver ici à tout moment.`},
     Retenue:{ic:"🎉", t:"Bienvenue dans l'équipe !", p:`Félicitations ${prenom}, vous êtes retenu·e en tant que <b>${esc(agentLabel(c.service))}</b> chez <b>${esc(svcName)}</b>. Connectez-vous désormais avec le bouton « Agent », avec ce même code PIN.`},
-    Refusée:{ic:"🕊", t:"Pas cette fois", p:`${prenom}, votre candidature n'a pas été retenue pour le moment. Merci pour l'intérêt porté à <b>${esc(svcName)}</b> : vous pourrez retenter votre chance.`},
+    Refusée:{ic:"🕊", t:"Pas cette fois", p:`${prenom}, votre candidature n'a pas été retenue pour le moment. Merci pour l'intérêt porté à la <b>${esc(svcName)}</b> : vous pourrez retenter votre chance.`},
   }[st] || {ic:"📨", t:meta.label, p:meta.desc};
   const nodes = ["Reçue","En étude", refus ? "Refusée" : "Retenue"];
   const track = `<div class="cs-track">${nodes.map((t,i)=>`<div class="cs-node${i<stIdx?" done":""}${i===stIdx?" now":""}${i===2&&refus?" bad":""}"><b>${i<stIdx||(i===2&&stIdx===2&&!refus)?"✓":(i===2&&refus?"✕":i+1)}</b><span>${t}</span></div>`).join('<div class="cs-line"></div>')}</div>`;
@@ -12803,7 +12803,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v8.1 — messagerie candidat";
+const SITE_VERSION = "v8.2 — corrections textes";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
