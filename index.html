@@ -4202,12 +4202,12 @@ function computeVerdict(pct, eliminated) {
   if(eliminated) return "Éliminé";
   if(pct>=80) return "Validé";
   if(pct>=60) return "Duo obligatoire";
-  return "Duo responsable obligatoire";
+  return "Duo formateur obligatoire";
 }
 const VERDICT_META = {
   "Validé":                    {color:"#52D98B", icon:"✅"},
   "Duo obligatoire":            {color:"#5DADE2", icon:"🔶"},
-  "Duo responsable obligatoire":{color:"#F0A840", icon:"🔺"},
+  "Duo formateur obligatoire":{color:"#F0A840", icon:"🔺"},
   "Éliminé":                    {color:"#F08080", icon:"❌"},
 };
 function updateEvalVerdict() {
@@ -9990,10 +9990,10 @@ function renderMesServices(logs) {
 
 // ─── LOGS PDG/RESPONSABLE ──────────────────────────────────────────
 // ─── GESTION DES EFFECTIFS ───────────────────────────────────────────
-const STATUT_EFFECTIF_OPTIONS = ["En service","Absent","Sanction","En duo","En duo responsable","Hors Service","Démission","Licencié"];
+const STATUT_EFFECTIF_OPTIONS = ["En service","Absent","Sanction","En duo","En duo formateur","Hors Service","Démission","Licencié"];
 const STATUT_EFFECTIF_COLORS = {
   "En service":"#52D98B", "Absent":"#F0A840", "Sanction":"#E74C3C", "En duo":"#5DADE2",
-  "En duo responsable":"#7D3C98", "Hors Service":"#7F9AB0", "Démission":"#C0392B", "Licencié":"#8B1A1A",
+  "En duo formateur":"#7D3C98", "Hors Service":"#7F9AB0", "Démission":"#C0392B", "Licencié":"#8B1A1A",
 };
 const TARIF_HEURE_AGENT = 200;
 const TARIF_HEURE_FORMATEUR = 300;
@@ -11830,7 +11830,7 @@ function careerMilestone(t) {
   return null;
 }
 // Statuts d'effectif retenus dans le plan de carrière : sanction (début ET retour), départ, et les
-// changements entre hors service / en service / en duo / en duo responsable. L'absence est ignorée.
+// changements entre hors service / en service / en duo / en duo formateur. L'absence est ignorée.
 function dossierDuree(d1, d2) {
   const h = Math.floor((new Date(d2) - new Date(d1)) / 3600000);
   if(h < 1) return "moins d'une heure";
@@ -11845,7 +11845,7 @@ function statutMilestones(rows) {
     "En service":         {icon:"🟢", c:"#52D98B", title:"Passe en service"},
     "Hors Service":       {icon:"⚫", c:"#7F9AB0", title:"Passe hors service"},
     "En duo":             {icon:"👥", c:"#5DADE2", title:"Passe en duo"},
-    "En duo responsable": {icon:"👥", c:"#C8A0E8", title:"Passe en duo responsable"},
+    "En duo formateur": {icon:"👥", c:"#C8A0E8", title:"Passe en duo formateur"},
   };
   const out = [];
   let prev = null, sanctionStart = null;
