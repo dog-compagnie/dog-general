@@ -1223,7 +1223,7 @@ tbody tr:hover{box-shadow:none;}
 /* Fenêtres d'alerte */
 .alert-popup-box{border-radius:24px;border:1px solid rgba(255,255,255,.1);box-shadow:0 50px 100px -30px #000,inset 0 1px 0 rgba(255,255,255,.07);}
 /* Dossier agent, effectifs, hiérarchie, titres de section */
-.doc-section-title,.bil-section-title{font-family:var(--font-display);font-weight:700;color:#fff;letter-spacing:-.005em;}
+.bil-section-title,.doc-section-title:not(.doc-page .doc-section-title){font-family:var(--font-display);font-weight:700;color:#fff;letter-spacing:-.005em;}
 .eff-card{padding:18px 20px;}
 
 /* v6.3 — une seule famille de titres dans l'application */
@@ -4202,12 +4202,12 @@ function computeVerdict(pct, eliminated) {
   if(eliminated) return "Éliminé";
   if(pct>=80) return "Validé";
   if(pct>=60) return "Duo obligatoire";
-  return "Duo formateur obligatoire";
+  return "Duo responsable obligatoire";
 }
 const VERDICT_META = {
   "Validé":                    {color:"#52D98B", icon:"✅"},
   "Duo obligatoire":            {color:"#5DADE2", icon:"🔶"},
-  "Duo formateur obligatoire":{color:"#F0A840", icon:"🔺"},
+  "Duo responsable obligatoire":{color:"#F0A840", icon:"🔺"},
   "Éliminé":                    {color:"#F08080", icon:"❌"},
 };
 function updateEvalVerdict() {
@@ -4570,6 +4570,7 @@ function buildDocInner(data, ref, overrideAuteur, overrideRole) {
 .doc-infobox .lbl{color:#8a94a3;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;}
 .doc-infobox .val{font-weight:700;margin-top:2px;}
 .doc-body{font-size:13px;line-height:1.7;}
+.doc-page .doc-section-title{color:#1a1a1a;font-family:inherit;}
 .doc-section-title{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 8px;}
 .doc-footer{margin-top:60px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;}
 .doc-signature .name{font-weight:800;color:${color};margin-top:26px;}
@@ -9990,10 +9991,10 @@ function renderMesServices(logs) {
 
 // ─── LOGS PDG/RESPONSABLE ──────────────────────────────────────────
 // ─── GESTION DES EFFECTIFS ───────────────────────────────────────────
-const STATUT_EFFECTIF_OPTIONS = ["En service","Absent","Sanction","En duo","En duo formateur","Hors Service","Démission","Licencié"];
+const STATUT_EFFECTIF_OPTIONS = ["En service","Absent","Sanction","En duo","En duo responsable","Hors Service","Démission","Licencié"];
 const STATUT_EFFECTIF_COLORS = {
   "En service":"#52D98B", "Absent":"#F0A840", "Sanction":"#E74C3C", "En duo":"#5DADE2",
-  "En duo formateur":"#7D3C98", "Hors Service":"#7F9AB0", "Démission":"#C0392B", "Licencié":"#8B1A1A",
+  "En duo responsable":"#7D3C98", "Hors Service":"#7F9AB0", "Démission":"#C0392B", "Licencié":"#8B1A1A",
 };
 const TARIF_HEURE_AGENT = 200;
 const TARIF_HEURE_FORMATEUR = 300;
@@ -11830,7 +11831,7 @@ function careerMilestone(t) {
   return null;
 }
 // Statuts d'effectif retenus dans le plan de carrière : sanction (début ET retour), départ, et les
-// changements entre hors service / en service / en duo / en duo formateur. L'absence est ignorée.
+// changements entre hors service / en service / en duo / en duo responsable. L'absence est ignorée.
 function dossierDuree(d1, d2) {
   const h = Math.floor((new Date(d2) - new Date(d1)) / 3600000);
   if(h < 1) return "moins d'une heure";
@@ -11845,7 +11846,7 @@ function statutMilestones(rows) {
     "En service":         {icon:"🟢", c:"#52D98B", title:"Passe en service"},
     "Hors Service":       {icon:"⚫", c:"#7F9AB0", title:"Passe hors service"},
     "En duo":             {icon:"👥", c:"#5DADE2", title:"Passe en duo"},
-    "En duo formateur": {icon:"👥", c:"#C8A0E8", title:"Passe en duo formateur"},
+    "En duo responsable": {icon:"👥", c:"#C8A0E8", title:"Passe en duo responsable"},
   };
   const out = [];
   let prev = null, sanctionStart = null;
@@ -12449,6 +12450,14 @@ function renderHierarchie(grades) {
     </div>`;
   }).join("");
 }
+async function patchGradeAvecDate(gradeId, payload, datee) {
+  // Enregistre la modification ; si c'est une promotion (datee=true), date aussi « Grade actuel depuis le » (effectifs / plan de carrière)
+  if(datee) {
+    try { await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({...payload, grade_depuis:calTodayStr()})}); return; }
+    catch(e) { /* colonne absente : on enregistre sans la date */ }
+  }
+  await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify(payload)});
+}
 async function changerRoleHierarchie(gradeId, newRole, nomComplet) {
   try {
     const payload = {role:newRole};
@@ -12465,7 +12474,7 @@ async function changerRoleHierarchie(gradeId, newRole, nomComplet) {
 }
 async function toggleResponsableGeneral(gradeId, checked, nomComplet) {
   try {
-    await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({general:checked})});
+    await patchGradeAvecDate(gradeId,{general:checked},checked);
     logActivity("hierarchie_general", `${nomComplet.trim()} ${checked?"devient Responsable Général":"n'est plus Responsable Général"}`);
     toast(checked ? "⭐ "+nomComplet.trim()+" est désormais Responsable Général" : "✓ Statut retiré pour "+nomComplet.trim());
     await loadComptes();
@@ -12474,7 +12483,7 @@ async function toggleResponsableGeneral(gradeId, checked, nomComplet) {
 }
 async function togglePdgAdjoint(gradeId, checked, nomComplet) {
   try {
-    await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({adjoint:checked})});
+    await patchGradeAvecDate(gradeId,{adjoint:checked},checked);
     logActivity("hierarchie_adjoint", `${nomComplet.trim()} ${checked?"devient PDG Adjoint":"n'est plus PDG Adjoint"}`);
     toast(checked ? "🏅 "+nomComplet.trim()+" est désormais PDG Adjoint" : "✓ Statut retiré pour "+nomComplet.trim());
     await loadComptes();
@@ -12483,7 +12492,7 @@ async function togglePdgAdjoint(gradeId, checked, nomComplet) {
 }
 async function toggleFormateur(gradeId, checked, nomComplet) {
   try {
-    await sb(`agents_grades?id=eq.${gradeId}`,{method:"PATCH",body:JSON.stringify({formateur:checked})});
+    await patchGradeAvecDate(gradeId,{formateur:checked},checked);
     logActivity("hierarchie_formateur", `${nomComplet.trim()} ${checked?"devient Formateur":"n'est plus Formateur"}`);
     toast(checked ? "🎯 "+nomComplet.trim()+" est désormais Formateur" : "✓ Statut retiré pour "+nomComplet.trim());
     if(currentCompte && String(currentCompte.id)===String(gradeId)) {
@@ -12803,7 +12812,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v8.2 — corrections textes";
+const SITE_VERSION = "v8.3 — documents & promotions";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
