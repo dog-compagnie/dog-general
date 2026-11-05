@@ -9991,6 +9991,7 @@ function renderMesServices(logs) {
 
 // ─── LOGS PDG/RESPONSABLE ──────────────────────────────────────────
 // ─── GESTION DES EFFECTIFS ───────────────────────────────────────────
+function statutLbl(s){ return s==="En duo responsable" ? "Duo avec formateur" : s; }
 const STATUT_EFFECTIF_OPTIONS = ["En service","Absent","Sanction","En duo","En duo responsable","Hors Service","Démission","Licencié"];
 const STATUT_EFFECTIF_COLORS = {
   "En service":"#52D98B", "Absent":"#F0A840", "Sanction":"#E74C3C", "En duo":"#5DADE2",
@@ -10128,7 +10129,7 @@ function renderEffectifsList(comptesAll) {
           <div>
             <div class="eff-nom" style="cursor:pointer;" title="Ouvrir le dossier" onclick="openDossier('${c.compte_id}')">${esc(nomComplet)}</div>
             <div class="eff-role">${accountRoleLabel(c)} · ${SERVICE_LABELS[c.service]||"—"}</div>
-            <span class="eff-chip">${esc(statut)}</span>
+            <span class="eff-chip">${esc(statutLbl(statut))}</span>
             ${c.telephone ? `<div style="font-size:10.5px;color:var(--text3);margin-top:2px;">
               <a href="tel:${esc(c.telephone)}" style="color:inherit;text-decoration:none;">📞 ${esc(fmtTel(c.telephone))}</a>
             </div>` : ""}
@@ -10141,7 +10142,7 @@ function renderEffectifsList(comptesAll) {
           <div class="field">
             <label>Statut</label>
             <select onchange="updateStatutEffectif('${c.id}', this.value)" style="border-color:${statutColor}66;color:${statutColor};font-weight:700;">
-              ${STATUT_EFFECTIF_OPTIONS.map(s=>`<option value="${s}" ${s===statut?"selected":""}>${s}</option>`).join("")}
+              ${STATUT_EFFECTIF_OPTIONS.map(s=>`<option value="${s}" ${s===statut?"selected":""}>${statutLbl(s)}</option>`).join("")}
             </select>
           </div>
           <div class="field"><label>Date de recrutement</label><input type="date" value="${c.date_recrutement||""}" onchange="updateDateRecrutement('${c.id}', this.value)"></div>
@@ -10200,7 +10201,7 @@ async function loadAnciensAgents() {
       const reactivation = compteActif ? `
         <select onchange="reactiverAncienAgent('${compteActif.id}', this.value)" style="background:rgba(13,21,32,0.7);border:1px solid rgba(41,128,185,0.25);border-radius:7px;color:#fff;font-size:11px;padding:6px 8px;">
           <option value="" selected disabled>↩️ Réactiver avec le statut…</option>
-          ${STATUT_EFFECTIF_OPTIONS.filter(s=>s!=="Démission" && s!=="Licencié").map(s=>`<option value="${s}">${s}</option>`).join("")}
+          ${STATUT_EFFECTIF_OPTIONS.filter(s=>s!=="Démission" && s!=="Licencié").map(s=>`<option value="${s}">${statutLbl(s)}</option>`).join("")}
         </select>` : `<span style="font-size:10px;color:var(--text3);font-style:italic;">Compte supprimé</span>`;
       return `<div class="eff-card" style="opacity:0.88;">
         <div class="eff-card-top">
@@ -10262,7 +10263,7 @@ async function updateStatutEffectif(id, statut) {
     try { await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({...payload, sanction_depuis:sanctionDepuis})}); }
     catch(e) { await sb(`agents_grades?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(payload)}); }
     const _depuis = (_avant==="Sanction" && statut!=="Sanction" && _cStat && _cStat.sanction_depuis) ? ` [sanction depuis ${_cStat.sanction_depuis}]` : "";
-    logActivity("effectif_statut", `${_cStat?`${_cStat.prenom} ${_cStat.nom} — `:""}Statut d'effectif mis à jour : ${_avant} → ${statut}${_depuis}`);
+    logActivity("effectif_statut", `${_cStat?`${_cStat.prenom} ${_cStat.nom} — `:""}Statut d'effectif mis à jour : ${statutLbl(_avant)} → ${statutLbl(statut)}${_depuis}`);
     if(statut==="Démission" || statut==="Licencié") {
       const c = effectifsComptesCache.find(x=>String(x.id)===String(id));
       if(c) await archiverAncienAgent(c, statut);
@@ -11846,7 +11847,7 @@ function statutMilestones(rows) {
     "En service":         {icon:"🟢", c:"#52D98B", title:"Passe en service"},
     "Hors Service":       {icon:"⚫", c:"#7F9AB0", title:"Passe hors service"},
     "En duo":             {icon:"👥", c:"#5DADE2", title:"Passe en duo"},
-    "En duo responsable": {icon:"👥", c:"#C8A0E8", title:"Passe en duo responsable"},
+    "En duo responsable": {icon:"👥", c:"#C8A0E8", title:"Passe en duo avec formateur"},
   };
   const out = [];
   let prev = null, sanctionStart = null;
@@ -12072,7 +12073,7 @@ async function renderDossier(el, compteId, isOwn) {
       </div>`).join("") : `<div style="font-size:12px;color:var(--text3);">Aucune étape enregistrée pour le moment.</div>`;
     const nowHtml = (grade && grade.role) ? `<div class="cr-ms now" style="--cr-c:var(--accent);">
         <div class="cr-node">📍</div>
-        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statut)}${(statut==="Sanction" && sinceSanction) ? ` depuis le ${esc(fmtD(sinceSanction))}` : ""}</div></div>
+        <div class="cr-card"><div class="cr-title">Aujourd'hui : ${esc(accountRoleLabel(grade))}</div><div class="cr-detail">${esc(svcLabel(svc))} · ${esc(statutLbl(statut))}${(statut==="Sanction" && sinceSanction) ? ` depuis le ${esc(fmtD(sinceSanction))}` : ""}</div></div>
       </div>` : "";
     const tlHtml = `<div class="cr-head">Étapes marquantes</div><div class="cr-rail">${msHtml}${nowHtml}</div>`;
 
@@ -12122,7 +12123,7 @@ async function renderDossier(el, compteId, isOwn) {
               <div class="dos-name">${esc(nom)}</div>
               <div>${chips || '<span class="dos-chip">Aucun grade</span>'}</div>
               <div style="margin-top:6px;">
-                <span class="dos-chip" style="color:${statutColor};border-color:${statutColor}55;">● ${esc(statut)}</span>
+                <span class="dos-chip" style="color:${statutColor};border-color:${statutColor}55;">● ${esc(statutLbl(statut))}</span>
                 ${(isLeader && !isOwn && compte.telephone) ? `<a class="dos-chip" href="tel:${esc(compte.telephone)}" style="text-decoration:none;">📞 ${esc(fmtTel(compte.telephone))}</a>` : ""}
               </div>
             </div>
@@ -12812,7 +12813,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v8.3 — documents & promotions";
+const SITE_VERSION = "v8.4 — statut duo formateur";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
