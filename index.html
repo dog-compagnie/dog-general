@@ -4204,6 +4204,7 @@ function computeVerdict(pct, eliminated) {
   if(pct>=60) return "Duo obligatoire";
   return "Duo responsable obligatoire";
 }
+function vLbl(v){ return v==="Duo responsable obligatoire" ? "Duo formateur obligatoire" : (v||""); }
 const VERDICT_META = {
   "Validé":                    {color:"#52D98B", icon:"✅"},
   "Duo obligatoire":            {color:"#5DADE2", icon:"🔶"},
@@ -4229,7 +4230,7 @@ function updateEvalVerdict() {
     const meta = verdict ? VERDICT_META[verdict] : null;
     side.style.setProperty("--vc", meta ? meta.color : "#5C6E82");
     side.innerHTML = `${evRing(anyGraded ? pct : null, 132, meta ? meta.color : "#5C6E82")}
-      <div class="ev-verdict-t">${meta ? `${meta.icon} ${verdict}` : "En attente de notation"}</div>
+      <div class="ev-verdict-t">${meta ? `${meta.icon} ${vLbl(verdict)}` : "En attente de notation"}</div>
       <div class="ev-verdict-s">${!anyGraded ? "Complétez la grille pour obtenir le verdict." : eliminated ? "Un critère éliminatoire est en échec." : `${achieved} sur ${max} points`}</div>
       <div class="ev-prog"><i style="width:${total?Math.round(noted/total*100):0}%"></i></div><div class="ev-prog-l">${noted} critère${noted>1?"s":""} noté${noted>1?"s":""} sur ${total}</div>
       <div class="ev-leg"><span><i style="background:#52D98B"></i>Acquis = 100 %</span><span><i style="background:#F0A840"></i>Insuffisant = 50 %</span><span><i style="background:#7F9AB0"></i>Non noté = exclu</span><span><i style="background:#F08080"></i>Éliminatoire = échec</span></div>`;
@@ -4298,7 +4299,7 @@ function renderEvalHistory(rows) {
     const meta = VERDICT_META[r.verdict] || {color:"#fff",icon:""};
     return `<article class="ev-card" style="--vc:${meta.color}">
       <div class="ev-card-top">${evRing(r.pourcentage, 72, meta.color)}<div class="ev-card-id"><div class="ev-card-n">${esc(r.agent_nom)}</div><div class="ev-card-d">${d}</div><div class="ev-card-d">par ${esc(r.evaluateur||"—")}</div></div></div>
-      <div class="ev-badge" style="--vc:${meta.color}">${meta.icon} ${esc(r.verdict)}</div>
+      <div class="ev-badge" style="--vc:${meta.color}">${meta.icon} ${esc(vLbl(r.verdict))}</div>
       ${evBars(r.criteres)}
       <div class="ev-card-act"><button class="btn btn-ghost btn-sm" onclick="viewEvaluationDetail('${r.id}')">Voir le détail</button><button class="btn btn-danger btn-sm" title="Supprimer" onclick="deleteEvaluation('${r.id}')">🗑</button></div>
     </article>`;
@@ -4333,7 +4334,7 @@ function viewEvaluationDetail(id) {
   const content = document.getElementById("eval-detail-content");
   if(!content) return;
   content.innerHTML = `
-    <div class="ev-det-head" style="--vc:${meta.color||"#fff"}">${evRing(ev.pourcentage, 96, meta.color)}<div><div class="ev-card-n" style="font-size:19px">${esc(ev.agent_nom)}</div><div class="ev-card-d">${d} · évalué par ${esc(ev.evaluateur||"—")}</div><div class="ev-badge" style="--vc:${meta.color||"#fff"};margin-top:8px">${meta.icon||""} ${esc(ev.verdict)} · ${ev.score_total}/${ev.score_max} pts</div></div></div>
+    <div class="ev-det-head" style="--vc:${meta.color||"#fff"}">${evRing(ev.pourcentage, 96, meta.color)}<div><div class="ev-card-n" style="font-size:19px">${esc(ev.agent_nom)}</div><div class="ev-card-d">${d} · évalué par ${esc(ev.evaluateur||"—")}</div><div class="ev-badge" style="--vc:${meta.color||"#fff"};margin-top:8px">${meta.icon||""} ${esc(vLbl(ev.verdict))} · ${ev.score_total}/${ev.score_max} pts</div></div></div>
     ${ev.notes ? `<div class="ev-quote">« ${esc(ev.notes)} »</div>` : ""}
     ${groups.map(g=>`<div class="ev-det-cat"><div class="ev-det-cat-t">${esc(g.cat)}</div>${g.rows.map(c=>{ const sm = EVAL_STATUT_META[c.statut]||{label:c.statut, color:"#fff"}; return `<div class="ev-det-row"><span>${esc(c.nom)}</span>${c.eliminatoire_coche?'<em class="ev-det-elim">Éliminatoire</em>':""}<b style="color:${sm.color}">${sm.label}</b></div>`; }).join("")}</div>`).join("")}`;
   document.getElementById("eval-detail-modal")?.classList.add("show");
@@ -6765,7 +6766,7 @@ async function _renderAccueilBase() {
         <button class="hm-chip" onclick="goPage('calendrier')">Voir le calendrier →</button></div>` : "";
     const evBox = ev0 ? `<div class="hm-card"><div class="hm-card-t">⭐ Dernière évaluation</div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">${starsHTML(ev0.pourcentage,20)}<b style="font-size:18px;color:#fff;">${(ev0.pourcentage/20).toFixed(1)}<span style="font-size:12px;color:var(--text3);">/5</span></b>${evTrend}</div>
-        <div class="hm-muted" style="margin-top:6px;">${esc(ev0.verdict||"")} · ${new Date((ev0.date_eval||"")+"T12:00:00").toLocaleDateString("fr-FR")}${ev0.evaluateur?` · par ${esc(ev0.evaluateur)}`:""}</div>
+        <div class="hm-muted" style="margin-top:6px;">${esc(vLbl(ev0.verdict))} · ${new Date((ev0.date_eval||"")+"T12:00:00").toLocaleDateString("fr-FR")}${ev0.evaluateur?` · par ${esc(ev0.evaluateur)}`:""}</div>
         ${ev0.notes?`<div class="hm-quote">« ${esc(String(ev0.notes).slice(0,180))}${String(ev0.notes).length>180?"…":""} »</div>`:""}
         <button class="hm-chip" style="margin-top:12px;" onclick="goPage('mes-evaluations')">Toutes mes évaluations →</button></div>`
       : `<div class="hm-card"><div class="hm-card-t">⭐ Évaluations</div><div class="hm-empty">Aucune évaluation pour le moment.</div></div>`;
@@ -7058,7 +7059,7 @@ function getNotifications() {
   evalsForNotif.forEach(ev=>{
     const seen = (ev.vus_par||{})[vk];
     if(seen===undefined) {
-      list.push({type:"eval", id:ev.id, icon:"🎯", text:`Nouvelle évaluation de ${ev.agent_nom} — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
+      list.push({type:"eval", id:ev.id, icon:"🎯", text:`Nouvelle évaluation de ${ev.agent_nom} — ${vLbl(ev.verdict)} (${ev.pourcentage}%)`, time:ev.created_at});
     }
   });
   if(role==="admin"||role==="pdg") {
@@ -7092,7 +7093,7 @@ function getNotifications() {
       if(ev.agent_nom!==monNom) return;
       const seen = (ev.vus_par||{})[vk];
       if(seen===undefined) {
-        list.push({type:"eval_mine", id:ev.id, icon:"⭐", text:`Vous avez reçu une nouvelle évaluation — ${ev.verdict} (${ev.pourcentage}%)`, time:ev.created_at});
+        list.push({type:"eval_mine", id:ev.id, icon:"⭐", text:`Vous avez reçu une nouvelle évaluation — ${vLbl(ev.verdict)} (${ev.pourcentage}%)`, time:ev.created_at});
       }
     });
   }
@@ -12021,7 +12022,7 @@ async function renderDossier(el, compteId, isOwn) {
     // Évaluations : lues dans la table (déjà limitée à la filiale affichée), avec leur vraie date
     evalsOk.forEach(e=>{
       const d = e.date_eval ? e.date_eval + "T12:00:00" : e.created_at;
-      ms.push({icon:"⭐", c:"#F0C048", title:`Évaluation : ${e.verdict||"—"}`, detail:e.evaluateur?`Évalué(e) par ${e.evaluateur}`:"", pct:e.pourcentage, date:d});
+      ms.push({icon:"⭐", c:"#F0C048", title:`Évaluation : ${vLbl(e.verdict)||"—"}`, detail:e.evaluateur?`Évalué(e) par ${e.evaluateur}`:"", pct:e.pourcentage, date:d});
     });
     // Passage au grade actuel dans CETTE filiale (« Grade actuel depuis le » de la Gestion des effectifs)
     if(gradeFiliale && gradeFiliale.role && gradeFiliale.role!=="agent") {
@@ -12085,7 +12086,7 @@ async function renderDossier(el, compteId, isOwn) {
           return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
               <div>${starsHTML(e.pourcentage,15)} <span style="font-size:11px;color:var(--text3);margin-left:6px;">${d} · ${esc(e.evaluateur||"—")}</span></div>
-              <div style="font-weight:800;font-size:12px;color:${vm.color};">${vm.icon} ${esc(e.verdict||"")} (${(e.pourcentage/20).toFixed(1)}/5)</div>
+              <div style="font-weight:800;font-size:12px;color:${vm.color};">${vm.icon} ${esc(vLbl(e.verdict))} (${(e.pourcentage/20).toFixed(1)}/5)</div>
             </div>
             ${e.notes?`<div style="font-size:12px;color:var(--text2);margin-top:6px;white-space:pre-line;">${esc(e.notes)}</div>`:""}
           </div>`;}).join("")
@@ -12283,7 +12284,7 @@ async function initMesEvaluations() {
         const evaluateurRole = roleMap[e.evaluateur] ? ` (${roleMap[e.evaluateur]})` : "";
         return `<article class="ev-card" style="--vc:${vmeta.color}">
           <div class="ev-card-top">${evRing(e.pourcentage, 72, vmeta.color)}<div class="ev-card-id"><div class="ev-card-n">${(e.pourcentage/20).toFixed(1)} / 5</div><div class="ev-card-d">${d}</div><div class="ev-card-d">par ${esc(e.evaluateur||"—")}${esc(evaluateurRole)}</div></div></div>
-          <div class="ev-badge" style="--vc:${vmeta.color}">${vmeta.icon} ${esc(e.verdict||"")}</div>
+          <div class="ev-badge" style="--vc:${vmeta.color}">${vmeta.icon} ${esc(vLbl(e.verdict))}</div>
           ${evBars(e.criteres)}
           ${e.notes ? `<div class="ev-quote">« ${esc(e.notes)} »</div>` : ""}
         </article>`;
@@ -12813,7 +12814,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v8.4 — statut duo formateur";
+const SITE_VERSION = "v8.5 — verdict duo formateur";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
