@@ -7900,7 +7900,14 @@ function sfx(notes, opts) {
 }
 function playChime(notes, opts) { sfx(notes, Object.assign({vol:0.1, dur:1}, opts||{})); }
 // Gamme : E3 164.81 · E5 659.25 · G5 783.99 · A5 880 · B5 987.77 · D6 1174.66 · E6 1318.51
-function soundWelcome()      { playWelcomeMelody(); }
+// Une seule mélodie d'accueil à la fois (normale OU Noël), jamais deux superposées
+let _welcomeLockUntil = 0;
+function soundWelcome() {
+  const n = Date.now();
+  if(n < _welcomeLockUntil) return;
+  _welcomeLockUntil = n + 6500;
+  playWelcomeMelody();
+}
 function soundServiceStart() {
   // « Pouls » : deux notes graves et rondes qui montent (mi → si), registre chaud
   sfx([{f:164.81*2,at:0},{f:246.94*2,at:0.17}], {vol:0.1, dur:0.75, att:0.02, bright:0.1});
@@ -7962,6 +7969,7 @@ async function playWelcomeNoel() {
   try {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
+    if(!isNoel()) return;
     const now = Tone.now() + 0.05;
     Tone.Destination.volume.value = -14;
     const reverb = new Tone.Reverb({decay:2.2, wet:0.28}).toDestination();
@@ -7991,6 +7999,7 @@ async function playWelcomeMelody() {
   try {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
+    if(isNoel()) return;
     const now = Tone.now() + 0.05;
     Tone.Destination.volume.value = -14;
 
@@ -13126,7 +13135,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v9.5 — Noël : sons & sessions de test";
+const SITE_VERSION = "v9.6 — sons : une seule mélodie";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
