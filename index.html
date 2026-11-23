@@ -6607,6 +6607,7 @@ async function selectProfile(i) {
   finalizeLogin(window._pendingCompte, g, window._pendingGrades);
 }
 function finalizeLogin(compte, grade, allGrades) {
+  setTimeout(refreshNoelFlag, 1200);
   // Fusionne l'identité (prénom/nom/pin) et le grade choisi (service/rôle/statut…) en un seul objet,
   // exactement comme le reste de l'app s'y attend.
   currentCompte = {...compte, ...grade, compte_id: compte.id};
@@ -7645,6 +7646,7 @@ async function tryTestTokenLogin(token) {
     // masque pas explicitement — oublié initialement, d'où l'accueil vide par-dessus l'appli.
     document.getElementById("screen-landing").style.display="none";
     document.getElementById("screen-login").style.display="none";
+    await refreshNoelFlag();
     finalizeLogin(compte, grade, grades);
     return true;
   } catch(e) {
@@ -7953,7 +7955,10 @@ function soundClick() {
 // Se tait silencieusement si Tone.js n'a pas chargé (ne bloque jamais la connexion).
 let _toneReady = false;
 // Version Noël : « Jingle Bells » (domaine public) en boîte à musique, grelots de traîneau et nappe chaude
+let _noelWelcomePlaying = false;
 async function playWelcomeNoel() {
+  if(_noelWelcomePlaying) return;
+  _noelWelcomePlaying = true; setTimeout(()=>{ _noelWelcomePlaying = false; }, 5200);
   try {
     if(typeof Tone === "undefined") return;
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
@@ -8151,7 +8156,6 @@ function noelScheduleSanta(delay) {
     if(!all.length || !isNoel()) return;
     const top = (70+Math.random()*(Math.max(120,innerHeight*0.4)))+"px";
     all.forEach(sl=>{ sl.classList.remove("go"); void sl.offsetWidth; sl.style.setProperty("--top", top); sl.classList.add("go"); });
-    try { sfx([{f:2093,at:0,vol:.04,dur:.5},{f:2637,at:.12,vol:.04,dur:.5},{f:2093,at:.3,vol:.04,dur:.5},{f:2637,at:.42,vol:.04,dur:.5},{f:3136,at:.6,vol:.035,dur:.7}],{wave:"sine",bright:.4}); } catch(_) {}
     setTimeout(()=>all.forEach(sl=>sl.classList.remove("go")), 15200);
     noelScheduleSanta(25000+Math.random()*45000);
   }, delay);
@@ -8199,6 +8203,19 @@ function applyNoelTheme() {
 const MINAGE_ACCENT = {main:"#8E44AD", light:"#C39BD3", rgb:"142,68,173"};
 let landingContent = JSON.parse(JSON.stringify(LANDING_DEFAULTS));
 
+// Relit l'état du mode Noël (sessions de test, connexions déjà ouvertes, bascule faite par l'admin)
+async function refreshNoelFlag() {
+  try {
+    const rows = await sb("site_config?select=valeur&cle=eq.landing_content&limit=1");
+    if(!rows || !rows[0] || !rows[0].valeur) return;
+    const p = JSON.parse(rows[0].valeur);
+    const before = isNoel(), msgBefore = landingContent.noel_msg;
+    landingContent.noel_mode = p.noel_mode==="on" ? "on" : "off";
+    if(p.noel_msg) landingContent.noel_msg = p.noel_msg;
+    if(isNoel()!==before || landingContent.noel_msg!==msgBefore) { renderLanding(); applyNoelTheme(); }
+  } catch(_) {}
+}
+setInterval(()=>{ if(!document.hidden) refreshNoelFlag(); }, 60000);
 async function loadLandingContent() {
   try {
     const rows = await sb("site_config?select=*&cle=eq.landing_content&limit=1");
@@ -13109,7 +13126,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v9.4 — Noël : père Noël en fond";
+const SITE_VERSION = "v9.5 — Noël : sons & sessions de test";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
