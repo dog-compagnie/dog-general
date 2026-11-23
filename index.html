@@ -1827,6 +1827,7 @@ html.noel body::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .noel-sleigh{position:fixed;top:var(--top,110px);left:0;width:min(40vw,540px);z-index:0;pointer-events:none;opacity:1;filter:drop-shadow(0 0 18px rgba(255,226,160,.35));transform:translateX(-120%);display:none;}
 .noel-sleigh.go{display:block;animation:noel-sleigh 15s linear forwards;}
 @keyframes noel-sleigh{0%{transform:translateX(-120%) translateY(10px) rotate(-1.5deg);}25%{transform:translateX(60%) translateY(-12px) rotate(-3deg);}50%{transform:translateX(160%) translateY(6px) rotate(-1deg);}75%{transform:translateX(270%) translateY(-10px) rotate(-3deg);}100%{transform:translateX(380%) translateY(0) rotate(-2deg);}}
+#noel-baubles.app .b-land,#noel-baubles:not(.app) .b-app{display:none;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -3000,6 +3001,17 @@ html.noel body::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
           </select>
         </div>
         <div id="le-noel-state" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+        <div class="field" style="margin-top:14px;"><label>Musique d'accueil (jouée à la connexion)</label>
+          <select id="le-noel-music" onchange="saveNoelMusic(this.value)">
+            <option value="random">Au hasard à chaque connexion</option>
+            <option value="jingle">Jingle Bells</option>
+            <option value="wish">We Wish You a Merry Christmas</option>
+            <option value="deck">Deck the Halls</option>
+            <option value="silent">Douce nuit</option>
+            <option value="joy">Joy to the World</option>
+          </select>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="playWelcomeNoel(document.getElementById('le-noel-music').value==='random'?true:document.getElementById('le-noel-music').value)">▶ Écouter</button>
+        </div>
         <div class="field" style="margin-top:14px;"><label>Message de vœux (affiché sur la page d'accueil en mode Noël)</label>
           <textarea id="le-noel-msg" rows="3" placeholder="Message de vœux…"></textarea>
         </div>
@@ -7961,15 +7973,27 @@ function soundClick() {
 // pour le mouvement. Pas de percussion ni de synthèse FM (c'était ça, le côté "jeu vidéo").
 // Se tait silencieusement si Tone.js n'a pas chargé (ne bloque jamais la connexion).
 let _toneReady = false;
-// Version Noël : « Jingle Bells » (domaine public) en boîte à musique, grelots de traîneau et nappe chaude
+// Version Noël : airs traditionnels (domaine public) en boîte à musique, avec une nappe chaude. Aucun grelot.
+const NOEL_TUNES = {
+  jingle: { name:"Jingle Bells", beat:0.2,  notes:[["E5",1],["E5",1],["E5",2],["E5",1],["E5",1],["E5",2],["E5",1],["G5",1],["C5",1.5],["D5",.5],["E5",4]], chords:[["C3","G3","E4"],["G2","B3","D4"]] },
+  wish:   { name:"We Wish You a Merry Christmas", beat:0.27, notes:[["G4",1],["C5",1],["C5",.5],["D5",.5],["C5",.5],["B4",.5],["A4",1],["A4",1],["A4",1],["D5",1],["D5",.5],["E5",.5],["D5",.5],["C5",.5],["B4",1],["G4",1],["C5",2.5]], chords:[["C3","G3","E4"],["F2","A3","C4"],["G2","B3","D4"],["C3","G3","E4"]] },
+  deck:   { name:"Deck the Halls", beat:0.24, notes:[["G5",1.5],["F5",.5],["E5",1],["C5",1],["D5",1],["E5",1],["F5",1],["D5",1],["E5",1.5],["D5",.5],["C5",1],["B4",1],["C5",3]], chords:[["C3","G3","E4"],["G2","B3","D4"],["C3","G3","E4"]] },
+  silent: { name:"Douce nuit", beat:0.34, notes:[["G4",1.5],["A4",.5],["G4",1],["E4",3],["G4",1.5],["A4",.5],["G4",1],["E4",3]], chords:[["C3","G3","E4"],["G2","B3","D4"]] },
+  joy:    { name:"Joy to the World", beat:0.22, notes:[["C6",1.5],["B5",.5],["A5",2],["G5",1.5],["F5",.5],["E5",2],["D5",2],["C5",3]], chords:[["C3","G3","E4"],["F2","A3","C4"],["G2","B3","D4"],["C3","G3","E4"]] },
+};
 let _noelWelcomePlaying = false;
-async function playWelcomeNoel() {
+async function playWelcomeNoel(preview) {
   if(_noelWelcomePlaying) return;
-  _noelWelcomePlaying = true; setTimeout(()=>{ _noelWelcomePlaying = false; }, 5200);
+  _noelWelcomePlaying = true;
+  const unlock = ms => setTimeout(()=>{ _noelWelcomePlaying = false; }, ms);
   try {
-    if(typeof Tone === "undefined") return;
+    if(typeof Tone === "undefined") { unlock(100); return; }
     if(!_toneReady) { await Tone.start(); _toneReady = true; }
-    if(!isNoel()) return;
+    if(!preview && !isNoel()) { unlock(100); return; }
+    let key = (landingContent && landingContent.noel_music) || "random";
+    if(typeof preview==="string" && NOEL_TUNES[preview]) key = preview;
+    if(!NOEL_TUNES[key]) key = Object.keys(NOEL_TUNES)[Math.floor(Math.random()*Object.keys(NOEL_TUNES).length)];
+    const tune = NOEL_TUNES[key];
     const now = Tone.now() + 0.05;
     Tone.Destination.volume.value = -14;
     const reverb = new Tone.Reverb({decay:2.2, wet:0.28}).toDestination();
@@ -7982,17 +8006,14 @@ async function playWelcomeNoel() {
     bell.volume.value = -9;
     const pad = new Tone.PolySynth(Tone.Synth, {oscillator:{type:"sine"}, envelope:{attack:0.6, decay:0.3, sustain:0.55, release:1.6}}).connect(reverb);
     pad.volume.value = -17;
-    const hp = new Tone.Filter({frequency:6500, type:"highpass"}).connect(reverb);
-    const sleigh = new Tone.NoiseSynth({noise:{type:"white"}, envelope:{attack:0.002, decay:0.07, sustain:0, release:0.05}}).connect(hp);
-    sleigh.volume.value = -25;
-    pad.triggerAttackRelease(["C3","G3","E4"], 1.6, now);
-    pad.triggerAttackRelease(["G2","B3","D4"], 1.5, now+1.55);
-    const q = 0.2;
-    const seq = [["E5",0,q],["E5",q,q],["E5",q*2,q*2],["E5",q*4,q],["E5",q*5,q],["E5",q*6,q*2],["E5",q*8,q],["G5",q*9,q],["C5",q*10,q*1.5],["D5",q*11.5,q*.6],["E5",q*12.3,q*4]];
-    seq.forEach(([n,at,d])=>bell.triggerAttackRelease(n,d,now+0.1+at));
-    for(let i=0;i<13;i++) sleigh.triggerAttackRelease(0.06, now+0.1+i*q);
-    setTimeout(()=>{ [reverb,bell,pad,hp,sleigh].forEach(n=>{ try{ n.dispose(); }catch(e){} }); Tone.Destination.volume.value = -14; }, 4800);
-  } catch(e) { /* audio indisponible : on continue sans bloquer */ }
+    const total = tune.notes.reduce((t,n)=>t+n[1],0) * tune.beat;
+    const per = total / tune.chords.length;
+    tune.chords.forEach((c,i)=>pad.triggerAttackRelease(c, per*0.95, now + i*per));
+    let t = 0.1;
+    tune.notes.forEach(([n,d])=>{ bell.triggerAttackRelease(n, d*tune.beat*0.9, now + t); t += d*tune.beat; });
+    unlock((total+2.6)*1000);
+    setTimeout(()=>{ [reverb,bell,pad].forEach(n=>{ try{ n.dispose(); }catch(e){} }); Tone.Destination.volume.value = -14; }, (total+2.4)*1000);
+  } catch(e) { unlock(100); /* audio indisponible : on continue sans bloquer */ }
 }
 async function playWelcomeMelody() {
   if(isNoel()) return playWelcomeNoel();
@@ -8181,8 +8202,8 @@ function applyNoelTheme() {
     const g = document.createElement("div"); g.id = "noel-garland"; g.setAttribute("aria-hidden","true"); document.body.appendChild(g);
     const bb = document.createElement("div"); bb.id = "noel-baubles"; bb.setAttribute("aria-hidden","true");
     const cols = ["#E0554A","#F0C048","#52D98B","#5DADE2","#E0554A","#F0C048","#52D98B","#B388EB","#E0554A","#F0C048"];
-    const pos = [17,22,27,32,67,72,77,82];
-    bb.innerHTML = pos.map((x,i)=>`<span style="left:${x}%;--len:${(34+((i*29)%38))}px;--c:${cols[i%cols.length]};animation-delay:${(-i*.55).toFixed(2)}s"><b></b></span>`).join("");
+    const mk = (arr,cls,lo,hi) => arr.map((x,i)=>`<span class="${cls}" style="left:${x}%;--len:${(lo+((i*29)%(hi-lo)))}px;--c:${cols[i%cols.length]};animation-delay:${(-i*.55).toFixed(2)}s"><b></b></span>`).join("");
+    bb.innerHTML = mk([17,22,27,32,67,72,77,82],"b-land",34,72) + mk([26,33,40,47,54,61],"b-app",12,26);
     document.body.appendChild(bb);
     // Le père Noël vole EN FOND : juste au-dessus de l'arrière-plan, derrière tout le contenu
     const mkSl = () => { const sl = document.createElement("div"); sl.className = "noel-sleigh"; sl.setAttribute("aria-hidden","true"); sl.innerHTML = NOEL_SLEIGH_SVG; return sl; };
@@ -8196,7 +8217,7 @@ function applyNoelTheme() {
   if(!window._noelBbTimer) window._noelBbTimer = setInterval(()=>{
     const bb=document.getElementById("noel-baubles"); if(!bb) return;
     const vis = id => { const e=document.getElementById(id); return !!(e && e.getClientRects().length>0); };
-    bb.style.display = (vis("screen-landing")||vis("screen-login")) ? "" : "none";
+    bb.classList.toggle("app", !(vis("screen-landing")||vis("screen-login")));
   },600);
   const sec = document.getElementById("lp-noel-sec");
   if(sec) {
@@ -8221,6 +8242,7 @@ async function refreshNoelFlag() {
     const before = isNoel(), msgBefore = landingContent.noel_msg;
     landingContent.noel_mode = p.noel_mode==="on" ? "on" : "off";
     if(p.noel_msg) landingContent.noel_msg = p.noel_msg;
+    if(p.noel_music) landingContent.noel_music = p.noel_music;
     if(isNoel()!==before || landingContent.noel_msg!==msgBefore) { renderLanding(); applyNoelTheme(); }
   } catch(_) {}
 }
@@ -8402,7 +8424,7 @@ function initLandingEditor() {
   document.getElementById("le-hero-sub").value = landingEditorDraft.hero_sub;
   document.getElementById("le-about-title").value = landingEditorDraft.about_title;
   document.getElementById("le-about-text").value = landingEditorDraft.about_text;
-  { const sel=document.getElementById("le-noel-mode"); if(sel) sel.value = landingContent.noel_mode==="on" ? "on" : "off"; const mm=document.getElementById("le-noel-msg"); if(mm) mm.value = landingContent.noel_msg||NOEL_MSG_DEFAULT; updateNoelStateLabel(); }
+  { const sel=document.getElementById("le-noel-mode"); if(sel) sel.value = landingContent.noel_mode==="on" ? "on" : "off"; const mu=document.getElementById("le-noel-music"); if(mu) mu.value = landingContent.noel_music||"random"; const mm=document.getElementById("le-noel-msg"); if(mm) mm.value = landingContent.noel_msg||NOEL_MSG_DEFAULT; updateNoelStateLabel(); }
   renderLandingImgPreview("hero_img");
   renderLandingImgPreview("about_img");
   renderStatsRows();
@@ -8436,6 +8458,10 @@ async function setNoelMode(mode) {
     logActivity("noel_mode", "Mode Noël : "+(mode==="on"?"activé":"désactivé"));
     toast(mode==="on" ? "🎄 Mode Noël activé pour tout le site" : "Mode Noël désactivé");
   } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
+}
+async function saveNoelMusic(v) {
+  if(role!=="admin") return;
+  try { await persistNoel({noel_music: v}); toast("✓ Musique d'accueil enregistrée"); } catch(e) { toast("Erreur : "+e.message,"#E74C3C"); }
 }
 async function saveNoelMsg() {
   if(role!=="admin") return;
@@ -13135,7 +13161,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v9.6 — sons : une seule mélodie";
+const SITE_VERSION = "v9.7 — Noël : musiques au choix";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
