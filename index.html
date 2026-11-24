@@ -13361,7 +13361,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v10.3 — Icônes de l'application";
+const SITE_VERSION = "v10.4 — Bouton d'installation toujours visible";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
@@ -13369,7 +13369,7 @@ let _installPrompt = null;
 const _isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 function refreshInstallButtons() {
-  const show = !_isStandalone() && (_installPrompt || _isIOS);
+  const show = !_isStandalone();   // toujours visible hors application installée (aide si le navigateur ne propose pas l'installation directe)
   ["install-btn-landing","install-btn-app"].forEach(id=>{ const b = document.getElementById(id); if(b) b.style.display = show ? "" : "none"; });
 }
 window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); _installPrompt = e; refreshInstallButtons(); });
@@ -13386,6 +13386,12 @@ async function installApp() {
 1. Ouvrez ce site dans Safari
 2. Appuyez sur le bouton Partager (le carré avec une flèche)
 3. Choisissez « Sur l'écran d'accueil »`);
+  } else {
+    alert(`Pour installer l'application sur ordinateur ou Android :
+
+• Chrome / Edge : cliquez sur l'icône d'installation à droite de la barre d'adresse, ou ouvrez le menu ⋮ puis « Installer Dog Compagnie ».
+
+Si l'icône n'apparaît pas : l'application est peut-être déjà installée (ouvrez-la depuis le bureau ou le menu Démarrer), ou faites Ctrl+F5 pour recharger le site.`);
   }
 }
 if("serviceWorker" in navigator && location.protocol==="https:") {
