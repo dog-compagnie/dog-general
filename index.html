@@ -8406,7 +8406,7 @@ function evBuild(ev) {
     else if(ev==="rose") { ch = i%4===0 ? "🌸" : i%4===2 ? "✿" : "♥"; col = i%2 ? "#FF9CC8" : "#FF5FA2"; sz = (9+R()*12).toFixed(0); }
     else if(ev==="or") { ch = i%4===0 ? "🍂" : i%4===2 ? "✨" : "✦"; col = i%2 ? "#FFC53D" : "#FFE08A"; sz = (9+R()*12).toFixed(0); }
     else if(ev==="paques") { ch = i%4===0 ? "🌼" : i%4===2 ? "🥚" : "✿"; col = ["#F5A3C7","#F2C94C","#9BE3A8","#9EC9FF"][i%4]; sz = (10+R()*11).toFixed(0); }
-    else if(ev==="movember") { col = ["#4C7DE0","#B07A45","#FFFFFF"][i%3]; ch = evMusSvg(col); sz = (9+R()*10).toFixed(0); }
+    else if(ev==="movember") { if(i%3) continue; col = ["#4C7DE0","#9DBBFF","#FFFFFF","#D9A36B"][i%4]; ch = i%2 ? "✦" : "•"; sz = (8+R()*7).toFixed(0); }
     else ch = i%6===0 ? "✦" : "❄";
     h += `<i style="left:${(R()*100).toFixed(1)}%;font-size:${sz}px;${col?"color:"+col+";text-shadow:0 0 6px "+col+"88;":""}animation-duration:${(9+R()*12).toFixed(1)}s;animation-delay:${(-R()*20).toFixed(1)}s;opacity:${(.4+R()*.5).toFixed(2)}">${ch}</i>`;
   }
@@ -13412,7 +13412,7 @@ async function initPublicCarteView(token) {
 
 // Numéro de version affiché en bas de la page d'accueil : permet de vérifier d'un coup d'œil
 // que la dernière version du site est bien celle publiée sur GitHub.
-const SITE_VERSION = "v11.0 — Pâques et Movember";
+const SITE_VERSION = "v11.1 — Movember plus sobre";
 { const v = document.getElementById("site-version"); if(v) v.textContent = "· " + SITE_VERSION; }
 
 // ─── APPLI INSTALLABLE (PWA) ─────────────────────────────────────────
